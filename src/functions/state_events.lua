@@ -1440,7 +1440,7 @@ G.FUNCS.tutorial_part = function(_part)
             hard_set = true,
             text_key = 'fh_7',
             highlight = {
-                local _uie_hud_hands = G.HUD:get_UIE_by_ID('hud_hands'); if _uie_hud_hands then _uie_hud_hands.parent end,
+                G.HUD:get_UIE_by_ID('hud_hands').parent,
             },
             attach = {major = G.ROOM_ATTACH, type = 'cm', offset = {x = 0, y = 0}},
             step = step,
@@ -1448,7 +1448,7 @@ G.FUNCS.tutorial_part = function(_part)
         step = tutorial_info({
             text_key = 'fh_8',
             highlight = {
-                local _uie_hud_hands = G.HUD:get_UIE_by_ID('hud_hands'); if _uie_hud_hands then _uie_hud_hands.parent end,
+                G.HUD:get_UIE_by_ID('hud_hands').parent,
                 G.HUD:get_UIE_by_ID('row_dollars_chips'),
                 G.HUD_blind
             },
@@ -1494,7 +1494,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_1',
             highlight = {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent
             },
             attach = {major = G.shop, type = 'tm', offset = {x = 0, y = 4}},
             step = step,
@@ -1503,7 +1503,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_2',
             highlight = {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.shop_jokers.cards[2],
             },
             snap_to = function() return G.shop_jokers.cards[2] end,
@@ -1517,7 +1517,7 @@ G.FUNCS.tutorial_part = function(_part)
             loc_vars = {#G.P_CENTER_POOLS.Joker},
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.jokers.cards[1],
             } end,
             attach = {major = G.shop, type = 'tm', offset = {x = 0, y = 6}},
@@ -1527,7 +1527,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_4',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.jokers.cards[1],
             } end,
             attach = {major = G.shop, type = 'tm', offset = {x = 0, y = 6}},
@@ -1537,7 +1537,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_5',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.jokers,
             } end,
             attach = {major = G.shop, type = 'tm', offset = {x = 0, y = 6}},
@@ -1547,7 +1547,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_6',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.shop_jokers.cards[1],
             } end,
             snap_to = function() return G.shop_jokers.cards[1] end,
@@ -1560,7 +1560,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_7',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.consumeables.cards[#G.consumeables.cards],
             } end,
             attach = {major = G.shop, type = 'tm', offset = {x = 0, y = 6}},
@@ -1570,7 +1570,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_8',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.consumeables
             } end,
             attach = {major = G.shop, type = 'tm', offset = {x = 0, y = 6}},
@@ -1580,7 +1580,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_9',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.shop_vouchers,
             } end,
             snap_to = function() return G.shop_vouchers.cards[1] end,
@@ -1591,7 +1591,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_10',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.shop_vouchers,
             } end,
             attach = {major = G.shop, type = 'tr', offset = {x = -4, y = 6}},
@@ -1601,7 +1601,7 @@ G.FUNCS.tutorial_part = function(_part)
             text_key = 's_11',
             highlight = function() return {
                 G.SHOP_SIGN,
-                local _uie_dollar_text_UI = G.HUD:get_UIE_by_ID('dollar_text_UI'); if _uie_dollar_text_UI then _uie_dollar_text_UI.parent.parent.parent end,
+                G.HUD:get_UIE_by_ID('dollar_text_UI').parent.parent.parent,
                 G.shop_booster,
             } end,
             snap_to = function() return G.shop_booster.cards[1] end,
