@@ -1,0 +1,13 @@
+game_dump/
+balatro-mobile-maker/
+*.apk
+*.love
+*.keystore
+__pycache__/
+*.tmp
+*.exe
+*.dll
+*.ppdb
+*.pdb
+*.sln
+*.txt
