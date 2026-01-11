@@ -1208,23 +1208,24 @@ end
   end
 
 function create_UIBox_HUD_blind()
-  local scale = 0.4
+  local scale = 0.35
   local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.5)
   if G.F_PORTRAIT then
-    -- VERTICAL BLIND BOX for Sidebar Layout
-    return {n=G.UIT.ROOT, config={align = "cm", minw = 2.0, r = 0.1, colour = G.C.BLACK, emboss = 0.05, padding = 0.05, func = 'HUD_blind_visible', id = 'HUD_blind'}, nodes={
+    -- VERTICAL BLIND BOX for Sidebar Layout (Compact)
+    G.GAME.blind:change_dim(1.15, 1.15)  -- ~23% smaller than original 1.5
+    return {n=G.UIT.ROOT, config={align = "cm", minw = 1.3, r = 0.1, colour = G.C.BLACK, emboss = 0.05, padding = 0.02, func = 'HUD_blind_visible', id = 'HUD_blind'}, nodes={
       {n=G.UIT.C, config={align = "cm", padding = 0.05}, nodes={ -- All content in one Column
         -- Title Area
-        {n=G.UIT.R, config={align = "cm", minh = 0.5, r = 0.1, colour = G.C.DYN_UI.MAIN, padding = 0.05, minw = 1.8}, nodes={
-            {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.blind, ref_value = 'loc_name'}}, colours = {G.C.UI.TEXT_LIGHT},shadow = true, rotate = true, silent = true, float = true, scale = 1.2*scale, y_offset = -4}),id = 'HUD_blind_name'}},
+        {n=G.UIT.R, config={align = "cm", minh = 0.4, r = 0.1, colour = G.C.DYN_UI.MAIN, padding = 0.03, minw = 1.4}, nodes={
+            {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.blind, ref_value = 'loc_name'}}, colours = {G.C.UI.TEXT_LIGHT},shadow = true, rotate = true, silent = true, float = true, scale = 0.9*scale, y_offset = -3}),id = 'HUD_blind_name'}},
         }},
         -- Debuff Info (if any)
         {n=G.UIT.R, config={align = "cm", minh = 0}, nodes={
             {n=G.UIT.T, config={ref_table = {val = ''}, ref_value = 'val', scale = scale*0.8, colour = G.C.UI.TEXT_LIGHT, func = 'HUD_blind_debuff_prefix'}},
             {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 1, scale = scale*0.8, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_1', func = 'HUD_blind_debuff'}}
         }},
-        -- Blind Icon
-        {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+        -- Blind Icon (smaller)
+        {n=G.UIT.R, config={align = "cm", padding = 0.03}, nodes={
              {n=G.UIT.O, config={object = G.GAME.blind, draw_layer = 1}},
         }},
         -- Score Goal

@@ -1,4 +1,41 @@
 if (love.system.getOS() == 'OS X' ) and (jit.arch == 'arm64' or jit.arch == 'arm') then jit.off() end
+
+-- Android: force orientation hints off at runtime (LOVE/SDL can override manifest via hints)
+local function _force_android_portrait_hints()
+    if not (love and love.system and love.system.getOS and love.system.getOS() == 'Android') then return end
+    if not (love and love.window and love.window.setMode) then return end
+
+    -- These are SDL/LÖVE orientation hints used by love-android.
+    -- If they exist, setting them should prevent FULL_SENSOR being requested.
+    pcall(function()
+        if love.window.setHint then
+            love.window.setHint("screenorientation", "portrait")
+            love.window.setHint("screenorientation", "fixed") -- some builds treat "fixed" as no sensor
+        end
+    end)
+
+    -- As a fallback, re-apply current mode to force SDL to re-evaluate flags without changing size.
+    pcall(function()
+        local w, h, flags = love.window.getMode()
+        flags = flags or {}
+        flags.resizable = false
+        love.window.setMode(w, h, flags)
+    end)
+end
+
+-- Debug logging helpers (prints + Android logcat via logcat fallback)
+local function _logcat(tag, msg)
+    tag = tag or "BALATRO"
+    msg = tostring(msg or "")
+    print(tag .. ": " .. msg)
+    if love and love.system and love.system.getOS and love.system.getOS() == 'Android' then
+        -- Try to write to logcat using io.popen; if unavailable, print above is still useful.
+        pcall(function()
+            local p = io.popen('log -t "'..tag..'" "'..msg:gsub('"', '\\"')..'"', 'w')
+            if p then p:close() end
+        end)
+    end
+end
 require "engine/object"
 require "bit"
 require "engine/string_packer"
@@ -54,14 +91,26 @@ function love.run()
 					end
 				end
 				if name == 'touchpressed' then
+					_n = 'mousepressed'
+					-- touchpressed signature: (id, x, y, dx, dy, pressure)
+					-- 'a' is the touch id (userdata). We want x/y.
+					local tx, ty = b, c
+					-- Some backends provide normalized touch coordinates (0..1). Convert to pixels if needed.
+					if type(tx) == 'number' and type(ty) == 'number' and tx >= 0 and tx <= 1 and ty >= 0 and ty <= 1 then
+						local w, h = love.graphics.getDimensions()
+						tx, ty = tx * w, ty * h
+					end
+					_a, _b = tx, ty
+					_c = 1
 					touched = true
-				elseif name == 'mousepressed' then 
+					_logcat("BALATRO_INPUT", string.format("TOUCH: raw=(%s,%s) final=(%s,%s)", tostring(b), tostring(c), tostring(_a), tostring(_b)))
+				elseif name == 'mousepressed' then
 					_n,_a,_b,_c,_d,_e,_f = name,a,b,c,d,e,f
 				else
 					love.handlers[name](a,b,c,d,e,f)
 				end
 			end
-			if _n then 
+			if _n then
 				love.handlers['mousepressed'](_a,_b,_c,touched)
 			end
 		end
@@ -87,7 +136,7 @@ end
 function love.errorhandler(msg)
 	-- Log to file for debugging
 	local err_msg = "ERROR: " .. tostring(msg) .. "\n" .. debug.traceback()
-	
+
 	-- Try to write to a file
 	pcall(function()
 		local file = love.filesystem.newFile("crash_log.txt")
@@ -95,14 +144,14 @@ function love.errorhandler(msg)
 		file:write(err_msg)
 		file:close()
 	end)
-	
+
 	-- Display error on screen
 	return function()
 		love.graphics.clear(0.2, 0, 0, 1)
 		love.graphics.setColor(1, 1, 1, 1)
 		love.graphics.printf("CRASH LOG:\n\n" .. err_msg, 10, 50, love.graphics.getWidth() - 20)
 		love.graphics.present()
-		
+
 		-- Wait for touch to quit
 		love.event.pump()
 		for e, a in love.event.poll() do
@@ -115,11 +164,11 @@ function love.errorhandler(msg)
 	end
 end
 
-function love.load() 
+function love.load()
 	-- Early portrait detection for Android/mobile
 	local w, h = love.graphics.getDimensions()
 	G.F_PORTRAIT = (h > w)
-	
+
 	-- Force portrait orientation on Android at engine level
 	local os_name = love.system.getOS()
 	if os_name == 'Android' or os_name == 'iOS' then
@@ -127,11 +176,14 @@ function love.load()
 		love.graphics.setBackgroundColor(0.1, 0.2, 0.1, 1)
 		G.F_PORTRAIT = true  -- Always portrait on mobile
 	end
-	
+
+	-- Android: apply orientation hints ASAP (prevents SDL from requesting FULL_SENSOR later)
+	_force_android_portrait_hints()
+
 	G:start_up()
 	--Steam integration
 	local os = love.system.getOS()
-	if os == 'OS X' or os == 'Windows' then 
+	if os == 'OS X' or os == 'Windows' then
 		local st = nil
 		--To control when steam communication happens, make sure to send updates to steam as little as possible
 		if os == 'OS X' then
@@ -210,8 +262,26 @@ function love.gamepadreleased(joystick, button)
 end
 
 function love.mousepressed(x, y, button, touch)
+    _logcat("BALATRO_INPUT", string.format("MOUSEPRESSED: x=%s y=%s button=%s touch=%s", tostring(x), tostring(y), tostring(button), tostring(touch)))
+    if not (G and G.CONTROLLER) then return end
+
+    -- On Android touch, the controller's cursor position can lag behind the touch.
+    -- Force cursor to the tap position so UI hit-testing uses the correct coordinates.
+    if touch and G.CONTROLLER.cursor_position then
+        G.CONTROLLER.cursor_position.x = x
+        G.CONTROLLER.cursor_position.y = y
+        if G.CURSOR and G.CURSOR.T then
+            G.CURSOR.T.x = x/(G.TILESCALE*G.TILESIZE) - (G.ROOM and G.ROOM.T and G.ROOM.T.x or 0)
+            G.CURSOR.T.y = y/(G.TILESCALE*G.TILESIZE) - (G.ROOM and G.ROOM.T and G.ROOM.T.y or 0)
+        end
+    end
+
+    if G and G.CONTROLLER and G.CONTROLLER.cursor_position then
+        _logcat("BALATRO_INPUT", string.format("  CONTROLLER cursor_pos=(%s,%s)", tostring(G.CONTROLLER.cursor_position.x), tostring(G.CONTROLLER.cursor_position.y)))
+    end
+
     G.CONTROLLER:set_HID_flags(touch and 'touch' or 'mouse')
-    if button == 1 then 
+    if button == 1 then
 		G.CONTROLLER:queue_L_cursor_press(x, y)
 	end
 	if button == 2 then
@@ -243,7 +313,7 @@ function love.errhand(msg)
 	if G.F_NO_ERROR_HAND then return end
 	msg = tostring(msg)
 
-	if G.SETTINGS.crashreports and _RELEASE_MODE and G.F_CRASH_REPORTS then 
+	if G.SETTINGS.crashreports and _RELEASE_MODE and G.F_CRASH_REPORTS then
 		local http_thread = love.thread.newThread([[
 			local https = require('https')
 			CHANNEL = love.thread.getChannel("http_channel")
@@ -265,7 +335,7 @@ function love.errhand(msg)
 			str = str:gsub("\n", "\r\n"):gsub("([^%w _%%%-%.~])", char_to_hex):gsub(" ", "+")
 			return str
 		end
-		
+
 
 		local error = msg
 		local file = string.sub(msg, 0,  string.find(msg, ':'))
@@ -283,7 +353,7 @@ function love.errhand(msg)
 				function_line = string.sub(l, string.find(l, 'in function')+12)..' line:'..function_line
 			end
 
-			if boot_found and func_found then 
+			if boot_found and func_found then
 				trace = trace..l..'\n'
 			end
 		end
@@ -366,11 +436,20 @@ function love.errhand(msg)
 end
 
 function love.resize(w, h)
+	-- Safety check: Don't process resize if game isn't initialized yet
+	if not G or not G.ROOM then
+		return
+	end
+
+	-- Android: re-apply portrait hints on any resize/config change
+	_force_android_portrait_hints()
+
 	-- On mobile: Completely ignore landscape resize events to prevent crash
 	local os_name = love.system.getOS()
 	if (os_name == 'Android' or os_name == 'iOS') then
 		if w > h then
 			-- Landscape detected on mobile - ignore this resize completely
+			-- Do not process any resize logic for landscape orientation
 			return
 		end
 		-- Force portrait flag
@@ -379,34 +458,39 @@ function love.resize(w, h)
 		-- Desktop: detect based on dimensions
 		G.F_PORTRAIT = (h > w)
 	end
-	
+
+	-- Additional safety check for window_prev
+	if not G.window_prev then
+		return
+	end
+
 	if G.F_PORTRAIT then
 		-- PORTRAIT MODE
 		-- Use 63% of original width as visible area
 		local portrait_scale_factor = 0.63
 		G.TILESCALE = w / (G.TILE_W * portrait_scale_factor * G.TILESIZE)
-		
+
 		if G.ROOM then
 			-- Room dimensions based on visible area
 			G.ROOM.T.w = w / (G.TILESCALE * G.TILESIZE)
 			G.ROOM.T.h = h / (G.TILESCALE * G.TILESIZE)
 			G.ROOM.T.x = 0
 			G.ROOM.T.y = 0
-			
+
 			G.ROOM_ATTACH.T.w = G.ROOM.T.w
 			G.ROOM_ATTACH.T.h = G.ROOM.T.h
 			G.ROOM_ATTACH.T.x = G.ROOM.T.x
 			G.ROOM_ATTACH.T.y = G.ROOM.T.y
-			
+
 			G.ROOM_ORIG = {
 				x = G.ROOM.T.x,
 				y = G.ROOM.T.y,
 				r = G.ROOM.T.r
 			}
-			
+
 			if G.buttons then G.buttons:recalculate() end
 			if G.HUD then G.HUD:recalculate() end
-			
+
 			-- Update game element positions for portrait mode
 			set_screen_positions()
 		end
@@ -426,7 +510,7 @@ function love.resize(w, h)
 			G.ROOM.T.w = G.TILE_W
 			G.ROOM.T.h = G.TILE_H
 			G.ROOM_ATTACH.T.w = G.TILE_W
-			G.ROOM_ATTACH.T.h = G.TILE_H		
+			G.ROOM_ATTACH.T.h = G.TILE_H
 
 			if w/h < G.window_prev.orig_ratio then
 				G.ROOM.T.x = G.ROOM_PADDING_W
@@ -449,7 +533,7 @@ function love.resize(w, h)
 
 	G.WINDOWTRANS = {
 		x = 0, y = 0,
-		w = G.TILE_W+2*G.ROOM_PADDING_W, 
+		w = G.TILE_W+2*G.ROOM_PADDING_W,
 		h = G.TILE_H+2*G.ROOM_PADDING_H,
 		real_window_w = w,
 		real_window_h = h
@@ -475,4 +559,4 @@ function love.resize(w, h)
 
 	G.CANVAS = love.graphics.newCanvas(w*G.CANV_SCALE, h*G.CANV_SCALE, {type = '2d', readable = true})
 	G.CANVAS:setFilter('linear', 'linear')
-end 
+end

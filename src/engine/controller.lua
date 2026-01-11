@@ -1300,7 +1300,10 @@ function Controller:capture_focused_input(button, input_type, dt)
         extern_button = true
     end
     if G.OVERLAY_MENU and not self.screen_keyboard and input_type == 'press' and G.OVERLAY_MENU:get_UIE_by_ID('cycle_shoulders') and (button == 'leftshoulder' or button == 'rightshoulder') then 
-        focused = local _uie_cycle_shoulders = G.OVERLAY_MENU:get_UIE_by_ID('cycle_shoulders'); if _uie_cycle_shoulders then _uie_cycle_shoulders.children end[1]
+        local _uie_cycle_shoulders = G.OVERLAY_MENU:get_UIE_by_ID('cycle_shoulders')
+        if _uie_cycle_shoulders and _uie_cycle_shoulders.children then
+            focused = _uie_cycle_shoulders.children[1]
+        end
         extern_button = true
     end
     if focused and focused.config.focus_args then

@@ -489,8 +489,11 @@ G.FUNCS.play_cards_from_highlighted = function(e)
             G.E_MANAGER:add_event(Event({
                 trigger = 'immediate',
                 func = (function()
-                    local _d1 = G.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_1'); if _d1 then _d1:juice_up(0.3, 0) end
-                    local _d2 = G.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_2'); if _d2 then _d2:juice_up(0.3, 0) end
+                    local _hud_blind = G.HUD_blind
+                    if _hud_blind then
+                        local _d1 = _hud_blind:get_UIE_by_ID('HUD_blind_debuff_1'); if _d1 then _d1:juice_up(0.3, 0) end
+                        local _d2 = _hud_blind:get_UIE_by_ID('HUD_blind_debuff_2'); if _d2 then _d2:juice_up(0.3, 0) end
+                    end
                     G.GAME.blind:juice_up()
                     G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
                         play_sound('tarot2', 0.76, 0.4);return true end}))
@@ -656,9 +659,15 @@ G.FUNCS.evaluate_play = function(e)
                 G.GAME.blind.triggered = true
                 G.E_MANAGER:add_event(Event({
                     trigger = 'immediate',
-                    func = (function() local _d1 = G.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_1'); if _d1 then _d1:juice_up(0.3, 0) end
-                        local _d2 = G.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_2'); if _d2 then _d2:juice_up(0.3, 0) end
-                        G.GAME.blind:juice_up();return true end)
+                    func = (function()
+                        local _hud_blind = G.HUD_blind
+                        if _hud_blind then
+                            local _d1 = _hud_blind:get_UIE_by_ID('HUD_blind_debuff_1'); if _d1 then _d1:juice_up(0.3, 0) end
+                            local _d2 = _hud_blind:get_UIE_by_ID('HUD_blind_debuff_2'); if _d2 then _d2:juice_up(0.3, 0) end
+                        end
+                        G.GAME.blind:juice_up()
+                        return true
+                    end)
                 }))
                 card_eval_status_text(scoring_hand[i], 'debuff')
             else
@@ -1000,8 +1009,11 @@ G.FUNCS.evaluate_play = function(e)
         G.E_MANAGER:add_event(Event({
             trigger = 'immediate',
             func = (function()
-                local _d1 = G.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_1'); if _d1 then _d1:juice_up(0.3, 0) end
-                local _d2 = G.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_2'); if _d2 then _d2:juice_up(0.3, 0) end
+                local _hud_blind = G.HUD_blind
+                if _hud_blind then
+                    local _d1 = _hud_blind:get_UIE_by_ID('HUD_blind_debuff_1'); if _d1 then _d1:juice_up(0.3, 0) end
+                    local _d2 = _hud_blind:get_UIE_by_ID('HUD_blind_debuff_2'); if _d2 then _d2:juice_up(0.3, 0) end
+                end
                 G.GAME.blind:juice_up()
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
                     play_sound('tarot2', 0.76, 0.4);return true end}))

@@ -930,7 +930,7 @@ G.FUNCS.text_input = function(e)
 end
 
 G.FUNCS.paste_seed = function(e)
-  G.CONTROLLER.text_input_hook = local _uie_text_input = e.UIBox:get_UIE_by_ID('text_input'); if _uie_text_input then _uie_text_input.children end[1].children[1]
+  G.CONTROLLER.text_input_hook = e.UIBox:get_UIE_by_ID('text_input').children[1].children[1]
   for i = 1, 8 do
     G.FUNCS.text_input_key({key = 'right'})
   end
@@ -2514,10 +2514,10 @@ end
     stop_use()
     if G.blind_select then 
         G.GAME.facing_blind = true
-        local _uie_prompt_dynatext1 = G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext1'); if _uie_prompt_dynatext1 then _uie_prompt_dynatext1.config.object.pop_delay end = 0
-        local _uie_prompt_dynatext1 = G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext1'); if _uie_prompt_dynatext1 then _uie_prompt_dynatext1.config.object end:pop_out(5)
-        local _uie_prompt_dynatext2 = G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext2'); if _uie_prompt_dynatext2 then _uie_prompt_dynatext2.config.object.pop_delay end = 0
-        local _uie_prompt_dynatext2 = G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext2'); if _uie_prompt_dynatext2 then _uie_prompt_dynatext2.config.object end:pop_out(5) 
+        G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext1').config.object.pop_delay = 0
+        G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext1').config.object:pop_out(5)
+        G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext2').config.object.pop_delay = 0
+        G.blind_prompt_box:get_UIE_by_ID('prompt_dynatext2').config.object:pop_out(5) 
 
         G.E_MANAGER:add_event(Event({
           trigger = 'before', delay = 0.2,
@@ -3105,7 +3105,7 @@ G.FUNCS.wipe_on = function(message, no_card, timefac, alt_colour)
   G.STAGE_OBJECT_INTERRUPT = nil
   G.screenwipe.alignment.offset.y = 0
   if message then 
-    for k, v in ipairs(local _uie_text = G.screenwipe:get_UIE_by_ID('text'); if _uie_text then _uie_text.children end) do
+    for k, v in ipairs(G.screenwipe:get_UIE_by_ID('text').children) do
       v.children[1].config.object:pulse()
     end
   end
@@ -3168,7 +3168,7 @@ G.FUNCS.wipe_off = function()
     func = function()
       if G.screenwipecard then G.screenwipecard:start_dissolve({G.C.BLACK, G.C.ORANGE,G.C.GOLD, G.C.RED}) end
       if G.screenwipe:get_UIE_by_ID('text') then 
-        for k, v in ipairs(local _uie_text = G.screenwipe:get_UIE_by_ID('text'); if _uie_text then _uie_text.children end) do
+        for k, v in ipairs(G.screenwipe:get_UIE_by_ID('text').children) do
           v.children[1].config.object:pop_out(4)
         end
       end

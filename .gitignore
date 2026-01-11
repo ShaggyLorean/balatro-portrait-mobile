@@ -1,5 +1,4 @@
-game_dump/
-balatro-mobile-maker/
+# Build artifacts
 *.apk
 *.love
 *.keystore
@@ -9,5 +8,27 @@ __pycache__/
 *.dll
 *.ppdb
 *.pdb
+
+# IDE and editor files
 *.sln
+.vscode/
+.idea/
+
+# Logs
 *.txt
+logcat*.txt
+
+# Temporary files
+.temp_*
+calisanapk/
+
+# Original game files (DO NOT COMMIT - Copyright)
+game_dump/
+src/resources/
+src/localization/
+
+# APK signing
+balatro-mobile-maker/*.apk
+balatro-mobile-maker/balatro-apk/
+balatro-mobile-maker/jdk/
+balatro-mobile-maker/*.tar.gz

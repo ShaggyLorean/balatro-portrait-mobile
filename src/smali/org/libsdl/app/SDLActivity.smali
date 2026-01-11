@@ -2492,6 +2492,10 @@
 
     invoke-static {v0, v1}, Landroid/util/Log;->v(Ljava/lang/String;Ljava/lang/String;)I
 
+    const/4 v0, 0x1
+
+    invoke-virtual {p0, v0}, Landroid/app/Activity;->setRequestedOrientation(I)V
+
     invoke-super {p0, p1}, Landroid/app/Activity;->onConfigurationChanged(Landroid/content/res/Configuration;)V
 
     sget-boolean v0, Lorg/libsdl/app/SDLActivity;->mBrokenLibraries:Z
@@ -2526,6 +2530,10 @@
 
 .method protected onCreate(Landroid/os/Bundle;)V
     .locals 5
+
+    const/4 v0, 0x1
+
+    invoke-virtual {p0, v0}, Landroid/app/Activity;->setRequestedOrientation(I)V
 
     new-instance v0, Ljava/lang/StringBuilder;
 
@@ -2919,6 +2927,10 @@
     const-string v1, "onResume()"
 
     invoke-static {v0, v1}, Landroid/util/Log;->v(Ljava/lang/String;Ljava/lang/String;)I
+
+    const/4 v0, 0x1
+
+    invoke-virtual {p0, v0}, Landroid/app/Activity;->setRequestedOrientation(I)V
 
     invoke-super {p0}, Landroid/app/Activity;->onResume()V
 
@@ -3331,6 +3343,11 @@
 .method public setOrientationBis(IIZLjava/lang/String;)V
     .locals 9
 
+    # Force portrait and ignore any runtime orientation requests (prevents FULL_SENSOR switching)
+    const/4 v0, 0x1
+    invoke-virtual {p0, v0}, Landroid/app/Activity;->setRequestedOrientation(I)V
+    return-void
+
     const-string v0, "LandscapeRight"
 
     invoke-virtual {p4, v0}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
@@ -3568,7 +3585,9 @@
 
     sget-object p1, Lorg/libsdl/app/SDLActivity;->mSingleton:Lorg/libsdl/app/SDLActivity;
 
-    invoke-virtual {p1, v3}, Landroid/app/Activity;->setRequestedOrientation(I)V
+    const/4 v0, 0x1
+
+    invoke-virtual {p1, v0}, Landroid/app/Activity;->setRequestedOrientation(I)V
 
     return-void
 .end method

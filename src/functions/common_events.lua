@@ -23,7 +23,7 @@ function set_screen_positions()
             
             -- Portrait Mode Layout: Left Column Stack
             
-            -- 1. Deck (Top Left)
+            -- 1. Deck (Top Left, original position)
             G.deck.T.x = 0.2
             G.deck.T.y = 5.5
             

@@ -121,19 +121,19 @@ function Blind:set_blind(blind, reset, silent)
                 delay = 0.05,
                 blockable = false,
                 func = (function()
-                        local _uie_HUD_blind_name = G.HUD_blind:get_UIE_by_ID('HUD_blind_name'); if _uie_HUD_blind_name then _uie_HUD_blind_name.states.visible end = false
-                        local _uie_dollars_to_be_earned = G.HUD_blind:get_UIE_by_ID('dollars_to_be_earned'); if _uie_dollars_to_be_earned then _uie_dollars_to_be_earned.parent.parent.states.visible end = false
+                        G.HUD_blind:get_UIE_by_ID("HUD_blind_name").states.visible = false
+                        G.HUD_blind:get_UIE_by_ID("dollars_to_be_earned").parent.parent.states.visible = false
                         G.HUD_blind.alignment.offset.y = 0
                     G.E_MANAGER:add_event(Event({
                         trigger = 'after',
                         delay = 0.15,
                         blockable = false,
                         func = (function()
-                            local _uie_HUD_blind_name = G.HUD_blind:get_UIE_by_ID('HUD_blind_name'); if _uie_HUD_blind_name then _uie_HUD_blind_name.states.visible end = true
-                            local _uie_dollars_to_be_earned = G.HUD_blind:get_UIE_by_ID('dollars_to_be_earned'); if _uie_dollars_to_be_earned then _uie_dollars_to_be_earned.parent.parent.states.visible end = true
-                            local _uie_dollars_to_be_earned = G.HUD_blind:get_UIE_by_ID('dollars_to_be_earned'); if _uie_dollars_to_be_earned then _uie_dollars_to_be_earned.config.object end:pop_in(0)
-                            local _uie_HUD_blind_name = G.HUD_blind:get_UIE_by_ID('HUD_blind_name'); if _uie_HUD_blind_name then _uie_HUD_blind_name.config.object end:pop_in(0)
-                            local _uie_HUD_blind_count = G.HUD_blind:get_UIE_by_ID('HUD_blind_count'); if _uie_HUD_blind_count then _uie_HUD_blind_count:juice_up() end
+                            G.HUD_blind:get_UIE_by_ID("HUD_blind_name").states.visible = true
+                            G.HUD_blind:get_UIE_by_ID("dollars_to_be_earned").parent.parent.states.visible = true
+                            G.HUD_blind:get_UIE_by_ID("dollars_to_be_earned").config.object:pop_in(0)
+                            G.HUD_blind:get_UIE_by_ID("HUD_blind_name").config.object:pop_in(0)
+                            G.HUD_blind:get_UIE_by_ID("HUD_blind_count"):juice_up()
                             self.children.animatedSprite:set_sprite_pos(self.config.blind.pos)
                             self.blind_set = true
                             G.ROOM.jiggle = G.ROOM.jiggle + 3
@@ -290,7 +290,7 @@ function Blind:defeat(silent)
         fill = true
     })
 
-    local blind_name_dynatext = local _uie_HUD_blind_name = G.HUD_blind:get_UIE_by_ID('HUD_blind_name'); if _uie_HUD_blind_name then _uie_HUD_blind_name.config.object end
+    local blind_name_dynatext = G.HUD_blind:get_UIE_by_ID('HUD_blind_name').config.object
     blind_name_dynatext:pop_out(2)
 
     G.E_MANAGER:add_event(Event({
@@ -744,7 +744,7 @@ function Blind:load(blindTable)
     self:change_colour()
     if self.dollars > 0 then
         G.GAME.current_round.dollars_to_be_earned = string.rep(localize('$'), self.dollars)..''
-        local _uie_dollars_to_be_earned = G.HUD_blind:get_UIE_by_ID('dollars_to_be_earned'); if _uie_dollars_to_be_earned then _uie_dollars_to_be_earned.config.object end:pop_in(0)
+        G.HUD_blind:get_UIE_by_ID("dollars_to_be_earned").config.object:pop_in(0)
         G.HUD_blind.alignment.offset.y = 0
     end
     self:set_text()
