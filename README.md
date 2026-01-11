@@ -1,6 +1,7 @@
 # Balatro Portrait Mobile
 
 🎴 A portrait mode mod for Balatro on Android - optimized for mobile gaming!
+<img width="587" height="1290" alt="image" src="https://github.com/user-attachments/assets/1e509b4e-fe9d-4619-9b68-e223310f34d2" />
 
 ## Features
 
