@@ -1,6 +1,7 @@
 # Balatro Portrait Mobile
 
 🎴 A portrait mode mod for Balatro on Android - optimized for mobile gaming!
+
 <img width="587" height="1290" alt="image" src="https://github.com/user-attachments/assets/1e509b4e-fe9d-4619-9b68-e223310f34d2" />
 
 ## Features
@@ -9,60 +10,49 @@
 - **Redesigned HUD**: Score, buttons, and info panels repositioned for portrait
 - **Touch-Optimized**: Works perfectly with touchscreen controls
 - **Full Game Support**: All features work in portrait mode
-- 
+
 ## Requirements
 
 - **Balatro** - You must own a legal copy of the game
 - **Python 3.6+** - For build scripts
-- **Java (JDK 8+)** - Automatically downloaded during build
+- **7-Zip** - For extracting game files
 - **Android device** - Android 5.0+ recommended
+
+> ✅ **Cross-Platform:** Works on both Windows and Linux!
 
 ## Quick Start
 
 ### Step 1: Clone the Repository
 
-```bash
+```
 git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git
 cd balatro-portrait-mobile
 ```
 
-### Step 2: Get Original Game Files
+### Step 2: Get Balatro
 
 ⚠️ **You must own a legal copy of Balatro!**
 
-1. Purchase Balatro from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
-2. Extract the game files:
+1. Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
+2. Find your Balatro.exe location:
    - **Steam**: Right-click Balatro → Manage → Browse Local Files
-   - Extract `Balatro.exe` using 7-Zip or WinRAR
-3. Copy the extracted folders to `game_original_files/`:
-   ```
-   game_original_files/
-   ├── resources/
-   │   ├── textures/
-   │   ├── sounds/
-   │   └── ...
-   ├── localization/
-   └── version.jkr
-   ```
+   - Default: `C:\Program Files\Steam\steamapps\common\Balatro\Balatro.exe`
 
-### Step 3: Prepare Source Files
+### Step 3: Run Setup
 
-Copy the required files from `game_original_files/` to `src/`:
-
-```bash
-cp -r game_original_files/resources src/
-cp -r game_original_files/localization src/
-cp game_original_files/version.jkr src/
 ```
+python setup.py "C:\path\to\Balatro.exe"
+```
+
+This will automatically:
+- Extract game files from Balatro.exe
+- Copy resources to the src folder
 
 ### Step 4: Build the APK
 
-```bash
-# Step 1: Create Game.love (combines all game files)
-python3 rebuild_game.py
-
-# Step 2: Build the APK
-python3 build_apk.py
+```
+python rebuild_game.py
+python build_apk.py
 ```
 
 The final APK will be at:
@@ -72,48 +62,37 @@ balatro-mobile-maker/balatro-aligned-debugSigned.apk
 
 ### Step 5: Install on Android
 
-```bash
-# If you have ADB installed:
-adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
+Transfer the APK to your phone and install it.
 
-# Or simply transfer the APK to your phone and install it
+Or if you have ADB:
 ```
-
-## Build Scripts
-
-| Script | Description |
-|--------|-------------|
-| `rebuild_game.py` | Packages source files into Game.love |
-| `build_apk.py` | Creates signed Android APK |
+adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
+```
 
 ## Project Structure
 
 ```
 balatro-portrait-mobile/
-├── src/                    # Modified source files (portrait mode patches)
-│   ├── main.lua           # Entry point with portrait resize handling
-│   ├── game.lua           # Core game with portrait HUD positioning
-│   ├── functions/         # UI and gameplay functions
-│   └── engine/            # LÖVE engine utilities
-├── game_original_files/   # ⚠️ PUT YOUR GAME FILES HERE
-├── balatro-mobile-maker/  # APK building tools
-├── rebuild_game.py        # Game.love builder
-└── build_apk.py          # APK builder
+├── src/                    # Modified source files (portrait mode)
+├── game_original_files/    # Extracted game files (created by setup.py)
+├── setup.py                # Setup script (extracts & copies files)
+├── rebuild_game.py         # Creates Game.love
+└── build_apk.py            # Builds the APK
 ```
 
 ## Troubleshooting
 
+### "7-Zip not found"
+- **Windows**: Install from https://7-zip.org
+- **Linux**: `sudo apt install p7zip-full`
+
 ### "Game won't start"
-- Make sure you copied ALL files from `game_original_files/` to `src/`
+- Make sure setup.py completed successfully
 - Check that `src/resources/` and `src/localization/` exist
 
 ### "Build fails"
-- Ensure Python 3.6+ is installed: `python3 --version`
-- Try running with verbose output: `python3 build_apk.py`
-
-### "Touch not working"
-- The mod should handle touch automatically
-- If issues persist, try clearing app data and reinstalling
+- Ensure Python 3.6+ is installed: `python --version`
+- JDK is downloaded automatically during build
 
 ## Credits
 

@@ -15,7 +15,6 @@ __pycache__/
 .idea/
 
 # Logs
-*.txt
 logcat*.txt
 
 # Temporary files
@@ -26,9 +25,13 @@ calisanapk/
 game_dump/
 src/resources/
 src/localization/
+game_original_files/resources/
+game_original_files/localization/
+game_original_files/*.lua
+game_original_files/engine/
+game_original_files/functions/
+game_original_files/version.jkr
 
-# APK signing
-balatro-mobile-maker/*.apk
-balatro-mobile-maker/balatro-apk/
-balatro-mobile-maker/jdk/
-balatro-mobile-maker/*.tar.gz
+# APK build folder (downloaded tools + output)
+balatro-mobile-maker/
+

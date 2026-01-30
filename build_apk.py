@@ -8,7 +8,11 @@ import urllib.request
 import zipfile
 
 # Constants
-JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz"
+# Use Windows JDK for Windows, Linux JDK for Linux
+if os.name == "nt":
+    JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip"
+else:
+    JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz"
 APKTOOL_URL = (
     "https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"
 )
@@ -37,7 +41,11 @@ def download_file(url, dest):
 
 
 def setup_jdk():
-    jdk_archive = os.path.join(WORKDIR, "openjdk.tar.gz")
+    # Use appropriate archive format for the platform
+    if os.name == "nt":
+        jdk_archive = os.path.join(WORKDIR, "openjdk.zip")
+    else:
+        jdk_archive = os.path.join(WORKDIR, "openjdk.tar.gz")
     download_file(JDK_URL, jdk_archive)
 
     if not os.path.exists(JDK_DIR):
@@ -49,8 +57,15 @@ def setup_jdk():
                 if os.path.isdir(p):
                     shutil.rmtree(p)
 
-        # Use system tar
-        subprocess.run(["tar", "-xf", jdk_archive, "-C", WORKDIR], check=True)
+        # Extract based on platform
+        if os.name == "nt":
+            # Windows: use zipfile
+            with zipfile.ZipFile(jdk_archive, 'r') as zip_ref:
+                zip_ref.extractall(WORKDIR)
+        else:
+            # Linux/Mac: use tarfile
+            with tarfile.open(jdk_archive, 'r:gz') as tar_ref:
+                tar_ref.extractall(WORKDIR)
 
         # Find the extracted folder (it usually has a versioned name)
         for item in os.listdir(WORKDIR):
@@ -60,11 +75,13 @@ def setup_jdk():
 
     # Locate java bin
     global JAVA_BIN
+    java_name = "java.exe" if os.name == "nt" else "java"
     for root, dirs, files in os.walk(JDK_DIR):
-        if "java" in files and "bin" in root:
-            JAVA_BIN = os.path.join(root, "java")
-            # Ensure it is executable
-            os.chmod(JAVA_BIN, 0o755)
+        if java_name in files and "bin" in root:
+            JAVA_BIN = os.path.join(root, java_name)
+            # Ensure it is executable (only needed on Unix)
+            if os.name != "nt":
+                os.chmod(JAVA_BIN, 0o755)
             break
     print(f"Using Java at: {JAVA_BIN}")
 

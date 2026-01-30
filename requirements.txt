@@ -1,0 +1,10 @@
+# Balatro Portrait Mobile - Requirements
+
+# This project uses only Python standard library modules:
+# - os, sys, re, shutil, subprocess
+# - zipfile, tarfile
+# - urllib.request
+# - time
+
+# No external dependencies required!
+# Just Python 3.6+ is needed.
