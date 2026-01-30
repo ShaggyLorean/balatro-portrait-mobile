@@ -9,11 +9,7 @@
 - **Redesigned HUD**: Score, buttons, and info panels repositioned for portrait
 - **Touch-Optimized**: Works perfectly with touchscreen controls
 - **Full Game Support**: All features work in portrait mode
-
-## Screenshots
-
-*(Coming soon)*
-
+- 
 ## Requirements
 
 - **Balatro** - You must own a legal copy of the game
