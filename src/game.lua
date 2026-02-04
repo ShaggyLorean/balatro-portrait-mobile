@@ -2944,8 +2944,7 @@ love.graphics.pop()
     love.graphics.setCanvas(G.AA_CANVAS)
     love.graphics.push()
         love.graphics.setColor(G.C.WHITE)
-    -- PORTRAIT MODE: Skip CRT shader to avoid black ellipse visual artifact
-    if (not G.recording_mode or G.video_control) and true and not G.F_PORTRAIT then
+    if (not G.recording_mode or G.video_control) and true then
         G.ARGS.eased_cursor_pos = G.ARGS.eased_cursor_pos or {x=G.CURSOR.T.x,y=G.CURSOR.T.y, sx = G.CONTROLLER.cursor_position.x, sy = G.CONTROLLER.cursor_position.y}
         G.screenwipe_amt = G.screenwipe_amt and (0.95*G.screenwipe_amt + 0.05*((self.screenwipe and 0.4 or self.screenglitch and 0.4) or 0)) or 1
         G.SETTINGS.GRAPHICS.crt = G.SETTINGS.GRAPHICS.crt*0.3

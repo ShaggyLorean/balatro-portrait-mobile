@@ -55,6 +55,10 @@ python rebuild_game.py
 python build_apk.py
 ```
 
+During the build, you will be asked about the **CRT Shader Patch**:
+- If you see a **black ellipse** covering part of the screen, answer **yes** to disable CRT
+- If your game works fine, answer **no** to keep the CRT visual effects
+
 The final APK will be at:
 ```
 balatro-mobile-maker/balatro-aligned-debugSigned.apk
@@ -93,6 +97,30 @@ balatro-portrait-mobile/
 ### "Build fails"
 - Ensure Python 3.6+ is installed: `python --version`
 - JDK is downloaded automatically during build
+
+### "Black ellipse covering part of the screen"
+This is caused by the CRT shader not rendering correctly in portrait mode on some devices.
+
+**Solution**: Rebuild with CRT patch enabled:
+```
+python rebuild_game.py
+```
+When asked "Apply CRT disable patch?", answer **yes**.
+
+## Changelog
+
+### v1.3.0
+- Added CRT shader disable option during build
+- Fixed black ellipse visual artifact on some devices (Issue #3)
+- Build script now asks user about CRT patch preference
+
+### v1.2.0
+- Windows compatibility
+- Cross-platform build scripts
+
+### v1.0.0
+- Initial release
+- Portrait mode support
 
 ## Credits
 
