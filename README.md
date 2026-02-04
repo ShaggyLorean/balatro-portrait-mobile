@@ -109,6 +109,12 @@ When asked "Apply CRT disable patch?", answer **yes**.
 
 ## Changelog
 
+### v1.4.0
+- Fixed Game Over screen layout for portrait mode
+- Fixed black bar issue when locking/unlocking device (Issue #1)
+- Jimbo repositioned to bottom with stats at top
+- Improved resize handling for Android
+
 ### v1.3.0
 - Added CRT shader disable option during build
 - Fixed black ellipse visual artifact on some devices (Issue #3)
