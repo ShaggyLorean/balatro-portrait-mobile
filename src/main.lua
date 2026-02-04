@@ -559,4 +559,22 @@ function love.resize(w, h)
 
 	G.CANVAS = love.graphics.newCanvas(w*G.CANV_SCALE, h*G.CANV_SCALE, {type = '2d', readable = true})
 	G.CANVAS:setFilter('linear', 'linear')
+	
+	love.graphics.setScissor()
+	love.graphics.origin()
+	
+	if G.OVERLAY_MENU then
+		local menu_config = G.OVERLAY_MENU.config or {}
+		local is_game_over = (G.STATE == G.STATES.GAME_OVER)
+		
+		G.OVERLAY_MENU:remove()
+		G.OVERLAY_MENU = nil
+		
+		if is_game_over then
+			G.FUNCS.overlay_menu{
+				definition = create_UIBox_game_over(),
+				config = {no_esc = true}
+			}
+		end
+	end
 end
