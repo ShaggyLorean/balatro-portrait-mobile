@@ -1,60 +1,32 @@
 #!/usr/bin/env python3
 """
 Balatro Portrait Mobile - Setup Script
-Cross-platform setup for Windows and Linux
+Cross-platform setup for Windows, Linux, and macOS
 """
 
 import os
 import shutil
-import subprocess
 import sys
 import zipfile
 
 
-def find_7zip():
-    """Find 7-Zip executable based on OS"""
-    if os.name == "nt":  # Windows
-        paths = [
-            r"C:\Program Files\7-Zip\7z.exe",
-            r"C:\Program Files (x86)\7-Zip\7z.exe",
-        ]
-        for path in paths:
-            if os.path.exists(path):
-                return path
-        return None
-    else:  # Linux/Mac
-        # Check if 7z is in PATH
-        result = subprocess.run(["which", "7z"], capture_output=True, text=True)
-        if result.returncode == 0:
-            return "7z"
-        # Try p7zip
-        result = subprocess.run(["which", "7za"], capture_output=True, text=True)
-        if result.returncode == 0:
-            return "7za"
-        return None
-
-
 def extract_balatro(balatro_path, output_dir):
-    """Extract Balatro.exe using 7-Zip"""
-    seven_zip = find_7zip()
-    
-    if not seven_zip:
-        print("ERROR: 7-Zip not found!")
-        print("  Windows: Install from https://7-zip.org")
-        print("  Linux: sudo apt install p7zip-full")
-        return False
-    
+    """Extract Balatro.exe using Python's zipfile module"""
     print(f"Extracting {balatro_path}...")
     
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
     try:
-        subprocess.run(
-            [seven_zip, "x", balatro_path, f"-o{output_dir}", "-y"],
-            check=True,
-            capture_output=True
-        )
+        with zipfile.ZipFile(balatro_path, 'r') as zip_ref:
+            zip_ref.extractall(output_dir)
         print("Extraction complete!")
         return True
-    except subprocess.CalledProcessError as e:
+    except zipfile.BadZipFile:
+        print(f"ERROR: {balatro_path} is not a valid ZIP file.")
+        print("Make sure you're pointing to the correct Balatro executable.")
+        return False
+    except Exception as e:
         print(f"Extraction failed: {e}")
         return False
 
@@ -105,6 +77,7 @@ def main():
         print("Enter the path to Balatro.exe:")
         print("  Windows example: D:\\Steam\\steamapps\\common\\Balatro\\Balatro.exe")
         print("  Linux example: ~/.steam/steam/steamapps/common/Balatro/Balatro.exe")
+        print("  macOS example: ~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.exe")
         print()
         balatro_path = input("Path: ").strip().strip('"').strip("'")
     

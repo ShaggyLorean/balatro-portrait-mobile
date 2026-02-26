@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -8,10 +9,16 @@ import urllib.request
 import zipfile
 
 # Constants
-# Use Windows JDK for Windows, Linux JDK for Linux
+# Detect OS and architecture for appropriate JDK
 if os.name == "nt":
     JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip"
-else:
+elif platform.system() == "Darwin":  # macOS
+    # Detect architecture: arm64 for Apple Silicon (M1/M2/M3), x64 for Intel
+    if platform.machine() == "arm64":
+        JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz"
+    else:
+        JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz"
+else:  # Linux
     JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz"
 APKTOOL_URL = (
     "https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"

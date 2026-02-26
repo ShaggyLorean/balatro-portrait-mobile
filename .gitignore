@@ -18,6 +18,7 @@ __pycache__/
 logcat*.txt
 
 # Temporary files
+.DS_Store
 .temp_*
 calisanapk/
 

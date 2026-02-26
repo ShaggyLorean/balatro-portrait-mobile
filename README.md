@@ -15,10 +15,9 @@
 
 - **Balatro** - You must own a legal copy of the game
 - **Python 3.6+** - For build scripts
-- **7-Zip** - For extracting game files
 - **Android device** - Android 5.0+ recommended
 
-> ✅ **Cross-Platform:** Works on both Windows and Linux!
+> ✅ **Cross-Platform:** Works on Windows, MacOS and Linux!
 
 ## Quick Start
 
@@ -45,6 +44,7 @@ python setup.py "C:\path\to\Balatro.exe"
 ```
 
 This will automatically:
+
 - Extract game files from Balatro.exe
 - Copy resources to the src folder
 
@@ -56,10 +56,12 @@ python build_apk.py
 ```
 
 During the build, you will be asked about the **CRT Shader Patch**:
+
 - If you see a **black ellipse** covering part of the screen, answer **yes** to disable CRT
 - If your game works fine, answer **no** to keep the CRT visual effects
 
 The final APK will be at:
+
 ```
 balatro-mobile-maker/balatro-aligned-debugSigned.apk
 ```
@@ -69,6 +71,7 @@ balatro-mobile-maker/balatro-aligned-debugSigned.apk
 Transfer the APK to your phone and install it.
 
 Or if you have ADB:
+
 ```
 adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
 ```
@@ -86,45 +89,50 @@ balatro-portrait-mobile/
 
 ## Troubleshooting
 
-### "7-Zip not found"
-- **Windows**: Install from https://7-zip.org
-- **Linux**: `sudo apt install p7zip-full`
-
 ### "Game won't start"
+
 - Make sure setup.py completed successfully
 - Check that `src/resources/` and `src/localization/` exist
 
 ### "Build fails"
+
 - Ensure Python 3.6+ is installed: `python --version`
 - JDK is downloaded automatically during build
 
 ### "Black ellipse covering part of the screen"
+
 This is caused by the CRT shader not rendering correctly in portrait mode on some devices.
 
 **Solution**: Rebuild with CRT patch enabled:
+
 ```
 python rebuild_game.py
 ```
+
 When asked "Apply CRT disable patch?", answer **yes**.
 
 ## Changelog
 
 ### v1.4.0
+
 - Fixed Game Over screen layout for portrait mode
 - Fixed black bar issue when locking/unlocking device (Issue #1)
 - Jimbo repositioned to bottom with stats at top
 - Improved resize handling for Android
 
 ### v1.3.0
+
 - Added CRT shader disable option during build
 - Fixed black ellipse visual artifact on some devices (Issue #3)
 - Build script now asks user about CRT patch preference
 
 ### v1.2.0
+
 - Windows compatibility
 - Cross-platform build scripts
 
 ### v1.0.0
+
 - Initial release
 - Portrait mode support
 
