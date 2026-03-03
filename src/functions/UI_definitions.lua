@@ -2918,6 +2918,14 @@ function create_UIBox_win()
   }}
   }}
   }}) 
+  if G.F_PORTRAIT then
+    t.nodes[1] = {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+        t.nodes[1],
+        {n=G.UIT.R, config={align = "cm", padding = 0.5}, nodes={
+          {n=G.UIT.O, config={padding = 0, id = 'jimbo_spot', object = Moveable(0,0,G.CARD_W*1.1, G.CARD_H*1.1)}},
+        }},
+      }}
+  else
   t.nodes[1] = {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
       {n=G.UIT.C, config={align = "cm", padding = 2}, nodes={
         {n=G.UIT.O, config={padding = 0, id = 'jimbo_spot', object = Moveable(0,0,G.CARD_W*1.1, G.CARD_H*1.1)}},
@@ -2925,6 +2933,7 @@ function create_UIBox_win()
       {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={t.nodes[1]}
     }}
   }
+  end
   --t.nodes[1].config.mid = true
   t.config.id = 'you_win_UI'
   return t
@@ -3002,11 +3011,14 @@ function create_UIBox_game_over()
   
   if G.F_PORTRAIT then
     stats_content = {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-      {n=G.UIT.C, config={align = "cm"}, nodes={
+      {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
         {n=G.UIT.R, config={align = "cm", padding = 0.05, colour = G.C.BLACK, emboss = 0.05, r = 0.1}, nodes={
           {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
             create_UIBox_round_scores_row('hand'),
             create_UIBox_round_scores_row('poker_hand'),
+          }},
+          {n=G.UIT.R, config={align = "cm"}, nodes={
+            {n=G.UIT.B, config={w = 0.08, h = 0.15}}
           }},
           {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
             create_UIBox_round_scores_row('cards_played', G.C.BLUE),
@@ -3018,39 +3030,46 @@ function create_UIBox_game_over()
           }},
           {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
             create_UIBox_round_scores_row('new_collection', G.C.WHITE),
-            create_UIBox_round_scores_row('seed', G.C.WHITE),
           }},
+          {n=G.UIT.R, config={align = "cm"}, nodes={
+            {n=G.UIT.B, config={w = 0.08, h = 0.15}}
+          }},
+          {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+            {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
           {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
             create_UIBox_round_scores_row('furthest_ante', G.C.FILTER),
             create_UIBox_round_scores_row('furthest_round', G.C.FILTER),
           }},
           {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
+                create_UIBox_round_scores_row('seed', G.C.WHITE),
+                UIBox_button({button = 'copy_seed', label = {localize('b_copy')}, padding = 0.05, colour = G.C.BLUE, scale = 0.3, minw = 2.3, minh = 0.4, focus_args = {nav = 'wide'}}),
+              }},
+            }},
+            {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
             create_UIBox_round_scores_row('defeated_by'),
           }},
-          {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-            UIBox_button({button = 'copy_seed', label = {localize('b_copy')}, colour = G.C.BLUE, scale = 0.3, minw = 2.3, minh = 0.4, focus_args = {nav = 'wide'}}),
           }},
         }},
         show_lose_cta and 
-        {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+        {n=G.UIT.R, config={align = "cm", padding = 0.25}, nodes={
           {n=G.UIT.C, config={id = 'lose_cta', align = "cm", minw = 5, padding = 0.1, r = 0.1, hover = true, colour = G.C.GREEN, button = "show_main_cta", shadow = true}, nodes={
             {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
               {n=G.UIT.T, config={text = localize('b_next'), scale = 0.5, colour = G.C.UI.TEXT_LIGHT, focus_args = {nav = 'wide', snap_to = true}}}
             }}
           }}
         }} or
-        {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+        {n=G.UIT.R, config={align = "cm", padding = 0.25}, nodes={
           {n=G.UIT.R, config={id = 'from_game_over', align = "cm", minw = 5, padding = 0.1, r = 0.1, hover = true, colour = G.C.RED, button = "notify_then_setup_run", shadow = true, focus_args = {nav = 'wide', snap_to = true}}, nodes={
             {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true, maxw = 4.8}, nodes={
-              {n=G.UIT.T, config={text = localize('b_start_new_run'), scale = 0.5, colour = G.C.UI.TEXT_LIGHT}}
+              {n=G.UIT.T, config={text = localize('b_start_new_run'), scale = 0.7, colour = G.C.UI.TEXT_LIGHT}}
             }}
           }},
           {n=G.UIT.R, config={align = "cm", minw = 5, padding = 0.1, r = 0.1, hover = true, colour = G.C.RED, button = "go_to_menu", shadow = true, focus_args = {nav = 'wide'}}, nodes={
             {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true, maxw = 4.8}, nodes={
-              {n=G.UIT.T, config={text = localize('b_main_menu'), scale = 0.5, colour = G.C.UI.TEXT_LIGHT}}
-            }}
+              {n=G.UIT.T, config={text = localize('b_main_menu'), scale = 0.7, colour = G.C.UI.TEXT_LIGHT}}
           }}
         }}
+        }},
       }},
     }}
   else
@@ -3112,7 +3131,7 @@ function create_UIBox_game_over()
   if G.F_PORTRAIT then
     t.nodes[1] = {n=G.UIT.R, config={align = "cm", padding = 0.02}, nodes={
       {n=G.UIT.R, config={align = "cm", padding = 0.02}, nodes={t.nodes[1]}},
-      {n=G.UIT.R, config={align = "cm", padding = 0.02}, nodes={
+      {n=G.UIT.R, config={align = "cm", padding = 0.5}, nodes={
         {n=G.UIT.O, config={padding = 0, id = 'jimbo_spot', object = Moveable(0,0,G.CARD_W*0.6, G.CARD_H*0.6)}},
       }}
     }}
@@ -3152,7 +3171,11 @@ function create_UIBox_round_scores_row(score, text_colour)
     }
   end
   if score == 'seed' then 
+    if G.F_PORTRAIT then
+      label_w = 1
+    else
     label_w = 1.9
+    end
     score_w = 1.9
     label = localize('k_seed')
     score_tab = {
