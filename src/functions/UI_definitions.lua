@@ -2729,10 +2729,9 @@ function create_UIBox_high_scores()
   G.focused_profile = G.SETTINGS.profile
   local cheevs = {}
 
+  local display = G.UIT.C
   if G.F_PORTRAIT then
     display = G.UIT.R
-  else
-    display = G.UIT.C
   end
   
   local t = create_UIBox_generic_options({ back_func = 'options', snap_back = true, contents = {
