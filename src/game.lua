@@ -1576,10 +1576,14 @@ function Game:main_menu(change_context) --True if main menu is accessed from the
         CAI.TITLE_TOP_W,CAI.TITLE_TOP_H,
         {card_limit = 1, type = 'title'})
 
-    
+    local SC_scale_splash = 13*SC_scale
+    if G.F_PORTRAIT then
+        SC_scale_splash = 10*SC_scale
+    end
+
     G.SPLASH_LOGO = Sprite(0, 0, 
-        13*SC_scale, 
-        13*SC_scale*(G.ASSET_ATLAS["balatro"].py/G.ASSET_ATLAS["balatro"].px),
+        SC_scale_splash, 
+        SC_scale_splash*(G.ASSET_ATLAS["balatro"].py/G.ASSET_ATLAS["balatro"].px),
         G.ASSET_ATLAS["balatro"], {x=0,y=0})
 
     G.SPLASH_LOGO:set_alignment({
@@ -1595,8 +1599,12 @@ function Game:main_menu(change_context) --True if main menu is accessed from the
     G.SPLASH_LOGO.dissolve_colours = {G.C.WHITE, G.C.WHITE}
     G.SPLASH_LOGO.dissolve = 1   
 
+    local mult = 1.2
+    if G.F_PORTRAIT then
+        mult = 0.9
+    end
 
-    local replace_card = Card(self.title_top.T.x, self.title_top.T.y, 1.2*G.CARD_W*SC_scale, 1.2*G.CARD_H*SC_scale, G.P_CARDS.S_A, G.P_CENTERS.c_base)
+    local replace_card = Card(self.title_top.T.x, self.title_top.T.y, mult*G.CARD_W*SC_scale, mult*G.CARD_H*SC_scale, G.P_CARDS.S_A, G.P_CENTERS.c_base)
     self.title_top:emplace(replace_card)
 
     replace_card.states.visible = false
@@ -1703,13 +1711,20 @@ function Game:main_menu(change_context) --True if main menu is accessed from the
         end
       }))
 
+    local align_version = "tri"
+    local offset_version = 0
+    if G.F_PORTRAIT then
+        align_version = "tli"
+        offset_version = 0.6
+    end
+
     --VERSION
     UIBox{
         definition = 
         {n=G.UIT.ROOT, config={align = "cm", colour = G.C.UI.TRANSPARENT_DARK}, nodes={
             {n=G.UIT.T, config={text = G.VERSION, scale = 0.3, colour = G.C.UI.TEXT_LIGHT}}
         }}, 
-        config = {align="tri", offset = {x=0,y=0}, major = G.ROOM_ATTACH, bond = 'Weak'}
+        config = {align=align_version, offset = {x=offset_version,y=offset_version}, major = G.ROOM_ATTACH, bond = 'Weak'}
     }
 end
 

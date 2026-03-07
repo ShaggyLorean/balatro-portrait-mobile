@@ -798,11 +798,20 @@ function set_alerts()
 end
 
 function set_main_menu_UI()
+    local x_offset_base = 0
+    local x_offset_plus = 0
+    local y_offset_base = 0
+    if G.F_PORTRAIT then
+        x_offset_base = 0.7
+        x_offset_plus = 0.2
+        y_offset_base = -0.7
+    end
+
     G.MAIN_MENU_UI = UIBox{
         definition = create_UIBox_main_menu_buttons(), 
-        config = {align="bmi", offset = {x=0,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
+        config = {align="bmi", offset = {x=x_offset_base*2+x_offset_plus,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
     }
-    G.MAIN_MENU_UI.alignment.offset.y = 0
+    G.MAIN_MENU_UI.alignment.offset.y = y_offset_base
     G.MAIN_MENU_UI:align_to_major()
     G.E_MANAGER:add_event(Event({
         blockable = false,
@@ -811,8 +820,8 @@ function set_main_menu_UI()
             if (not G.F_DISP_USERNAME) or (type(G.F_DISP_USERNAME) == 'string') then
                 G.PROFILE_BUTTON = UIBox{
                     definition =  create_UIBox_profile_button(), 
-                        config = {align="bli", offset = {x=-10,y=0}, major = G.ROOM_ATTACH, bond = 'Weak'}}
-                    G.PROFILE_BUTTON.alignment.offset.x = 0
+                        config = {align="bli", offset = {x=-10,y=y_offset_base}, major = G.ROOM_ATTACH, bond = 'Weak'}}
+                    G.PROFILE_BUTTON.alignment.offset.x = x_offset_base
                     G.PROFILE_BUTTON:align_to_major()
                 return true
             end

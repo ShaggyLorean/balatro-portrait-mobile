@@ -630,19 +630,25 @@ G.FUNCS.your_collection_tarot_page = function(args)
     for i = #G.your_collection[j].cards,1, -1 do
       local c = G.your_collection[j]:remove_card(G.your_collection[j].cards[i])
       c:remove()
-      c = nil
+    end
+  end
+
+  local row_sizes = G.F_PORTRAIT and {3, 4, 4} or {5, 6}
+  local page = args.cycle_config.current_option
+  local card_index = 1 + (page - 1) * 11
+
+  for j = 1, #G.your_collection do
+    for i = 1, row_sizes[j] do
+      local center = G.P_CENTER_POOLS["Tarot"][card_index]
+      if center then 
+        local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
+        card:start_materialize(nil, i>1 or j>1)
+        G.your_collection[j]:emplace(card)
+      end
+      card_index = card_index + 1
     end
   end
   
-  for j = 1, #G.your_collection do
-    for i = 1, 4+j do
-      local center = G.P_CENTER_POOLS["Tarot"][i+(j-1)*(5) + (11*(args.cycle_config.current_option - 1))]
-      if not center then break end
-      local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, center)
-      card:start_materialize(nil, i>1 or j>1)
-      G.your_collection[j]:emplace(card)
-    end
-  end
   INIT_COLLECTION_CARD_ALERTS()
 end
 
