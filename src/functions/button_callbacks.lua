@@ -2629,10 +2629,13 @@ end
   end
 
   G.FUNCS.blind_choice_handler = function(e)
-    if not e.config.ref_table.run_info and G.blind_select and G.blind_select.VT.y < 10 and e.config.id and G.blind_select_opts[string.lower(e.config.id)] then 
+    -- Dynamic Y-limit to account for Portrait mode's lower UI placement
+    local y_limit = G.F_PORTRAIT and 50 or 10
+
+    if not e.config.ref_table.run_info and G.blind_select and G.blind_select.VT.y < y_limit and e.config.id and G.blind_select_opts[string.lower(e.config.id)] then 
       if e.UIBox.role.xy_bond ~= 'Weak' then e.UIBox:set_role({xy_bond = 'Weak'}) end
       if (e.config.ref_table.deck ~= 'on' and e.config.id == G.GAME.blind_on_deck) or
-         (e.config.ref_table.deck ~= 'off' and e.config.id ~= G.GAME.blind_on_deck) then
+        (e.config.ref_table.deck ~= 'off' and e.config.id ~= G.GAME.blind_on_deck) then
 
           local _blind_choice = G.blind_select_opts[string.lower(e.config.id)]
           local _top_button = e.UIBox:get_UIE_by_ID('select_blind_button')
@@ -2649,7 +2652,11 @@ end
             _border.parent.config.outline_colour = G.C.UI.TRANSPARENT_DARK
             _border.config.outline_colour = _border.config.outline and _border.config.outline_colour or get_blind_main_colour(e.config.id)
             _border.config.outline = 1.5
-            _blind_choice.alignment.offset.y = -0.9
+            
+            -- Elevates the active blind visually
+            local y_offset_active = G.F_PORTRAIT and 0 or -0.9
+            _blind_choice.alignment.offset.y = y_offset_active
+            
             if _tag and _tag_container then 
               _tag_container.children[2].config.draw_after = false
               _tag_container.children[2].config.colour = G.C.BLACK
@@ -2678,10 +2685,14 @@ end
             _border.parent.config.outline_colour = nil
             _border.config.outline_colour = nil
             _border.config.outline = nil
-            _blind_choice.alignment.offset.y = -0.2
+            
+            -- Pushes inactive blinds down visually
+            local y_offset_inactive = G.F_PORTRAIT and 1.2 or -0.2
+            _blind_choice.alignment.offset.y = y_offset_inactive
+            
             if _tag and _tag_container then 
               if G.GAME.round_resets.blind_states[e.config.id] == 'Skipped' or
-                 G.GAME.round_resets.blind_states[e.config.id] == 'Defeated' then
+                G.GAME.round_resets.blind_states[e.config.id] == 'Defeated' then
                 _tag_container.children[2]:set_role({xy_bond = 'Weak'})
                 _tag_container.children[2]:align(0, 10)
                 _tag_container.children[1]:set_role({xy_bond = 'Weak'})
