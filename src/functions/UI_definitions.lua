@@ -983,22 +983,60 @@ end
       }))
   end
 
-  function create_UIBox_buttons()
-    local text_scale = 0.45
-    local button_height = 1.3
-    local play_button = {n=G.UIT.C, config={id = 'play_button', align = "tm", minw = 2.5, padding = 0.3, r = 0.1, hover = true, colour = G.C.BLUE, button = "play_cards_from_highlighted", one_press = true, shadow = true, func = 'can_play'}, nodes={
-      {n=G.UIT.R, config={align = "bcm", padding = 0}, nodes={
-        {n=G.UIT.T, config={text = localize('b_play_hand'), scale = text_scale, colour = G.C.UI.TEXT_LIGHT, focus_args = {button = 'x', orientation = 'bm'}, func = 'set_button_pip'}}
-      }},
-    }}
+function create_UIBox_buttons()
+  local text_scale = 0.45
+  local button_height = 1.3
+  -- Defines a fixed, shared width for both buttons
+  local button_width = 3.2 
 
-    local discard_button = {n=G.UIT.C, config={id = 'discard_button',align = "tm", padding = 0.3, r = 0.1, minw = 2.5, minh = button_height, hover = true, colour = G.C.RED, button = "discard_cards_from_highlighted", one_press = true, shadow = true, func = 'can_discard'}, nodes={
-      {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-        {n=G.UIT.T, config={text = localize('b_discard'), scale = text_scale, colour = G.C.UI.TEXT_LIGHT, focus_args = {button = 'y', orientation = 'bm'}, func = 'set_button_pip'}}
-      }}
-    }}
+  if G.F_PORTRAIT then
+    text_scale = 0.8
+    button_height = 2
+    -- Slightly larger width for portrait mode
+    button_width = 4 
+  end
 
+  local play_button = {n=G.UIT.C, config={id = 'play_button', align = "tm", minw = button_width, minh = button_height, padding = 0.3, r = 0.1, hover = true, colour = G.C.BLUE, button = "play_cards_from_highlighted", one_press = true, shadow = true, func = 'can_play'}, nodes={
+    {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+      -- maxw forces the text to shrink instead of expanding the button
+      {n=G.UIT.T, config={text = localize('b_play_hand'), scale = text_scale, maxw = button_width - 0.6, colour = G.C.UI.TEXT_LIGHT, focus_args = {button = 'x', orientation = 'bm'}, func = 'set_button_pip'}}
+    }},
+  }}
+
+  local discard_button = {n=G.UIT.C, config={id = 'discard_button',align = "tm", minw = button_width, minh = button_height, padding = 0.3, r = 0.1, hover = true, colour = G.C.RED, button = "discard_cards_from_highlighted", one_press = true, shadow = true, func = 'can_discard'}, nodes={
+    {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+      -- maxw forces the text to shrink instead of expanding the button
+      {n=G.UIT.T, config={text = localize('b_discard'), scale = text_scale, maxw = button_width - 0.6, colour = G.C.UI.TEXT_LIGHT, focus_args = {button = 'y', orientation = 'bm'}, func = 'set_button_pip'}}
+    }}
+  }}
+
+  if G.F_PORTRAIT then
     local t = {
+      n=G.UIT.ROOT, config = {align = "cm", minw = 1, minh = 0.3,padding = 0.25, r = 0.1, colour = G.C.CLEAR}, nodes={
+          G.SETTINGS.play_button_pos == 1 and discard_button or play_button,
+
+          {n=G.UIT.C, config={align = "cm", padding = 0.1, r = 0.1, colour =G.C.UI.TRANSPARENT_DARK, outline = 1.5, outline_colour = mix_colours(G.C.WHITE,G.C.JOKER_GREY, 0.7), line_emboss = 1}, nodes={
+            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+              {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                {n=G.UIT.T, config={text = localize('b_sort_hand'), scale = text_scale*0.7, colour = G.C.UI.TEXT_LIGHT}}
+              }},
+              {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+                {n=G.UIT.C, config={align = "cm", minh = 0.7, minw = 0.9, padding = 0.1, r = 0.1, hover = true, colour =G.C.ORANGE, button = "sort_hand_value", shadow = true}, nodes={
+                  {n=G.UIT.T, config={text = localize('k_rank'), scale = text_scale*0.6, colour = G.C.UI.TEXT_LIGHT}}
+                }},
+                {n=G.UIT.C, config={align = "cm", minh = 0.7, minw = 0.9, padding = 0.1, r = 0.1, hover = true, colour =G.C.ORANGE, button = "sort_hand_suit", shadow = true}, nodes={
+                  {n=G.UIT.T, config={text = localize('k_suit'), scale = text_scale*0.6, colour = G.C.UI.TEXT_LIGHT}}
+                }}
+              }}
+            }}
+          }},
+  
+          G.SETTINGS.play_button_pos == 1 and play_button or discard_button,
+        }
+      }
+    return t
+  else
+      local t = {
       n=G.UIT.ROOT, config = {align = "cm", minw = 1, minh = 0.3,padding = 0.15, r = 0.1, colour = G.C.CLEAR}, nodes={
           G.SETTINGS.play_button_pos == 1 and discard_button or play_button,
 
@@ -1023,6 +1061,7 @@ end
       }
     return t
   end
+end
 
   function desc_from_rows(desc_nodes, empty, maxw)
     local t = {}
@@ -1208,44 +1247,15 @@ end
   end
 
 function create_UIBox_HUD_blind()
-  local scale = 0.35
+  local scale = 0.4
   local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.5)
-  if G.F_PORTRAIT then
-    -- VERTICAL BLIND BOX for Sidebar Layout (Compact)
-    G.GAME.blind:change_dim(1.15, 1.15)  -- ~23% smaller than original 1.5
-    return {n=G.UIT.ROOT, config={align = "cm", minw = 1.3, r = 0.1, colour = G.C.BLACK, emboss = 0.05, padding = 0.02, func = 'HUD_blind_visible', id = 'HUD_blind'}, nodes={
-      {n=G.UIT.C, config={align = "cm", padding = 0.05}, nodes={ -- All content in one Column
-        -- Title Area
-        {n=G.UIT.R, config={align = "cm", minh = 0.4, r = 0.1, colour = G.C.DYN_UI.MAIN, padding = 0.03, minw = 1.4}, nodes={
-            {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.blind, ref_value = 'loc_name'}}, colours = {G.C.UI.TEXT_LIGHT},shadow = true, rotate = true, silent = true, float = true, scale = 0.9*scale, y_offset = -3}),id = 'HUD_blind_name'}},
-        }},
-        -- Debuff Info (if any)
-        {n=G.UIT.R, config={align = "cm", minh = 0}, nodes={
-            {n=G.UIT.T, config={ref_table = {val = ''}, ref_value = 'val', scale = scale*0.8, colour = G.C.UI.TEXT_LIGHT, func = 'HUD_blind_debuff_prefix'}},
-            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 1, scale = scale*0.8, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_1', func = 'HUD_blind_debuff'}}
-        }},
-        -- Blind Icon (smaller)
-        {n=G.UIT.R, config={align = "cm", padding = 0.03}, nodes={
-             {n=G.UIT.O, config={object = G.GAME.blind, draw_layer = 1}},
-        }},
-        -- Score Goal
-        {n=G.UIT.R, config={align = "cm", r=0.1, colour=G.C.BLACK, padding=0.05}, nodes={
-            {n=G.UIT.T, config={text = localize('ph_blind_score_at_least'), scale = 0.3, colour = G.C.WHITE, shadow = true}},
-            {n=G.UIT.R, config={align="cm"}, nodes={
-                {n=G.UIT.O, config={w=0.5,h=0.5, colour = G.C.BLUE, object = stake_sprite, hover = true, can_collide = false}},
-                {n=G.UIT.T, config={ref_table = G.GAME.blind, ref_value = 'chip_text', scale = 0.001, colour = G.C.RED, shadow = true, id = 'HUD_blind_count', func = 'blind_chip_UI_scale'}}
-            }}
-        }},
-        -- Reward
-        {n=G.UIT.R, config={align = "cm", minh = 0.45, func = 'HUD_blind_reward'}, nodes={
-             {n=G.UIT.T, config={text = localize('ph_blind_reward'), scale = 0.3, colour = G.C.WHITE}},
-             {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.current_round, ref_value = 'dollars_to_be_earned'}}, colours = {G.C.MONEY},shadow = true, rotate = true, bump = true, silent = true, scale = 0.45}),id = 'dollars_to_be_earned'}},
-        }}
-      }}
-    }}
-  end
 
-  G.GAME.blind:change_dim(1.5,1.5)
+  if G.F_PORTRAIT then
+    scale = 0.3
+    G.GAME.blind:change_dim(1.1,1.1)
+  else
+    G.GAME.blind:change_dim(1.5,1.5)
+  end
 
   return {n=G.UIT.ROOT, config={align = "cm", minw = 4.5, r = 0.1, colour = G.C.BLACK, emboss = 0.05, padding = 0.05, func = 'HUD_blind_visible', id = 'HUD_blind'}, nodes={
       {n=G.UIT.R, config={align = "cm", minh = 0.7, r = 0.1, emboss = 0.05, colour = G.C.DYN_UI.MAIN}, nodes={
@@ -1287,14 +1297,33 @@ end
 function add_tag(_tag)
   G.HUD_tags = G.HUD_tags or {}
   local tag_sprite_ui = _tag:generate_UI()
+
+  local previous_tag = G.HUD_tags[#G.HUD_tags]
+  local align, offset, major
+
+  if G.F_PORTRAIT then
+
+    local first_tag_align = (G.SETTINGS.play_main_hand == 1) and 'bl' or 'br'
+    local first_tag_x = (G.SETTINGS.play_main_hand == 1) and -0.2 or 0.2
+
+    align = previous_tag and 'tm' or first_tag_align
+    offset = previous_tag and {x = 0, y = 0} or {x = first_tag_x, y = 0}
+    major = previous_tag or G.jokers
+
+  else
+    align = previous_tag and 'tm' or 'bri'
+    offset = previous_tag and {x = 0, y = 0} or {x = 0.7, y = 0}
+    major = previous_tag or G.ROOM_ATTACH
+  end
+
   G.HUD_tags[#G.HUD_tags+1] = UIBox{
       definition = {n=G.UIT.ROOT, config={align = "cm",padding = 0.05, colour = G.C.CLEAR}, nodes={
-        tag_sprite_ui
-      }},
+          tag_sprite_ui
+        }},
       config = {
-        align = G.HUD_tags[1] and 'tm' or 'bri',
-        offset = G.HUD_tags[1] and {x=0,y=0} or {x=0.7,y=0},
-        major = G.HUD_tags[1] and G.HUD_tags[#G.HUD_tags] or G.ROOM_ATTACH}
+        align = align,
+        offset = offset,
+        major = major}
   }
   discover_card(G.P_TAGS[_tag.key])
 
@@ -1432,52 +1461,6 @@ function create_UIBox_HUD()
           }}
         }}
     }
-
-    -- PORTRAIT MODE: Compact HUD that fits in zoomed view
-    if G.F_PORTRAIT then
-        -- Scale down for compact fit
-        local p_scale = 0.35
-        return {n=G.UIT.ROOT, config = {align = "tm", padding = 0.02, colour = G.C.CLEAR, minw = 8}, nodes={
-            -- SPACER to push HUD down (clears notches and combo text)
-            {n=G.UIT.R, config={minh = 2.5}, nodes={}},
-            
-            -- SIDEBAR LAYOUT: Two Columns
-            {n=G.UIT.R, config={align = "tm", padding = 0, colour = G.C.CLEAR, minw = 10}, nodes={
-            
-                -- LEFT COLUMN: Blind Info (Vertical Sidebar)
-                {n=G.UIT.C, config={align = "tl", padding = 0.05, minw = 2.2}, nodes={
-                     {n=G.UIT.C, config={align = "cm", id = 'row_blind', minw = 2.0, minh = 0.8}, nodes={}},
-                }},
-                
-                -- RIGHT COLUMN: Main HUD (Chips, Hands, Buttons)
-                -- Fixed minw to prevent crash (G.ROOM might be nil during init)
-                {n=G.UIT.C, config={align = "tr", padding = 0.05, minw = 7.5}, nodes={
-                    
-                    -- Row 1: Chips and Dollars (Aligned Right)
-                    {n=G.UIT.R, config={align = "tr", padding = 0}, nodes={
-                        {n=G.UIT.C, config={align = "tr", padding = 0.05, colour = G.C.DYN_UI.MAIN, r=0.1, minw = 3}, nodes={
-                             contents.dollars_chips,
-                        }},
-                    }},
-                    
-                    -- Row 2: Hands/Discards (Centered relative to column)
-                    {n=G.UIT.R, config={align = "cm", padding = 0.02}, nodes={
-                        {n=G.UIT.C, config={align = "cm", padding = 0.02, colour = G.C.DYN_UI.BOSS_DARK, r=0.1}, nodes={
-                            contents.hand,
-                        }},
-                    }},
-
-                    -- Row 3: Run Info / Round Info
-                    {n=G.UIT.R, config={align = "cm", padding = 0.02, colour = G.C.DYN_UI.MAIN, r=0.1, id = 'row_round'}, nodes={
-                        {n=G.UIT.C, config={align = "cm"}, nodes=contents.buttons},
-                        {n=G.UIT.C, config={align = "cm"}, nodes=contents.round}
-                    }},
-                }},
-            }},
-        }}
-
-    end
-
     return {n=G.UIT.ROOT, config = {align = "cm", padding = 0.03, colour = G.C.UI.TRANSPARENT_DARK}, nodes={
       {n=G.UIT.R, config = {align = "cm", padding= 0.05, colour = G.C.DYN_UI.MAIN, r=0.1}, nodes={
         {n=G.UIT.R, config={align = "cm", colour = G.C.DYN_UI.BOSS_DARK, r=0.1, minh = 30, padding = 0.08}, nodes={
@@ -1492,6 +1475,176 @@ function create_UIBox_HUD()
         }}
       }}
     }}
+end
+
+function create_UIBox_HUD_vertical()
+  local scale = 0.4
+  local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.5)
+
+  local spacing = 0.1
+  local temp_col = G.C.DYN_UI.BOSS_MAIN
+  local temp_col2 = G.C.DYN_UI.BOSS_DARK
+
+  -- ==========================================
+  -- 1. BOTTOM LINE (Stats & Money)
+  -- ==========================================
+  local hud_hands = {n=G.UIT.C, config={id = 'hud_hands',align = "cm", padding = 0.05, minw = 1.2, colour = temp_col, emboss = 0.05, r = 0.1}, nodes={
+    {n=G.UIT.R, config={align = "cm", minh = 0.3}, nodes={ {n=G.UIT.T, config={text = localize('k_hud_hands'), scale = 0.75*scale, colour = G.C.UI.TEXT_LIGHT, shadow = true}} }},
+    {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 1, colour = temp_col2}, nodes={ {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.current_round, ref_value = 'hands_left'}}, font = G.LANGUAGES['en-us'].font, colours = {G.C.BLUE}, shadow = true, scale = 1.8*scale}),id = 'hand_UI_count'}} }}
+  }}
+
+  local hud_discards = {n=G.UIT.C, config={id = 'hud_discards',align = "cm", padding = 0.05, minw = 1.2, colour = temp_col, emboss = 0.05, r = 0.1}, nodes={
+    {n=G.UIT.R, config={align = "cm", minh = 0.3}, nodes={ {n=G.UIT.T, config={text = localize('k_hud_discards'), scale = 0.75*scale, colour = G.C.UI.TEXT_LIGHT, shadow = true}} }},
+    {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 1, colour = temp_col2}, nodes={ {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.current_round, ref_value = 'discards_left'}}, font = G.LANGUAGES['en-us'].font, colours = {G.C.RED}, shadow = true, scale = 1.8*scale}),id = 'discard_UI_count'}} }}
+  }}
+
+  local hud_ante = {n=G.UIT.C, config={id = 'hud_ante',align = "cm", padding = 0.05, minw = 1.2, colour = temp_col, emboss = 0.05, r = 0.1}, nodes={
+    {n=G.UIT.R, config={align = "cm", minh = 0.3}, nodes={ {n=G.UIT.T, config={text = localize('k_ante'), scale = 0.75*scale, colour = G.C.UI.TEXT_LIGHT, shadow = true}} }},
+    {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 1, colour = temp_col2}, nodes={
+      {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME.round_resets, ref_value = 'ante'}}, colours = {G.C.IMPORTANT},shadow = true, font = G.LANGUAGES['en-us'].font, scale = 1.8*scale}),id = 'ante_UI_count'}},
+      {n=G.UIT.T, config={text = "/", scale = 0.6*scale, colour = G.C.WHITE, shadow = true}},
+      {n=G.UIT.T, config={ref_table = G.GAME, ref_value='win_ante', scale = 0.9*scale, colour = G.C.WHITE, shadow = true}}
+    }}
+  }}
+
+  local hud_round = {n=G.UIT.C, config={align = "cm", padding = 0.05, minw = 1.2, colour = temp_col, emboss = 0.05, r = 0.1}, nodes={
+    {n=G.UIT.R, config={align = "cm", minh = 0.3}, nodes={ {n=G.UIT.T, config={text = localize('k_round'), scale = 0.75*scale, colour = G.C.UI.TEXT_LIGHT, shadow = true}} }},
+    {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 1, colour = temp_col2, id = 'row_round_text'}, nodes={ {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME, ref_value = 'round'}}, colours = {G.C.IMPORTANT},shadow = true, scale = 1.8*scale}),id = 'round_UI_count'}} }}
+  }}
+
+  local hud_money = {n=G.UIT.C, config={align = "cm", padding = 0.05, minw = 1.45*2 + spacing, minh = 1.15, colour = temp_col, emboss = 0.05, r = 0.1}, nodes={
+    {n=G.UIT.R, config={align = "cm"}, nodes={
+      {n=G.UIT.C, config={align = "cm", r = 0.1, minw = 1.28*2+spacing, minh = 1, colour = temp_col2}, nodes={
+        {n=G.UIT.O, config={object = DynaText({string = {{ref_table = G.GAME, ref_value = 'dollars', prefix = localize('$')}}, maxw = 1.35, colours = {G.C.MONEY}, font = G.LANGUAGES['en-us'].font, shadow = true,spacing = 2, bump = true, scale = 2.2*scale}), id = 'dollar_text_UI'}}
+      }},
+    }},
+  }}
+
+  local bottom_stats_row = {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
+    hud_hands, {n=G.UIT.C, config={minw = spacing},nodes={}},
+    hud_discards, {n=G.UIT.C, config={minw = spacing},nodes={}},
+    hud_money, {n=G.UIT.C, config={minw = spacing},nodes={}},
+    hud_ante, {n=G.UIT.C, config={minw = spacing},nodes={}},
+    hud_round,
+  }}
+
+  -- ==========================================
+  -- 2. TOP RIGHT (Round Score & Current Hand)
+  -- ==========================================
+  local round_score = {n=G.UIT.R, config={align = "cm",r=0.1, padding = 0, colour = temp_col, emboss = 0.05, id = 'row_dollars_chips'}, nodes={
+    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+      {n=G.UIT.C, config={align = "cm", minw = 1.3}, nodes={
+      {n=G.UIT.R, config={align = "cm", padding = 0, maxw = 1.3}, nodes={
+          {n=G.UIT.T, config={text = localize('k_round'), scale = 0.42, colour = G.C.UI.TEXT_LIGHT, shadow = true}}
+      }},
+      {n=G.UIT.R, config={align = "cm", padding = 0, maxw = 1.3}, nodes={
+          {n=G.UIT.T, config={text =localize('k_lower_score'), scale = 0.42, colour = G.C.UI.TEXT_LIGHT, shadow = true}}
+      }}
+      }},
+      {n=G.UIT.C, config={align = "cm", minw = 3.3, minh = 0.7, r = 0.1, colour = G.C.DYN_UI.BOSS_DARK}, nodes={
+      {n=G.UIT.O, config={w=0.5,h=0.5 , object = stake_sprite, hover = true, can_collide = false}},
+      {n=G.UIT.B, config={w=0.1,h=0.1}},
+      {n=G.UIT.T, config={ref_table = G.GAME, ref_value = 'chips_text', lang = G.LANGUAGES['en-us'], scale = 0.85, colour = G.C.WHITE, id = 'chip_UI_count', func = 'chip_UI_set', shadow = true}}
+      }}
+    }}
+  }}
+
+  local current_hand = 
+    {n=G.UIT.R, config={align = "cm", id = 'hand_text_area', colour = darken(G.C.BLACK, 0.1), r = 0.1, emboss = 0.05, padding = 0.05}, nodes={
+      {n=G.UIT.C, config={align = "cm"}, nodes={
+        {n=G.UIT.R, config={align = "cm", minh = 1.1}, nodes={
+          {n=G.UIT.O, config={id = 'hand_name', func = 'hand_text_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "handname_text"}}, colours = {G.C.UI.TEXT_LIGHT}, shadow = true, float = true, scale = scale*1.4})}},
+          {n=G.UIT.O, config={id = 'hand_chip_total', func = 'hand_chip_total_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "chip_total_text"}}, colours = {G.C.UI.TEXT_LIGHT}, shadow = true, float = true, scale = scale*1.4})}},
+          {n=G.UIT.T, config={ref_table = G.GAME.current_round.current_hand, ref_value='hand_level', scale = scale, colour = G.C.UI.TEXT_LIGHT, id = 'hand_level', shadow = true}}
+        }},
+        {n=G.UIT.R, config={align = "cm", minh = 1, padding = 0.1}, nodes={
+          {n=G.UIT.C, config={align = "cr", minw = 2, minh =1, r = 0.1,colour = G.C.UI_CHIPS, id = 'hand_chip_area', emboss = 0.05}, nodes={
+            {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_chips', object = Moveable(0,0,0,0), w = 0, h = 0}},
+            {n=G.UIT.O, config={id = 'hand_chips', func = 'hand_chip_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "chip_text"}}, colours = {G.C.UI.TEXT_LIGHT}, font = G.LANGUAGES['en-us'].font, shadow = true, float = true, scale = scale*2.3})}},
+            {n=G.UIT.B, config={w=0.1,h=0.1}},
+          }},
+          {n=G.UIT.C, config={align = "cm"}, nodes={
+          {n=G.UIT.T, config={text = "X", lang = G.LANGUAGES['en-us'], scale = scale*2, colour = G.C.UI_MULT, shadow = true}},
+          }},
+          {n=G.UIT.C, config={align = "cl", minw = 2, minh=1, r = 0.1,colour = G.C.UI_MULT, id = 'hand_mult_area', emboss = 0.05}, nodes={
+            {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_mult', object = Moveable(0,0,0,0), w = 0, h = 0}},
+            {n=G.UIT.B, config={w=0.1,h=0.1}},
+            {n=G.UIT.O, config={id = 'hand_mult', func = 'hand_mult_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "mult_text"}}, colours = {G.C.UI.TEXT_LIGHT}, font = G.LANGUAGES['en-us'].font, shadow = true, float = true, scale = scale*2.3})}},
+          }}
+        }}
+      }}
+    }}
+
+-- ==========================================
+  -- 3. HUD BOTTOM (Buttons)
+  -- ==========================================
+  local pos = G.SETTINGS.runinfo_options_button_pos or 1
+
+  local run_info_button =
+  {n=G.UIT.C, config={id='run_info_container', align="cm", padding=0.3}, nodes={ -- NOUVEAU ID ICI
+    {n=G.UIT.R, config={id='run_info_button', align="cm", minh=1.1, minw=2.5, padding=0.05, r=0.1, hover=true, colour=G.C.RED, button="run_info", shadow=true}, nodes={
+      {n=G.UIT.R, config={align="cm", padding=0, maxw=1.4}, nodes={
+        {n=G.UIT.T, config={text=localize('b_run_info_1'), scale=1.2*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
+      }},
+      {n=G.UIT.R, config={align="cm", padding=0, maxw=1.4}, nodes={
+        {n=G.UIT.T, config={text=localize('b_run_info_2'), scale=1*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true, focus_args={button=G.F_GUIDE and 'guide' or 'back', orientation='bm'}, func='set_button_pip'}}
+      }}
+    }}
+  }}
+
+  local options_button =
+  {n=G.UIT.C, config={id='options_container', align="cm", padding=0.3}, nodes={ -- NOUVEAU ID ICI
+    {n=G.UIT.R, config={align="cm", minh=1.1, minw=2.5, padding=0.05, r=0.1, hover=true, colour=G.C.ORANGE, button="options", shadow=true}, nodes={
+      {n=G.UIT.C, config={align="cm", maxw=1.4, focus_args={button='start', orientation='bm'}, func='set_button_pip'}, nodes={
+        {n=G.UIT.T, config={text=localize('b_options'), scale=scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
+      }}
+    }}
+  }}
+
+  local order = {run_info_button, options_button}
+
+  -- invert order if needed
+  if pos % 2 == 0 then
+    order = {options_button, run_info_button}
+  end
+
+  -- alignment
+  local align = "bm"
+  if pos >= 3 and pos <= 4 then align = "bl" end
+  if pos >= 5 then align = "br" end
+
+  local buttons = {n=G.UIT.R, config={align=align, padding = 0.02, colour = G.C.CLEAR, id='button_area'}, nodes=order}
+
+  -- ==========================================
+  -- 4. FINAL ASSEMBLY (Grid Structure)
+  -- ==========================================
+  return {n=G.UIT.ROOT, config = {align = "cm", padding = 0.03, colour = G.C.CLEAR}, nodes={
+    {n=G.UIT.R, config = {align = "cm", padding= 0.05, colour = G.C.DYN_UI.MAIN, r=0.1}, nodes={
+      {n=G.UIT.R, config={align = "cm", colour = G.C.DYN_UI.BOSS_DARK, r=0.1, padding = 0.08}, nodes={
+
+        -- Top Line: Blind (Left) + Current Stats (Right)
+        {n=G.UIT.R, config={align = "ct", padding = 0.05}, nodes={
+
+          -- Left Column: Reserving Space for the Blind
+          {n=G.UIT.C, config={align = "cm", id = 'row_blind', minw = 5, minh = 3.75}, nodes={}},
+
+          -- Space at the middle
+          {n=G.UIT.C, config={w = 1}, nodes={}},
+
+          -- Right Column: Round Score + Hand Played
+          {n=G.UIT.C, config={align = "cm"}, nodes={
+              round_score,
+              {n=G.UIT.R, config={minh = 0.1}, nodes={}}, -- Espace vertical
+              current_hand
+          }}
+        }},
+        
+        -- Bottom Ligne : Stats
+        bottom_stats_row
+      }}
+    }},
+    buttons
+  }}
 end
 
 function create_UIBox_blind_select()
@@ -2417,10 +2570,26 @@ return t
 end
 
 function G.UIDEF.settings_tab(tab)
+  local ml_play_main_hand_opt = {
+    "Left Hand",
+    "Right Hand",
+  }
+
+  local ml_runinfo_options_pos_opt = {
+    "Run Info/Options (middle)",
+    "Options/Run Info (middle)",
+    "Run Info/Options (left)",
+    "Options/Run Info (left)",
+    "Run Info/Options (right)",
+    "Options/Run Info (right)",
+  }
+
   if tab == 'Game' then
     return {n=G.UIT.ROOT, config={align = "cm", padding = 0.05, colour = G.C.CLEAR}, nodes={
       create_option_cycle({label = localize('b_set_gamespeed'),scale = 0.8, options = {0.5, 1, 2, 4}, opt_callback = 'change_gamespeed', current_option = (G.SETTINGS.GAMESPEED == 0.5 and 1 or G.SETTINGS.GAMESPEED == 4 and 4 or G.SETTINGS.GAMESPEED + 1)}),
       create_option_cycle({w = 5, label = localize('b_set_play_discard_pos'),scale = 0.8, options = localize('ml_play_discard_pos_opt'), opt_callback = 'change_play_discard_position', current_option = (G.SETTINGS.play_button_pos)}),
+      G.F_PORTRAIT and create_option_cycle({w = 5, label = 'Left or Right Hand',scale = 0.8, options = ml_play_main_hand_opt, opt_callback = 'change_play_main_hand', current_option = (G.SETTINGS.play_main_hand)}),
+      G.F_PORTRAIT and create_option_cycle({w = 5, label = 'Run Info/Options Button Position (Classic Only)',scale = 0.8, options = ml_runinfo_options_pos_opt, opt_callback = 'change_runinfo_options_position', current_option = (G.SETTINGS.runinfo_options_button_pos)}),
       G.F_RUMBLE and create_toggle({label = localize('b_set_rumble'), ref_table = G.SETTINGS, ref_value = 'rumble'}) or nil,
       create_slider({label = localize('b_set_screenshake'),w = 4, h = 0.4, ref_table = G.SETTINGS, ref_value = 'screenshake', min = 0, max = 100}),
       create_toggle({label = localize('ph_display_stickers'), ref_table = G.SETTINGS, ref_value = 'run_stake_stickers'}),
@@ -2511,7 +2680,7 @@ function create_UIBox_test_framework(variables)
       }}
     }}
   }}
-return t                                      
+return t
 end
 
 function G.UIDEF.usage_tabs()
@@ -2916,7 +3085,7 @@ function create_UIBox_win()
     }},
   }}
   }}
-  }}) 
+  }})
   if G.F_PORTRAIT then
     t.nodes[1] = {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
         t.nodes[1],
@@ -2925,13 +3094,13 @@ function create_UIBox_win()
         }},
       }}
   else
-  t.nodes[1] = {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
-      {n=G.UIT.C, config={align = "cm", padding = 2}, nodes={
-        {n=G.UIT.O, config={padding = 0, id = 'jimbo_spot', object = Moveable(0,0,G.CARD_W*1.1, G.CARD_H*1.1)}},
-      }},
-      {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={t.nodes[1]}
-    }}
-  }
+    t.nodes[1] = {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+        {n=G.UIT.C, config={align = "cm", padding = 2}, nodes={
+          {n=G.UIT.O, config={padding = 0, id = 'jimbo_spot', object = Moveable(0,0,G.CARD_W*1.1, G.CARD_H*1.1)}},
+        }},
+        {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={t.nodes[1]}
+      }}
+    }
   end
   --t.nodes[1].config.mid = true
   t.config.id = 'you_win_UI'
@@ -3035,18 +3204,18 @@ function create_UIBox_game_over()
           }},
           {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
             {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
-          {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-            create_UIBox_round_scores_row('furthest_ante', G.C.FILTER),
-            create_UIBox_round_scores_row('furthest_round', G.C.FILTER),
-          }},
-          {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
+              {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
+                create_UIBox_round_scores_row('furthest_ante', G.C.FILTER),
+                create_UIBox_round_scores_row('furthest_round', G.C.FILTER),
+              }},
+              {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
                 create_UIBox_round_scores_row('seed', G.C.WHITE),
                 UIBox_button({button = 'copy_seed', label = {localize('b_copy')}, padding = 0.05, colour = G.C.BLUE, scale = 0.3, minw = 2.3, minh = 0.4, focus_args = {nav = 'wide'}}),
               }},
             }},
             {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
-            create_UIBox_round_scores_row('defeated_by'),
-          }},
+              create_UIBox_round_scores_row('defeated_by'),
+            }},
           }},
         }},
         show_lose_cta and 
@@ -3066,8 +3235,8 @@ function create_UIBox_game_over()
           {n=G.UIT.R, config={align = "cm", minw = 5, padding = 0.1, r = 0.1, hover = true, colour = G.C.RED, button = "go_to_menu", shadow = true, focus_args = {nav = 'wide'}}, nodes={
             {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true, maxw = 4.8}, nodes={
               {n=G.UIT.T, config={text = localize('b_main_menu'), scale = 0.7, colour = G.C.UI.TEXT_LIGHT}}
+            }}
           }}
-        }}
         }},
       }},
     }}
@@ -3169,11 +3338,11 @@ function create_UIBox_round_scores_row(score, text_colour)
       {n=G.UIT.O, config={object = DynaText({string = {number_format(G.GAME.round)}, colours = {text_colour or G.C.FILTER},shadow = true, float = true, scale = 0.45})}},
     }
   end
-  if score == 'seed' then 
+  if score == 'seed' then
     if G.F_PORTRAIT then
       label_w = 1
     else
-    label_w = 1.9
+      label_w = 1.9
     end
     score_w = 1.9
     label = localize('k_seed')

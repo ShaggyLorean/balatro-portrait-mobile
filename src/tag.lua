@@ -523,7 +523,17 @@ function Tag:generate_UI(_size)
 
                 self:get_uibox_table(tag_sprite)
                 _self.config.h_popup =  G.UIDEF.card_h_popup(_self)
-                _self.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = _self}
+                
+                -- Sets dynamic popup alignment based on screen orientation and hand setting
+                if G.F_PORTRAIT then
+                    -- 'tl' aligns left borders and places above, 'tr' aligns right borders and places above
+                    local popup_align = (G.SETTINGS.play_main_hand == 1) and 'tr' or 'tl'
+                    _self.config.h_popup_config = {align = popup_align, offset = {x = 0, y = -0.2}, parent = _self}
+                else
+                    -- Original landscape configuration
+                    _self.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = _self}
+                end
+                
                 Node.hover(_self)
                 if _self.children.alert then 
                     _self.children.alert:remove()

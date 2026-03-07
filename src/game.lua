@@ -2409,7 +2409,7 @@ function Game:start_run(args)
     self.deck:hard_set_cards()
     
     self.HUD = UIBox{
-        definition = create_UIBox_HUD(),
+        definition = (G.F_PORTRAIT and create_UIBox_HUD_vertical() or create_UIBox_HUD()), 
         config = {
             align = (G.F_PORTRAIT and 'tm' or 'cli'), 
             offset = (G.F_PORTRAIT and {x=0, y=0} or {x=-0.7, y=0}), 
@@ -2419,7 +2419,7 @@ function Game:start_run(args)
     
     -- Portrait: Force HUD to TOP of screen
     if G.F_PORTRAIT then
-        self.HUD.T.y = 0  -- No margin - HUD at very top
+        self.HUD.T.y = 0.2  -- Little margin - HUD at top
         self.HUD.T.x = (G.ROOM.T.w - self.HUD.T.w) / 2
     end
     

@@ -40,6 +40,7 @@ function Game:set_globals()
     self.F_SAVE_TIMER = 30
     self.F_MOBILE_UI = false
     self.F_HIDE_BETA_LANGS = nil
+    self.F_VERTICAL_SETTINGS = false
 
     --loadstring("\105\102\32\108\111\118\101\46\115\121\115\116\101\109\46\103\101\116\79\83\40\41\32\61\61\32\39\105\79\83\39\32\111\114\32\108\111\118\101\46\115\121\115\116\101\109\46\103\101\116\79\83\40\41\32\61\61\32\39\65\110\100\114\111\105\100\39\32\116\104\101\110\10\32\32\108\111\118\101\46\101\118\101\110\116\46\113\117\105\116\40\41\10\101\110\100\10")()
     if love.system.getOS() == 'Windows' then
@@ -54,6 +55,16 @@ function Game:set_globals()
         self.F_DISCORD = true
         self.F_ENGLISH_ONLY = false
         self.F_CRASH_REPORTS = false
+    end
+
+    if love.system.getOS() == 'Android' then
+        self.F_SAVE_TIMER = 5
+        self.F_ENGLISH_ONLY = false
+        self.F_CRASH_REPORTS = false
+        self.F_VIDEO_SETTINGS = false
+        self.F_VERTICAL_SETTINGS = true
+        self.F_MOBILE_UI = true
+        self.F_EXTERNAL_LINKS = false
     end
 
     if love.system.getOS() == 'Nintendo Switch' then
@@ -159,6 +170,8 @@ function Game:set_globals()
         run_stake_stickers = false,
         rumble = self.F_RUMBLE,
         play_button_pos = 2,
+        play_main_hand = 2,
+        runinfo_options_button_pos = 1,
         GAMESPEED = 1,
         paused = false,
         SOUND = {

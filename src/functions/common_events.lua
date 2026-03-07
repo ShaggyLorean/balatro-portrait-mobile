@@ -9,35 +9,46 @@ function set_screen_positions()
             local room_h = G.ROOM.T.h or 20
             
             -- Space allocation: HUD area starts lower to avoid overlap
-            -- Space allocation: HUD area starts lower to avoid overlap
             local hud_top_space = 13  -- Reverted to 13 (balance between overlap and off-screen)
             local bottom_margin = 0.5
+
+            -- Portrait Mode Layout:
+            -- 1. Jokers (Bottom Center)
+            G.jokers.T.x = (room_w - G.jokers.T.w) / 2
+            G.jokers.T.y = 11
             
             -- Hand at BOTTOM of screen (moved UP slightly)
             G.hand.T.x = (room_w - G.hand.T.w) / 2
-            G.hand.T.y = room_h - G.hand.T.h - bottom_margin - 3  -- Was -2, now -3 (moved up)
+            G.hand.T.y = room_h - G.hand.T.h - bottom_margin - 3.5
+
+            local ideal_play_y = G.hand.T.y - G.play.T.h - 1.5
+            local jokers_bottom_limit = G.jokers.T.y + G.jokers.T.h + 2.5
             
             -- Play area above hand (moved UP slightly)
             G.play.T.x = (room_w - G.play.T.w) / 2
-            G.play.T.y = G.hand.T.y - G.play.T.h - 2  -- Was -1.5, now -2 (moved up)
+            G.play.T.y = math.max(ideal_play_y, jokers_bottom_limit)
             
-            -- Portrait Mode Layout: Left Column Stack
+            if G.SETTINGS.play_main_hand == 2 then -- Right Hand
+                -- 2. Consumables (Above Jokers)
+                G.consumeables.T.x = G.jokers.T.x + G.jokers.T.w - G.consumeables.T.w
+                G.consumeables.T.y = G.jokers.T.y - G.jokers.T.h - 0.6
+
+                -- 3. Deck (Above Jokers, next to consumables)
+                G.deck.T.x = G.jokers.T.x + G.jokers.T.w/6
+                G.deck.T.y = G.jokers.T.y - G.jokers.T.h - 0.6
+            else
+                -- 2. Consumables (Above Jokers)
+                G.consumeables.T.x = G.jokers.T.x
+                G.consumeables.T.y = G.jokers.T.y - G.jokers.T.h - 0.6
+
+                -- 3. Deck (Above Jokers, next to consumables)
+                G.deck.T.x = G.jokers.T.x + G.jokers.T.w - G.deck.T.w - G.jokers.T.w/6
+                G.deck.T.y = G.jokers.T.y - G.jokers.T.h - 0.6
+            end
             
-            -- 1. Deck (Top Left, original position)
-            G.deck.T.x = 0.2
-            G.deck.T.y = 5.5
-            
-            -- 2. Consumables (Below Deck)
-            G.consumeables.T.x = 0.2
-            G.consumeables.T.y = G.deck.T.y + G.deck.T.h + 0.2
-            
-            -- 3. Discard (Below Consumables)
-            G.discard.T.x = 0.2
-            G.discard.T.y = G.consumeables.T.y + G.consumeables.T.h + 0.2
-            
-            -- 4. Jokers (Bottom Center)
-            G.jokers.T.x = (room_w - G.jokers.T.w) / 2
-            G.jokers.T.y = 11.5
+            -- 4. Discard
+            G.discard.T.x = G.jokers.T.x + G.jokers.T.w/2 + 0.3 + 15
+            G.discard.T.y = G.play.T.y
         else
             -- LANDSCAPE MODE (original)
             G.hand.T.x = G.TILE_W - G.hand.T.w - 2.85

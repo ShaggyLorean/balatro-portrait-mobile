@@ -236,7 +236,7 @@ function CardArea:move(dt)
         if G.F_PORTRAIT then
             -- Portrait mode: Hand at bottom of visible area (but not too low)
             local room_h = (G.ROOM and G.ROOM.T and G.ROOM.T.h) or G.TILE_H or 10
-            local base_offset = 2.5  -- Smaller offset to keep hand closer to bottom
+            local base_offset = 3.5  -- Smaller offset to keep hand closer to bottom
             local slide_offset = 3*((not G.deck_preview and (G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.DRAW_TO_HAND)) and 1 or 0)
             desired_y = room_h - G.hand.T.h - base_offset - slide_offset
         else
@@ -448,12 +448,18 @@ function CardArea:align_cards()
             end
         end
     end
+
+    local usable_w = self.T.w
+    if G.F_PORTRAIT then
+        usable_w = usable_w * 0.96
+    end
+    
     if self.config.type == 'hand' and (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK  or G.STATE == G.STATES.PLANET_PACK) then
         for k, card in ipairs(self.cards) do
             if not card.states.drag.is then 
                 card.T.r = 0.4*(-#self.cards/2 - 0.5 + k)/(#self.cards)+ (G.SETTINGS.reduced_motion and 0 or 1)*0.02*math.sin(2*G.TIMERS.REAL+card.T.x)
                 local max_cards = math.max(#self.cards, self.config.temp_limit)
-                card.T.x = self.T.x + (self.T.w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w)
+                card.T.x = self.T.x + (usable_w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w) + (self.T.w - usable_w)/2
                 local highlight_height = G.HIGHLIGHT_H
                 if not card.highlighted then highlight_height = 0 end
                 card.T.y = G.hand.T.y - 1.8*card.T.h - highlight_height + (G.SETTINGS.reduced_motion and 0 or 1)*0.1*math.sin(0.666*G.TIMERS.REAL+card.T.x) + math.abs(1.3*(-#self.cards/2 + k-0.5)/(#self.cards))^2-0.3
@@ -468,7 +474,7 @@ function CardArea:align_cards()
             if not card.states.drag.is then 
                 card.T.r = 0.2*(-#self.cards/2 - 0.5 + k)/(#self.cards)+ (G.SETTINGS.reduced_motion and 0 or 1)*0.02*math.sin(2*G.TIMERS.REAL+card.T.x)
                 local max_cards = math.max(#self.cards, self.config.temp_limit)
-                card.T.x = self.T.x + (self.T.w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w)
+                card.T.x = self.T.x + (usable_w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w) + (self.T.w - usable_w)/2
 
                 local highlight_height = G.HIGHLIGHT_H
                 if not card.highlighted then highlight_height = 0 end

@@ -840,6 +840,85 @@ G.FUNCS.change_play_discard_position = function(args)
   end
 end
 
+--Updates play areas position (Left/Right Hand mode)
+--
+---@param args {cycle_config: table, to_key: value}
+--**cycle_config** Is the config table from the original option cycle UIE
+--**to_key** The new screenmode setting key
+G.FUNCS.change_play_main_hand = function(args)
+  G.SETTINGS.play_main_hand = args.to_key
+  
+  -- 1. Updates card areas physical coordinates
+  set_screen_positions()
+
+  -- 2. Update the LIVE alignment properties of the first tag
+  if G.HUD_tags and G.HUD_tags[1] and G.F_PORTRAIT then
+    -- Modify the actual active alignment type ('bl' or 'br')
+    G.HUD_tags[1].alignment.type = (G.SETTINGS.play_main_hand == 1) and 'bl' or 'br'
+    G.HUD_tags[1].alignment.offset.x = (G.SETTINGS.play_main_hand == 1) and -0.2  or 0.2
+  end
+
+  -- 3. Recalculate specific UI elements safely
+  if G.STAGE == G.STAGES.RUN then
+    if G.HUD then G.HUD:recalculate() end
+    if G.buttons then G.buttons:recalculate() end
+    
+    -- Target ONLY Deck and Consumables UI boxes to prevent ghost menus
+    for _, uibox in pairs(G.I.UIBOX or {}) do
+      if uibox.config and (uibox.config.major == G.deck or uibox.config.major == G.consumeables) then
+        uibox:recalculate()
+      end
+    end
+    
+    -- Force tags to update their visual coordinates immediately
+    if G.HUD_tags then
+      for i = 1, #G.HUD_tags do
+        G.HUD_tags[i]:recalculate()
+      end
+    end
+  end
+end
+
+--Changes the position and order of Run Info / Options buttons
+--
+---@param args {cycle_config: table, to_key: value}
+--**cycle_config** Is the config table from the original option cycle UIE
+--**to_key** The new position key
+G.FUNCS.change_runinfo_options_position = function(args)
+  G.SETTINGS.runinfo_options_button_pos = args.to_key
+  local pos = args.to_key
+
+  -- 1. Only proceed if the main HUD exists (i.e. we are in a run)
+  if G.HUD then
+    local button_area = G.HUD:get_UIE_by_ID('button_area')
+    local run_info = G.HUD:get_UIE_by_ID('run_info_container')
+    local options = G.HUD:get_UIE_by_ID('options_container')
+
+    if button_area and run_info and options then
+      
+      -- 2. Update the horizontal alignment of the entire button area
+      local new_align = "bm"
+      if pos >= 3 and pos <= 4 then new_align = "bl" end
+      if pos >= 5 then new_align = "br" end
+      button_area.config.align = new_align
+
+      -- 3. Reorder the children nodes based on the setting (Odd = Run Info first, Even = Options first)
+      if pos % 2 == 0 then
+        -- Options first
+        button_area.children[1] = options
+        button_area.children[2] = run_info
+      else
+        -- Run Info first
+        button_area.children[1] = run_info
+        button_area.children[2] = options
+      end
+
+      -- 4. Tell the main HUD to update the layout of its newly ordered children
+      G.HUD:recalculate()
+    end
+  end
+end
+
 --Changes the Shadow setting
 --
 ---@param args {cycle_config: table, to_val: value}
