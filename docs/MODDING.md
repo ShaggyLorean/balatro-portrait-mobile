@@ -2,6 +2,8 @@
 
 Balatro Portrait Mobile supports the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime Lua injector for loading mods (such as [Steamodded](https://github.com/Steamodded/smods)) on Android.
 
+> ⚠️ **Root Required**: Installing mods requires a **rooted Android device** (e.g. via [Magisk](https://github.com/topjohnwu/Magisk)). The mod directory is located at `/data/user/0/`, which is only accessible with root privileges.
+
 ## Building with Lovely
 
 When running `build_apk.py`, select **yes** when asked about Lovely mod support:

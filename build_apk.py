@@ -365,13 +365,14 @@ def main():
 
     if use_lovely:
         print()
-        print("MOD INSTALLATION:")
+        print("MOD INSTALLATION (requires rooted device):")
         print("  1. Install Material Files from Play Store")
         print("  2. Open Material Files > navigate to:")
         print("     / > data > user > 0 > com.unofficial.balatro > files > save > ASET > Mods")
         print("  3. Place your mod folders there")
         print("  4. Restart the game")
         print()
+        print("NOTE: Root access (e.g. Magisk) is required to access /data/user/0/")
         print("See docs/MODDING.md for detailed instructions.")
 
 

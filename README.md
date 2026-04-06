@@ -101,14 +101,14 @@ balatro-portrait-mobile/
 
 Balatro Portrait Mobile supports the [Lovely](https://github.com/ethangreen-dev/lovely-injector) mod framework for loading mods on Android.
 
+> ⚠️ **Root Required**: Installing mods requires a **rooted Android device** (e.g. via [Magisk](https://github.com/topjohnwu/Magisk)). The mod directory is located in the root filesystem (`/data/user/0/`), which is not accessible without root.
+
 Build with `--with-lovely` (or answer "yes" during the build prompt) to embed the Lovely runtime. After installation:
 
 1. Launch the game once to create the folder structure
 2. Install [Material Files](https://play.google.com/store/apps/details?id=me.zhanghai.android.files)
 3. Navigate to: `/data/user/0/com.unofficial.balatro/files/save/ASET/Mods/`
 4. Place your mod folders there and restart the game
-
-> ⚠️ The mod directory is in the **root filesystem** (`/`), not in `Android/data/`. Use Material Files to navigate from `/`.
 
 📖 **See [docs/MODDING.md](docs/MODDING.md) for detailed instructions and troubleshooting.**
 
