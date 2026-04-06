@@ -120,7 +120,11 @@ def apply_readabletro_patch(src_dir, apply=True):
     shader_dir_src = os.path.join("patches", "readabletro", "shaders")
     shader_dir_dst = os.path.join(src_dir, "resources", "shaders")
     
+    texture_dir_src = os.path.join("patches", "readabletro", "textures", "2x")
+    texture_dir_dst = os.path.join(src_dir, "resources", "textures", "2x")
+    
     if apply:
+        # -- Lua file patches --
         for rel_path, reps in replacements.items():
             filepath = os.path.join(src_dir, rel_path)
             if not os.path.exists(filepath): continue
@@ -136,9 +140,11 @@ def apply_readabletro_patch(src_dir, apply=True):
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(content)
         
+        # -- Font --
         if os.path.exists(font_src):
             shutil.copy2(font_src, font_dst)
             
+        # -- Shaders --
         for shader in shaders:
             s_src = os.path.join(shader_dir_src, shader)
             s_dst = os.path.join(shader_dir_dst, shader)
@@ -147,9 +153,25 @@ def apply_readabletro_patch(src_dir, apply=True):
                 shutil.copy2(s_dst, s_bak)
             if os.path.exists(s_src):
                 shutil.copy2(s_src, s_dst)
+        
+        # -- Textures --
+        tex_count = 0
+        if os.path.isdir(texture_dir_src):
+            for tex_file in os.listdir(texture_dir_src):
+                if not tex_file.endswith(".png"):
+                    continue
+                t_src = os.path.join(texture_dir_src, tex_file)
+                t_dst = os.path.join(texture_dir_dst, tex_file)
+                t_bak = t_dst + ".bak"
+                if os.path.exists(t_dst) and not os.path.exists(t_bak):
+                    shutil.copy2(t_dst, t_bak)
+                shutil.copy2(t_src, t_dst)
+                tex_count += 1
+            print(f"  Replaced {tex_count} textures")
                 
         print("Readabletro mod enabled")
     else:
+        # -- Revert Lua files --
         for rel_path, reps in replacements.items():
             filepath = os.path.join(src_dir, rel_path)
             bak_path = filepath + ".bak"
@@ -157,15 +179,26 @@ def apply_readabletro_patch(src_dir, apply=True):
                 shutil.copy2(bak_path, filepath)
                 os.remove(bak_path)
                 
+        # -- Revert font --
         if os.path.exists(font_dst):
             os.remove(font_dst)
             
+        # -- Revert shaders --
         for shader in shaders:
             s_dst = os.path.join(shader_dir_dst, shader)
             s_bak = s_dst + ".bak"
             if os.path.exists(s_bak):
                 shutil.copy2(s_bak, s_dst)
                 os.remove(s_bak)
+        
+        # -- Revert textures --
+        if os.path.isdir(texture_dir_dst):
+            for tex_file in os.listdir(texture_dir_dst):
+                t_bak = os.path.join(texture_dir_dst, tex_file)
+                if t_bak.endswith(".bak"):
+                    original = t_bak[:-4]
+                    shutil.copy2(t_bak, original)
+                    os.remove(t_bak)
 
 
 def rebuild_game_love(apply_crt_patch_flag=False, apply_readabletro_flag=False):
@@ -233,13 +266,25 @@ def rebuild_game_love(apply_crt_patch_flag=False, apply_readabletro_flag=False):
     print("Source files restored to original state")
 
     file_size = os.path.getsize(output_file)
-    print(f"\n✓ Successfully created {output_file}")
+    print(f"\n[OK] Successfully created {output_file}")
     print(f"  Files: {file_count}")
     print(f"  Size: {file_size / 1024 / 1024:.2f} MB")
     print(f"\nYou can now run: python build_apk.py")
 
 
 if __name__ == "__main__":
-    apply_crt = ask_crt_patch()
-    apply_readabletro = ask_readabletro_patch()
+    if '--crt' in sys.argv:
+        apply_crt = True
+    elif '--no-crt' in sys.argv:
+        apply_crt = False
+    else:
+        apply_crt = ask_crt_patch()
+        
+    if '--readabletro' in sys.argv:
+        apply_readabletro = True
+    elif '--no-readabletro' in sys.argv:
+        apply_readabletro = False
+    else:
+        apply_readabletro = ask_readabletro_patch()
+        
     rebuild_game_love(apply_crt_patch_flag=apply_crt, apply_readabletro_flag=apply_readabletro)

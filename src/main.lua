@@ -127,7 +127,12 @@ function love.run()
 		end
 
 		run_time = math.min(love.timer.getTime() - run_time, 0.1)
-		G.FPS_CAP = G.FPS_CAP or 500
+		
+		-- Mobile Battery Optimization: Cap at 60 FPS on iOS/Android to prevent thermal throttling and battery drain
+		local os_name = (love and love.system and love.system.getOS) and love.system.getOS() or 'Windows'
+		local is_mobile = (os_name == 'Android' or os_name == 'iOS')
+		G.FPS_CAP = G.FPS_CAP or (is_mobile and 60 or 500)
+		
 		if run_time < 1./G.FPS_CAP then love.timer.sleep(1./G.FPS_CAP - run_time) end
 	end
 end
@@ -219,6 +224,13 @@ function love.quit()
 	if G.STEAM then G.STEAM:shutdown() end
 end
 
+-- Mobile Background Auto-Save
+function love.visible(v)
+    if not v and G and G.SAVE_MANAGER and G.STAGE == G.STAGES.RUN then
+        pcall(function() G:save_progress() end)
+    end
+end
+
 function love.update( dt )
 	--Perf monitoring checkpoint
     timer_checkpoint(nil, 'update', true)
@@ -296,6 +308,12 @@ end
 
 function love.mousemoved(x, y, dx, dy, istouch)
 	G.CONTROLLER.last_touch_time = G.CONTROLLER.last_touch_time or -1
+
+	-- Fat-finger Anti-Jitter: Ignore micro-movements on touchscreens
+	if istouch and math.abs(dx) < 3.5 and math.abs(dy) < 3.5 then
+		return
+	end
+
 	if next(love.touch.getTouches()) ~= nil then
 		G.CONTROLLER.last_touch_time = G.TIMERS.UPTIME
 	end
@@ -475,7 +493,8 @@ function love.resize(w, h)
 			G.ROOM.T.w = w / (G.TILESCALE * G.TILESIZE)
 			G.ROOM.T.h = h / (G.TILESCALE * G.TILESIZE)
 			G.ROOM.T.x = 0
-			G.ROOM.T.y = 0
+			-- Safe Area Padding (Notch Support): Shift rendering space down slightly
+			G.ROOM.T.y = (os_name == 'Android' or os_name == 'iOS') and 0.5 or 0
 
 			G.ROOM_ATTACH.T.w = G.ROOM.T.w
 			G.ROOM_ATTACH.T.h = G.ROOM.T.h

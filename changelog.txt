@@ -1,0 +1,16 @@
+v1.8.5 - Premium Mobile Enhancements & Haptic Support
+
+We are excited to introduce a major quality-of-life update that transforms Balatro into a premium native-feeling mobile experience, rather than a standard PC port. 
+
+Major Additions:
+- Haptic Feedback Engine: Added comprehensive haptic feedback (vibrations) on Android devices. You will now feel subtle tactile feedback when tapping buttons, purchasing items, playing cards, opening packs, and rerolling the shop. This dramatically increases the immersion of the mobile port.
+- Intelligent Engine Optimization: Hardcoded an FPS cap tailored for mobile (60 FPS limit on iOS/Android). This resolves previous battery drain and thermal overheating issues caused by the default 500 FPS behavior.
+- Suspended State Auto-Save: Implemented an active state listener. The game now automatically triggers a background save whenever the application loses focus, preventing data loss if Android aggressively clears background processes mid-run.
+- Layout Safe Area: Shifted the portrait HUD down symmetrically to clear front-camera notches and cutouts present on modern hardware.
+- Anti-Jitter Touch Deadzones: Added a movement threshold to prevent the game from accidentally confusing brief card taps with drag movements on highly sensitive touch screens.
+
+Bug Fixes & Refinements:
+- Readabletro Textures Fix: Successfully resolved the texture caching bug directly within the build script. The high-resolution 2x Readabletro textures will now correctly apply and replace the vanilla assets upon building.
+- Build Automation: The build.py script now supports saved configurations. Users will no longer be asked redundant setup questions on subsequent builds, and the CRT disable patch now defaults to false.
+
+*Note: For the haptic features and optimized builds to apply, please rebuild your APK using the updated scripts.*

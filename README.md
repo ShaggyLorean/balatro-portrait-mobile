@@ -1,6 +1,6 @@
 # Balatro Portrait Mobile
 
-🎴 A portrait mode mod for Balatro on Android - optimized for mobile gaming!
+A portrait mode mod for Balatro on Android - optimized for mobile gaming.
 
 <img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/98c0f4eb-68d6-43c4-9f8d-1908eea24711" />
 
@@ -25,7 +25,7 @@
 - **Python 3.6+** - For build scripts
 - **Android device** - Android 5.0+ recommended
 
-> ✅ **Cross-Platform:** Works on Windows, MacOS and Linux!
+> **Cross-Platform:** Works on Windows, MacOS and Linux.
 
 ## Quick Start
 
@@ -38,7 +38,7 @@ cd balatro-portrait-mobile
 
 ### Step 2: Get Balatro
 
-⚠️ **You must own a legal copy of Balatro!**
+**You must own a legal copy of Balatro.**
 
 1. Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
 2. Find your Balatro.exe location:
@@ -69,10 +69,12 @@ During the build, you will be asked about:
    - If you see a **black ellipse** covering part of the screen, answer **yes** to disable CRT
    - If your game works fine, answer **no** to keep the CRT visual effects
 
-2. **Readabletro Typography & Shaders** (in `rebuild_game.py`):
-   - Answer **yes** to apply the "Readabletro" font/shader mod directly into the game.
-   - This makes text much more readable on mobile displays.
-   - Note: PC shader crashes have been fixed natively for Android OpenGL ES.
+2. **Readabletro Typography, Shaders & Textures** (in `rebuild_game.py`):
+   - Answer **yes** to apply the [Readabletro](https://github.com/bladeSk/readabletro) mod directly into the game.
+   - Replaces the pixel font with a smoother, more readable typeface (TypoQuik-Bold).
+   - Replaces background/splash shaders with higher-contrast versions (fixed for Android OpenGL ES).
+   - Replaces card and UI textures (Jokers, Tarots, Vouchers, Enhancers, etc.) with smooth, anti-aliased variants.
+   - While these are not the exact same shaders used in the PC version of Readabletro, they have been adapted to work on mobile without crashes.
 
 3. **Lovely Mod Support** (in `build_apk.py`):
    - Answer **yes** to build with [Lovely](https://github.com/ethangreen-dev/lovely-injector) mod framework embedded
@@ -106,7 +108,7 @@ balatro-portrait-mobile/
 
 Balatro Portrait Mobile supports the [Lovely](https://github.com/ethangreen-dev/lovely-injector) mod framework for loading mods on Android.
 
-> ⚠️ **Root Required**: Installing mods requires a **rooted Android device** (e.g. via [Magisk](https://github.com/topjohnwu/Magisk)). The mod directory is located in the root filesystem (`/data/user/0/`), which is not accessible without root.
+> **Root Required**: Installing mods requires a **rooted Android device** (e.g. via [Magisk](https://github.com/topjohnwu/Magisk)). The mod directory is located in the root filesystem (`/data/user/0/`), which is not accessible without root.
 
 Build with `--with-lovely` (or answer "yes" during the build prompt) to embed the Lovely runtime. After installation:
 
@@ -115,7 +117,7 @@ Build with `--with-lovely` (or answer "yes" during the build prompt) to embed th
 3. Navigate to: `/data/user/0/com.unofficial.balatro/files/save/ASET/Mods/`
 4. Place your mod folders there and restart the game
 
-📖 **See [docs/MODDING.md](docs/MODDING.md) for detailed instructions and troubleshooting.**
+See [docs/MODDING.md](docs/MODDING.md) for detailed instructions and troubleshooting.
 
 ## Troubleshooting
 
@@ -149,6 +151,7 @@ When asked "Apply CRT disable patch?", answer **yes**.
 - **KtourzaJeremy** - Some huge pull requests
 - **[ethangreen-dev](https://github.com/ethangreen-dev)** - Lovely injector
 - **[WilsontheWolf](https://github.com/WilsontheWolf)** - Lovely Mobile Maker & lmm-love-android
+- **[bladeSk](https://github.com/bladeSk)** - Readabletro mod (fonts, shaders, textures)
 
 ## Disclaimer
 
