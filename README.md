@@ -69,7 +69,12 @@ During the build, you will be asked about:
    - If you see a **black ellipse** covering part of the screen, answer **yes** to disable CRT
    - If your game works fine, answer **no** to keep the CRT visual effects
 
-2. **Lovely Mod Support** (in `build_apk.py`):
+2. **Readabletro Typography & Shaders** (in `rebuild_game.py`):
+   - Answer **yes** to apply the "Readabletro" font/shader mod directly into the game.
+   - This makes text much more readable on mobile displays.
+   - Note: PC shader crashes have been fixed natively for Android OpenGL ES.
+
+3. **Lovely Mod Support** (in `build_apk.py`):
    - Answer **yes** to build with [Lovely](https://github.com/ethangreen-dev/lovely-injector) mod framework embedded
    - Answer **no** for vanilla portrait Balatro
    - You can also use CLI flags: `--with-lovely` or `--no-lovely`

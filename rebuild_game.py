@@ -8,6 +8,7 @@ import os
 import sys
 import zipfile
 import re
+import shutil
 
 CRT_PATCH_ORIGINAL = 'if (not G.recording_mode or G.video_control) and true then'
 CRT_PATCH_MODIFIED = 'if (not G.recording_mode or G.video_control) and true and not G.F_PORTRAIT then'
@@ -71,7 +72,103 @@ def apply_crt_patch(src_dir, apply=True):
     return True
 
 
-def rebuild_game_love(apply_crt_patch_flag=False):
+def ask_readabletro_patch():
+    """Ask user if they want to apply Readabletro mod"""
+    print()
+    print("=" * 60)
+    print("READABLETRO MOD")
+    print("=" * 60)
+    print()
+    print("This applies the 'Readabletro' font and high-contrast")
+    print("shaders to make the game much easier to read.")
+    print("Original pixel font is replaced with TypoQuik-Bold.")
+    print()
+    
+    while True:
+        response = input("Apply Readabletro mod? (y/n): ").strip().lower()
+        if response in ('y', 'yes'):
+            return True
+        elif response in ('n', 'no'):
+            return False
+        else:
+            print("Please enter 'y' or 'n'")
+
+
+def apply_readabletro_patch(src_dir, apply=True):
+    """Apply or revert Readabletro mod to game files"""
+    replacements = {
+        "game.lua": [
+            ('{file = "resources/fonts/m6x11plus.ttf", render_scale = self.TILESIZE*10, TEXT_HEIGHT_SCALE = 0.83, TEXT_OFFSET = {x=10,y=-20}, FONTSCALE = 0.1, squish = 1, DESCSCALE = 1}',
+             '{file = "resources/fonts/TypoQuik-Bold.ttf", render_scale = self.TILESIZE*10, TEXT_HEIGHT_SCALE = 0.83, TEXT_OFFSET = {x=10,y=-20}, FONTSCALE = 0.1, squish = 1, DESCSCALE = 1}'),
+            ('{file = "resources/fonts/m6x11plus.ttf", render_scale = self.TILESIZE*10, TEXT_HEIGHT_SCALE = 0.9, TEXT_OFFSET = {x=10,y=15}, FONTSCALE = 0.1, squish = 1, DESCSCALE = 1}',
+             '{file = "resources/fonts/TypoQuik-Bold.ttf", render_scale = self.TILESIZE*10, TEXT_HEIGHT_SCALE = 0.83, TEXT_OFFSET = {x=10,y=-20}, FONTSCALE = 0.1, squish = 1, DESCSCALE = 1}')
+        ],
+        "main.lua": [
+            ('local font = love.graphics.setNewFont("resources/fonts/m6x11plus.ttf", 20)',
+             'local font = love.graphics.setNewFont("resources/fonts/TypoQuik-Bold.ttf", 20)')
+        ],
+        "functions/misc_functions.lua": [
+            ('font = love.graphics.setNewFont("resources/fonts/m6x11plus.ttf", 20),',
+             'font = love.graphics.setNewFont("resources/fonts/TypoQuik-Bold.ttf", 20),')
+        ]
+    }
+    
+    font_src = os.path.join("patches", "readabletro", "fonts", "TypoQuik-Bold.ttf")
+    font_dst = os.path.join(src_dir, "resources", "fonts", "TypoQuik-Bold.ttf")
+    
+    shaders = ["background.fs", "splash.fs"]
+    shader_dir_src = os.path.join("patches", "readabletro", "shaders")
+    shader_dir_dst = os.path.join(src_dir, "resources", "shaders")
+    
+    if apply:
+        for rel_path, reps in replacements.items():
+            filepath = os.path.join(src_dir, rel_path)
+            if not os.path.exists(filepath): continue
+            
+            bak_path = filepath + ".bak"
+            if not os.path.exists(bak_path):
+                shutil.copy2(filepath, bak_path)
+                
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            for orig, mod in reps:
+                content = content.replace(orig, mod)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+        
+        if os.path.exists(font_src):
+            shutil.copy2(font_src, font_dst)
+            
+        for shader in shaders:
+            s_src = os.path.join(shader_dir_src, shader)
+            s_dst = os.path.join(shader_dir_dst, shader)
+            s_bak = s_dst + ".bak"
+            if os.path.exists(s_dst) and not os.path.exists(s_bak):
+                shutil.copy2(s_dst, s_bak)
+            if os.path.exists(s_src):
+                shutil.copy2(s_src, s_dst)
+                
+        print("Readabletro mod enabled")
+    else:
+        for rel_path, reps in replacements.items():
+            filepath = os.path.join(src_dir, rel_path)
+            bak_path = filepath + ".bak"
+            if os.path.exists(bak_path):
+                shutil.copy2(bak_path, filepath)
+                os.remove(bak_path)
+                
+        if os.path.exists(font_dst):
+            os.remove(font_dst)
+            
+        for shader in shaders:
+            s_dst = os.path.join(shader_dir_dst, shader)
+            s_bak = s_dst + ".bak"
+            if os.path.exists(s_bak):
+                shutil.copy2(s_bak, s_dst)
+                os.remove(s_bak)
+
+
+def rebuild_game_love(apply_crt_patch_flag=False, apply_readabletro_flag=False):
     """Rebuild Game.love from src folder"""
 
     src_dir = "src"
@@ -83,6 +180,9 @@ def rebuild_game_love(apply_crt_patch_flag=False):
 
     if apply_crt_patch_flag:
         apply_crt_patch(src_dir, apply=True)
+        
+    if apply_readabletro_flag:
+        apply_readabletro_patch(src_dir, apply=True)
 
     if os.path.exists(output_file):
         print(f"Removing old {output_file}...")
@@ -97,6 +197,7 @@ def rebuild_game_love(apply_crt_patch_flag=False):
         ".git",
         ".gitignore",
         "zip_game.py",
+        ".bak",
     ]
 
     def should_exclude(path):
@@ -125,7 +226,11 @@ def rebuild_game_love(apply_crt_patch_flag=False):
 
     if apply_crt_patch_flag:
         apply_crt_patch(src_dir, apply=False)
-        print("Source files restored to original state")
+        
+    if apply_readabletro_flag:
+        apply_readabletro_patch(src_dir, apply=False)
+        
+    print("Source files restored to original state")
 
     file_size = os.path.getsize(output_file)
     print(f"\n✓ Successfully created {output_file}")
@@ -135,5 +240,6 @@ def rebuild_game_love(apply_crt_patch_flag=False):
 
 
 if __name__ == "__main__":
-    apply_patch = ask_crt_patch()
-    rebuild_game_love(apply_crt_patch_flag=apply_patch)
+    apply_crt = ask_crt_patch()
+    apply_readabletro = ask_readabletro_patch()
+    rebuild_game_love(apply_crt_patch_flag=apply_crt, apply_readabletro_flag=apply_readabletro)
