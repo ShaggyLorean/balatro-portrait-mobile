@@ -70,16 +70,6 @@ function love.run()
 	local dt = 0
 	local dt_smooth = 1/100
 	local run_time = 0
-	local pinch_state = nil
-	local pinch_last_scale = nil
-
-	local function _get_touch_distance(touches)
-		if #touches < 2 then return 0 end
-		local x1, y1 = love.touch.getPosition(touches[1])
-		local x2, y2 = love.touch.getPosition(touches[2])
-		if not x1 or not x2 then return 0 end
-		return math.sqrt((x2-x1)^2 + (y2-y1)^2)
-	end
 
 	return function()
 		run_time = love.timer.getTime()
@@ -103,36 +93,6 @@ function love.run()
 					_c = 1
 					touched = true
 					_logcat("BALATRO_INPUT", string.format("TOUCH: raw=(%s,%s) final=(%s,%s)", tostring(b), tostring(c), tostring(_a), tostring(_b)))
-				elseif name == 'touchmoved' then
-					local touches = love.touch.getTouches()
-					if #touches >= 2 then
-						local dist = _get_touch_distance(touches)
-						if not pinch_state then
-							pinch_state = {
-								start_dist = dist,
-								start_scale = G.TILESCALE
-							}
-						else
-							if pinch_state.start_dist > 10 then
-								local ratio = dist / pinch_state.start_dist
-								local new_scale = pinch_state.start_scale * ratio
-								new_scale = math.max(2.0, math.min(new_scale, 8.0))
-								if math.abs(new_scale - (pinch_last_scale or G.TILESCALE)) > 0.1 then
-									pinch_last_scale = new_scale
-									G.TILESCALE = new_scale
-									love.resize(love.graphics.getWidth(), love.graphics.getHeight())
-								end
-							end
-						end
-					end
-				elseif name == 'touchreleased' then
-					if pinch_state then
-						local touches = love.touch.getTouches()
-						if #touches < 2 then
-							pinch_state = nil
-							pinch_last_scale = nil
-						end
-					end
 				elseif name == 'mousepressed' then
 					_n,_a,_b,_c,_d,_e,_f = name,a,b,c,d,e,f
 				else
@@ -219,19 +179,51 @@ function love.quit()
 	if G.STEAM then G.STEAM:shutdown() end
 end
 
+G._needs_canvas_refresh = false
+
 function love.visible(v)
     if not v and G and G.SAVE_MANAGER and G.STAGE == G.STAGES.RUN then
         pcall(function() G:save_progress() end)
+    end
+    if v then
+        G._needs_canvas_refresh = true
     end
 end
 
 function love.update( dt )
     timer_checkpoint(nil, 'update', true)
+    if G._needs_canvas_refresh then
+        G._needs_canvas_refresh = false
+        local os_name = love.system.getOS()
+        if (os_name == 'Android' or os_name == 'iOS') and G and G.ROOM then
+            local w, h = love.graphics.getDimensions()
+            if w > 0 and h > 0 and G.TILESCALE and h > w then
+                love.graphics.setScissor()
+                love.graphics.origin()
+                love.graphics.clear(0, 0, 0, 1)
+                if G.CANVAS then
+                    G.CANVAS:release()
+                    G.CANVAS = nil
+                end
+                love.resize(w, h)
+            end
+        end
+    end
     G:update(dt)
 end
 
 function love.draw()
     timer_checkpoint(nil, 'draw', true)
+    local os_name = love.system.getOS()
+    if (os_name == 'Android' or os_name == 'iOS') and G and G.CANVAS then
+        local screen_w = love.graphics.getWidth()
+        local screen_h = love.graphics.getHeight()
+        local canvas_w = G.CANVAS:getWidth() / (G.CANV_SCALE or 1)
+        local canvas_h = G.CANVAS:getHeight() / (G.CANV_SCALE or 1)
+        if math.abs(screen_w - canvas_w) > 2 or math.abs(screen_h - canvas_h) > 2 then
+            love.resize(screen_w, screen_h)
+        end
+    end
 	G:draw()
 end
 
@@ -495,6 +487,10 @@ function love.resize(w, h)
 		return
 	end
 
+	love.graphics.setScissor()
+	love.graphics.origin()
+	love.graphics.clear(0, 0, 0, 1)
+
 	_force_android_portrait_hints()
 
 	local os_name = love.system.getOS()
@@ -602,6 +598,7 @@ function love.resize(w, h)
 		end
 	end
 
+	if G.CANVAS then G.CANVAS:release() end
 	G.CANVAS = love.graphics.newCanvas(w*G.CANV_SCALE, h*G.CANV_SCALE, {type = '2d', readable = true})
 	G.CANVAS:setFilter('linear', 'linear')
 	
