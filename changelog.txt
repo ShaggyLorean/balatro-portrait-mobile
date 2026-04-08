@@ -1,0 +1,40 @@
+Centralized Configuration:
+- Created portrait_config.lua: all scattered magic numbers (scale factors, margins, offsets, thresholds) now live in a single config table.
+- Dynamic aspect ratio scaling via get_portrait_scale(): adapts to phone (0.63), tall phone (0.58), tablet (0.70-0.80) automatically.
+
+Crash Reporting:
+- Crash log is now automatically copied to clipboard on crash (love.system.setClipboardText).
+- Crash log is saved to crash_log.txt file on disk.
+- Crash screen stays open until user presses BACK or ESC. No more auto-closing.
+- Font fallback chain: TypoQuik-Bold -> m6x11plus -> system default.
+
+Input Improvements:
+- Pinch-to-zoom: two-finger gesture scales the game view in real time (range 2.0-8.0).
+- Android back button: opens options menu during gameplay, closes overlay menus.
+- Touch cursor sync: force controller cursor to exact tap position for accurate hit-testing.
+
+Display & Layout:
+- Immersive mode: hides system bars for full-screen gaming on Android.
+- Keep screen alive: prevents display sleep during gameplay.
+- Adaptive HUD: vertical HUD scale adjusts 0.35-0.45 based on screen aspect ratio.
+- Smart tooltip anchoring: tooltips dynamically flip direction (above/below) based on card position and shift horizontally to stay within screen bounds.
+- Tutorial speech bubble repositioned for portrait mode: shows below Jimbo instead of above, moved lower on screen.
+
+Bug Fixes:
+- Discard off-screen bug: changed from hardcoded +15 offset to relative positioning from play area.
+- Landscape resize black screen: canvas now updates even when landscape resize events are ignored on mobile.
+- Readabletro patch FileNotFoundError: destination directories are now created with os.makedirs before copying.
+- Build script .bak restore issue: backup files are always recreated from current source, preventing stale backups from reverting changes.
+
+Build System:
+- Incremental builds: file hash caching in .build_cache.json, skips rebuild if no source changes detected.
+- Sequential downloads: replaced parallel downloads with reliable sequential transfers using urllib with 120s timeout.
+- Build profiler with per-step timing report.
+- Download progress bars use ASCII-safe characters for Windows console compatibility.
+- build.py now checks for src/resources existence (not just src/) before prompting for setup.
+
+Settings:
+- Portrait-specific haptic toggle added to Game settings tab.
+- FPS cap configurable via portrait_config.fps_cap (default 60 on mobile).
+
+Full Changelog: https://github.com/ShaggyLorean/balatro-portrait-mobile/compare/v1.8.5...v1.9.0
