@@ -537,23 +537,57 @@ end
 G = Game()
 
 HAPTIC_PATTERNS = {
-    LIGHT = {left = 0.3, right = 0.3, duration = 0.01},
-    MEDIUM = {left = 0.5, right = 0.5, duration = 0.02},
-    HEAVY = {left = 0.8, right = 0.8, duration = 0.05},
-    SUCCESS = {left = 0.5, right = 0.5, duration = 0.1},
-    ERROR = {left = 1.0, right = 1.0, duration = 0.05},
+    LIGHT = {left = 0.3, right = 0.3, duration = 0.01, android_duration = 0.012},
+    MEDIUM = {left = 0.5, right = 0.5, duration = 0.02, android_duration = 0.02},
+    HEAVY = {left = 0.8, right = 0.8, duration = 0.05, android_duration = 0.03},
+    SUCCESS = {left = 0.5, right = 0.5, duration = 0.1, android_duration = 0.025},
+    ERROR = {left = 1.0, right = 1.0, duration = 0.05, android_duration = 0.04},
 }
 
+function haptics_enabled()
+    return G and G.F_HAPTIC and G.SETTINGS and G.SETTINGS.haptic_enabled
+end
+
+function stop_haptics()
+    if G then
+        G.VIBRATION = 0
+        G.CURR_VIBRATION = 0
+        G.JIGGLE_VIBRATION = 0
+    end
+
+    local joysticks = love.joystick.getJoysticks()
+    if joysticks then
+        for _, joy in ipairs(joysticks) do
+            if joy and joy.setVibration then
+                pcall(function()
+                    joy:setVibration(0, 0, 0)
+                end)
+            end
+        end
+    end
+end
+
+function on_haptic_setting_changed(enabled)
+    if not enabled then
+        stop_haptics()
+    end
+end
+
 function trigger_haptic(pattern_name)
-    if not G or not G.F_HAPTIC then return end
-    if not G.SETTINGS.haptic_enabled then return end
+    if not haptics_enabled() then return end
     local pattern = HAPTIC_PATTERNS[pattern_name] or HAPTIC_PATTERNS.LIGHT
+
+    if love and love.system and love.system.getOS and love.system.getOS() == 'Android' and love.system.vibrate then
+        pcall(function()
+            love.system.vibrate(pattern.android_duration or pattern.duration)
+        end)
+    end
+
     local joysticks = love.joystick.getJoysticks()
     if joysticks then
         for _, joy in ipairs(joysticks) do
             if joy and joy.isGamepad and joy:isGamepad() then
                 joy:setVibration(pattern.left, pattern.right, pattern.duration)
-                return
             end
         end
     end

@@ -695,9 +695,13 @@ end
 function play_sound(sound_code, per, vol)
   if G.F_MUTE then return end
   
-  if love and love.system and love.system.getOS and love.system.getOS() == 'Android' and love.system.vibrate then
+  if love and love.system and love.system.getOS and love.system.getOS() == 'Android' and love.system.vibrate and haptics_enabled() then
     if sound_code == 'button1' or sound_code == 'button2' or sound_code == 'paper1' then
       pcall(function() love.system.vibrate(0.01) end)
+    elseif sound_code == 'card1' or sound_code == 'cardSlide1' or sound_code == 'cardSlide2' then
+      pcall(function() love.system.vibrate(0.012) end)
+    elseif sound_code == 'cardFan2' then
+      pcall(function() love.system.vibrate(0.018) end)
     elseif sound_code == 'coin1' or sound_code == 'coin2' or sound_code == 'chips1' or sound_code == 'chips2' then
       pcall(function() love.system.vibrate(0.02) end)
     elseif sound_code == 'tarot2' or sound_code == 'timpani' or sound_code == 'whoosh1' or sound_code == 'tarot1' or sound_code == 'tarotinfo' then

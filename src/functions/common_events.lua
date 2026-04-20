@@ -1212,7 +1212,11 @@ function update_canvas_juice(dt)
     G.CURR_VIBRATION = math.min(1, G.CURR_VIBRATION + G.VIBRATION + G.JIGGLE_VIBRATION*0.2)
     G.VIBRATION = 0
     G.CURR_VIBRATION = (1-15*dt)*G.CURR_VIBRATION
-    if not G.SETTINGS.rumble then G.CURR_VIBRATION = 0 end
+    local allow_rumble = G.SETTINGS.rumble
+    if love.system.getOS() == 'Android' then
+        allow_rumble = allow_rumble and haptics_enabled()
+    end
+    if not allow_rumble then G.CURR_VIBRATION = 0 end
     if G.CONTROLLER.GAMEPAD.object and G.F_RUMBLE then G.CONTROLLER.GAMEPAD.object:setVibration(G.CURR_VIBRATION*0.4*G.F_RUMBLE, G.CURR_VIBRATION*0.4*G.F_RUMBLE) end
 end
 

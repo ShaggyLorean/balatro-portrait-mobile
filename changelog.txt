@@ -1,3 +1,9 @@
+Bug Fixes:
+- Fixed Haptic Feedback toggle so disabling it fully stops Android vibration paths.
+- Restored Android haptics for card movement sounds such as cardSlide1/cardSlide2/card1/cardFan2.
+- Re-enabled stronger action haptics on Android while keeping the toggle behavior correct.
+- Added haptics for toggle presses and option-cycle changes to improve UI feedback.
+
 Centralized Configuration:
 - Created portrait_config.lua: all scattered magic numbers (scale factors, margins, offsets, thresholds) now live in a single config table.
 - Dynamic aspect ratio scaling via get_portrait_scale(): adapts to phone (0.63), tall phone (0.58), tablet (0.70-0.80) automatically.

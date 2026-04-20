@@ -465,6 +465,7 @@ function G.FUNCS.toggle_button(e)
   if e.config.toggle_callback then 
     e.config.toggle_callback(e.config.ref_table.ref_table[e.config.ref_table.ref_value])
   end
+  trigger_haptic('LIGHT')
 end
 
 --for the toggle
@@ -577,6 +578,7 @@ G.FUNCS.option_cycle = function(e)
       cycle_config = e.config.ref_table
     }
   end
+  trigger_haptic('LIGHT')
 end
 
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

@@ -2633,7 +2633,7 @@ function G.UIDEF.settings_tab(tab)
       G.F_PORTRAIT and create_option_cycle({w = 5, label = 'Left or Right Hand',scale = 0.8, options = ml_play_main_hand_opt, opt_callback = 'change_play_main_hand', current_option = (G.SETTINGS.play_main_hand)}),
       G.F_PORTRAIT and create_option_cycle({w = 5, label = 'Run Info/Options Button Position (Classic Only)',scale = 0.8, options = ml_runinfo_options_pos_opt, opt_callback = 'change_runinfo_options_position', current_option = (G.SETTINGS.runinfo_options_button_pos)}),
       G.F_RUMBLE and create_toggle({label = localize('b_set_rumble'), ref_table = G.SETTINGS, ref_value = 'rumble'}) or nil,
-      G.F_PORTRAIT and create_toggle({label = 'Haptic Feedback', ref_table = G.SETTINGS, ref_value = 'haptic_enabled'}) or nil,
+      G.F_PORTRAIT and create_toggle({label = 'Haptic Feedback', ref_table = G.SETTINGS, ref_value = 'haptic_enabled', callback = on_haptic_setting_changed}) or nil,
       create_slider({label = localize('b_set_screenshake'),w = 4, h = 0.4, ref_table = G.SETTINGS, ref_value = 'screenshake', min = 0, max = 100}),
       create_toggle({label = localize('ph_display_stickers'), ref_table = G.SETTINGS, ref_value = 'run_stake_stickers'}),
       create_toggle({label = localize('b_high_contrast_cards'), ref_table = G.SETTINGS, ref_value = 'colourblind_option', callback = G.FUNCS.refresh_contrast_mode}),
