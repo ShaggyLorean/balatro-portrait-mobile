@@ -303,18 +303,17 @@ def main():
             "com.unofficial.balatro"
         )
 
-        # Set app label to "Balatro" and make it debuggable
+        # Set app label to "Balatro" and ensure release manifests are not debuggable
         manifest_content = re.sub(
             r'android:label="[^"]+"',
             'android:label="Balatro"',
             manifest_content,
         )
-        # Add debuggable="true" if not present
-        if 'android:debuggable="true"' not in manifest_content:
-            manifest_content = manifest_content.replace(
-                '<application ',
-                '<application android:debuggable="true" '
-            )
+        manifest_content = re.sub(
+            r'\sandroid:debuggable="[^"]+"',
+            '',
+            manifest_content,
+        )
 
         # Set portrait orientation
         manifest_content = re.sub(

@@ -14,7 +14,7 @@ function Game:start_up()
     local settings_ver = nil
     if settings then 
         local settings_file = STR_UNPACK(settings)
-        if G.VERSION >= '1.0.0' and (love.system.getOS() == 'NOPE') and ((not settings_file.version) or (settings_file.version < '1.0.0')) then 
+        if version_gte(G.VERSION, '1.0.0') and ((not settings_file.version) or version_lt(settings_file.version, '1.0.0')) then 
             for i = 1, 3 do
                 love.filesystem.remove(i..'/'..'profile.jkr')
                 love.filesystem.remove(i..'/'..'save.jkr')
@@ -28,7 +28,7 @@ function Game:start_up()
             self.SETTINGS.profile = 1
             self.SETTINGS.tutorial_progress = nil
         else 
-            if G.VERSION < '1.0.0' then 
+            if version_lt(G.VERSION, '1.0.0') then 
                 settings_ver = settings_file.version
             end
             for k, v in pairs(settings_file) do

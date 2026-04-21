@@ -1623,7 +1623,7 @@ function create_UIBox_HUD_vertical()
   local pos = G.SETTINGS.runinfo_options_button_pos or 1
 
   local run_info_button =
-  {n=G.UIT.C, config={id='run_info_container', align="cm", padding=0.3}, nodes={ -- NOUVEAU ID ICI
+  {n=G.UIT.C, config={id='run_info_container', align="cm", padding=0.3}, nodes={
     {n=G.UIT.R, config={id='run_info_button', align="cm", minh=1.1, minw=2.5, padding=0.05, r=0.1, hover=true, colour=G.C.RED, button="run_info", shadow=true}, nodes={
       {n=G.UIT.R, config={align="cm", padding=0, maxw=1.4}, nodes={
         {n=G.UIT.T, config={text=localize('b_run_info_1'), scale=1.2*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
@@ -1635,7 +1635,7 @@ function create_UIBox_HUD_vertical()
   }}
 
   local options_button =
-  {n=G.UIT.C, config={id='options_container', align="cm", padding=0.3}, nodes={ -- NOUVEAU ID ICI
+  {n=G.UIT.C, config={id='options_container', align="cm", padding=0.3}, nodes={
     {n=G.UIT.R, config={align="cm", minh=1.1, minw=2.5, padding=0.05, r=0.1, hover=true, colour=G.C.ORANGE, button="options", shadow=true}, nodes={
       {n=G.UIT.C, config={align="cm", maxw=1.4, focus_args={button='start', orientation='bm'}, func='set_button_pip'}, nodes={
         {n=G.UIT.T, config={text=localize('b_options'), scale=scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
@@ -1676,7 +1676,7 @@ function create_UIBox_HUD_vertical()
           -- Right Column: Round Score + Hand Played
           {n=G.UIT.C, config={align = "cm"}, nodes={
               round_score,
-              {n=G.UIT.R, config={minh = 0.1}, nodes={}}, -- Espace vertical
+              {n=G.UIT.R, config={minh = 0.1}, nodes={}},
               current_hand
           }}
         }},

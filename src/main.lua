@@ -20,6 +20,7 @@ local function _force_android_portrait_hints()
 end
 
 local function _logcat(tag, msg)
+    if _RELEASE_MODE then return end
     tag = tag or "BALATRO"
     msg = tostring(msg or "")
     print(tag .. ": " .. msg)
@@ -228,6 +229,14 @@ function love.draw()
 end
 
 function love.keypressed(key)
+	local os_name = (love and love.system and love.system.getOS) and love.system.getOS() or nil
+	if G and G.CONTROLLER and G.CONTROLLER.text_input_hook and (os_name == 'Android' or os_name == 'iOS') then
+		local allow_key = key == 'backspace' or key == 'delete' or key == 'left' or key == 'right' or key == 'return' or key == 'enter' or key == 'escape'
+		if not allow_key then
+			return
+		end
+	end
+
 	if key == 'back' or (key == 'escape' and love.system.getOS() == 'Android') then
 		if G.OVERLAY_MENU then
 			G.FUNCS.exit_overlay_menu()
@@ -249,6 +258,22 @@ function love.keyreleased(key)
 		G.CONTROLLER:set_HID_flags('mouse')
 		G.CONTROLLER:key_release(key)
 	end
+end
+
+function love.textinput(text)
+    if not (G and G.CONTROLLER and G.CONTROLLER.text_input_hook and text and text ~= '') then
+        return
+    end
+
+    if utf8 and utf8.codes and utf8.char then
+        for _, codepoint in utf8.codes(text) do
+            G.CONTROLLER:key_press_update(utf8.char(codepoint))
+        end
+    else
+        for i = 1, #text do
+            G.CONTROLLER:key_press_update(text:sub(i, i))
+        end
+    end
 end
 
 function love.gamepadpressed(joystick, button)
@@ -283,7 +308,6 @@ function love.mousepressed(x, y, button, touch)
     end
 
     G.CONTROLLER:set_HID_flags(touch and 'touch' or 'mouse')
-    if touch then trigger_haptic('LIGHT') end
     if button == 1 then
 		G.CONTROLLER:queue_L_cursor_press(x, y)
 	end

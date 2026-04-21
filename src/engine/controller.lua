@@ -773,6 +773,7 @@ function Controller:key_press_update(key, dt)
     if self.text_input_hook then
         if key == "escape" then
             self.text_input_hook = nil
+            set_mobile_text_input(false)
         elseif key == "capslock" then
             self.capslock = not self.capslock
         else

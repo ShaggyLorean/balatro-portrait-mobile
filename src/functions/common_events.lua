@@ -22,7 +22,7 @@ function set_screen_positions()
             
             G.play.T.x = (room_w - G.play.T.w) / 2
             G.play.T.y = math.max(ideal_play_y, jokers_bottom_limit)
-            
+
             if G.SETTINGS.play_main_hand == 2 then
                 G.consumeables.T.x = G.jokers.T.x + G.jokers.T.w - G.consumeables.T.w
                 G.consumeables.T.y = G.jokers.T.y - G.jokers.T.h - 0.6

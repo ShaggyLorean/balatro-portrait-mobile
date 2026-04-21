@@ -202,7 +202,7 @@ G.FUNCS.can_continue = function(e)
         G.SAVED_GAME = get_compressed(G.SETTINGS.profile..'/'..'save.jkr')
         if G.SAVED_GAME ~= nil then G.SAVED_GAME = STR_UNPACK(G.SAVED_GAME) end
       end
-      if not G.SAVED_GAME.VERSION or G.SAVED_GAME.VERSION < '0.9.2' then
+      if not G.SAVED_GAME.VERSION or version_lt(G.SAVED_GAME.VERSION, '0.9.2') then
         e.config.colour = G.C.UI.BACKGROUND_INACTIVE
         e.config.button = nil
       else
@@ -465,7 +465,6 @@ function G.FUNCS.toggle_button(e)
   if e.config.toggle_callback then 
     e.config.toggle_callback(e.config.ref_table.ref_table[e.config.ref_table.ref_value])
   end
-  trigger_haptic('LIGHT')
 end
 
 --for the toggle
@@ -578,7 +577,6 @@ G.FUNCS.option_cycle = function(e)
       cycle_config = e.config.ref_table
     }
   end
-  trigger_haptic('LIGHT')
 end
 
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -1043,6 +1041,18 @@ G.FUNCS.select_text_input = function(e)
   --Start by setting the cursor position to the correct location
   TRANSPOSE_TEXT_INPUT(0)
   e.UIBox:recalculate(true)
+  set_mobile_text_input(true)
+  G.E_MANAGER:add_event(Event({
+    trigger = 'after',
+    delay = 0.05,
+    blockable = false,
+    func = function()
+      if G and G.CONTROLLER and G.CONTROLLER.text_input_hook then
+        set_mobile_text_input(true)
+      end
+      return true
+    end
+  }))
 end
 
 --Handles all key inputs for the hooked text input.
@@ -1115,6 +1125,7 @@ G.FUNCS.text_input_key = function(args)
     hook_config.colour[3] = G.C.WHITE[3]
     ease_colour(hook_config.colour, temp_colour)
     G.CONTROLLER.text_input_hook = nil
+    set_mobile_text_input(false)
   elseif args.key == 'LEFT' then --Move cursor position to the left
     TRANSPOSE_TEXT_INPUT(-1)
   elseif args.key == 'RIGHT' then --Move cursor position to the right
@@ -2952,7 +2963,6 @@ end
 
   G.FUNCS.reroll_shop = function(e) 
     stop_use()
-    trigger_haptic('LIGHT')
     G.CONTROLLER.locks.shop_reroll = true
     if G.CONTROLLER:save_cardarea_focus('shop_jokers') then G.CONTROLLER.interrupt.focus = true end
     if G.GAME.current_round.reroll_cost > 0 then 

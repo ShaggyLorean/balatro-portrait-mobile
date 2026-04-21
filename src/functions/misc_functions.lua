@@ -60,6 +60,56 @@ function GET_DISPLAYINFO(screenmode, display)
   return res_option
 end
 
+local function _version_parts(version)
+  local parts = {}
+  version = tostring(version or "")
+
+  for number in version:gmatch("%d+") do
+    parts[#parts + 1] = tonumber(number)
+  end
+
+  return parts
+end
+
+function compare_version_strings(a, b)
+  local a_parts = _version_parts(a)
+  local b_parts = _version_parts(b)
+  local count = math.max(#a_parts, #b_parts)
+
+  for i = 1, count do
+    local left = a_parts[i] or 0
+    local right = b_parts[i] or 0
+    if left ~= right then
+      return left < right and -1 or 1
+    end
+  end
+
+  return 0
+end
+
+function version_lt(a, b)
+  return compare_version_strings(a, b) < 0
+end
+
+function version_gte(a, b)
+  return compare_version_strings(a, b) >= 0
+end
+
+function set_mobile_text_input(enabled)
+  if not (love and love.keyboard and love.keyboard.setTextInput and love.system and love.system.getOS) then
+    return
+  end
+
+  local os_name = love.system.getOS()
+  if os_name ~= 'Android' and os_name ~= 'iOS' then
+    return
+  end
+
+  pcall(function()
+    love.keyboard.setTextInput(enabled and true or false)
+  end)
+end
+
 function timer_checkpoint(label, type, reset)
   G.PREV_GARB = G.PREV_GARB or 0
   if not G.F_ENABLE_PERF_OVERLAY then return end

@@ -963,8 +963,8 @@ function UIElement:collides_with_point(cursor_trans)
 end
 
 function UIElement:click()
-    -- TEMP DEBUG: trace why taps don't result in button callbacks
     local function _dbg(msg)
+        if _RELEASE_MODE then return end
         msg = tostring(msg or "")
         print("BALATRO_UI: " .. msg)
         if love and love.system and love.system.getOS and love.system.getOS() == 'Android' then
@@ -1051,6 +1051,7 @@ function UIElement:remove()
 
     if self == G.CONTROLLER.text_input_hook then
         G.CONTROLLER.text_input_hook = nil
+        set_mobile_text_input(false)
     end
     remove_all(self.children)
 
