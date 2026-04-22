@@ -1412,6 +1412,9 @@ G.FUNCS.tutorial_part = function(_part)
             step = step,
         })
     elseif _part == 'first_hand_2' then
+        local hand_attach = G.F_PORTRAIT and
+            {major = G.ROOM_ATTACH, type = 'cm', offset = {x = 0, y = -10}} or
+            {major = G.hand, type = 'cl', offset = {x = -1.5, y = 0}}
         step = tutorial_info({
             hard_set = true,
             text_key = 'fh_4',
@@ -1419,7 +1422,7 @@ G.FUNCS.tutorial_part = function(_part)
                 G.hand,
                 G.HUD:get_UIE_by_ID('run_info_button')
             },
-            attach = {major = G.hand, type = 'cl', offset = {x = -1.5, y = 0}},
+            attach = hand_attach,
             snap_to = function() return G.hand.cards[1] end,
             step = step,
         })
@@ -1430,12 +1433,15 @@ G.FUNCS.tutorial_part = function(_part)
                 G.buttons:get_UIE_by_ID('play_button'),
                 G.HUD:get_UIE_by_ID('run_info_button')
             },
-            attach = {major = G.hand, type = 'cl', offset = {x = -1.5, y = 0}},
+            attach = hand_attach,
             no_button = true,
             button_listen = 'play_cards_from_highlighted',
             step = step,
         })
     elseif _part == 'first_hand_3' then
+        local hand_attach = G.F_PORTRAIT and
+            {major = G.ROOM_ATTACH, type = 'cm', offset = {x = 0, y = -10}} or
+            {major = G.hand, type = 'cl', offset = {x = -1.5, y = 0}}
         step = tutorial_info({
             hard_set = true,
             text_key = 'fh_6',
@@ -1444,7 +1450,7 @@ G.FUNCS.tutorial_part = function(_part)
                 G.buttons:get_UIE_by_ID('discard_button'),
                 G.HUD:get_UIE_by_ID('run_info_button')
             },
-            attach = {major = G.hand, type = 'cl', offset = {x = -1.5, y = 0}},
+            attach = hand_attach,
             no_button = true,
             button_listen = 'discard_cards_from_highlighted',
             step = step,
@@ -1640,16 +1646,19 @@ G.FUNCS.tutorial_part = function(_part)
         blockable = false,
         timer = 'REAL',
         func = function()
-            if (G.OVERLAY_TUTORIAL.step == step and
-            not G.OVERLAY_TUTORIAL.step_complete) or G.OVERLAY_TUTORIAL.skip_steps then
-                if G.OVERLAY_TUTORIAL.Jimbo then G.OVERLAY_TUTORIAL.Jimbo:remove() end
-                if G.OVERLAY_TUTORIAL.content then G.OVERLAY_TUTORIAL.content:remove() end
-                G.OVERLAY_TUTORIAL:remove()
-                G.OVERLAY_TUTORIAL = nil
+            local overlay = G and rawget(G, 'OVERLAY_TUTORIAL') or nil
+            if not overlay then
+                return true
+            end
+            if (overlay.step == step and not overlay.step_complete) or overlay.skip_steps then
+                if overlay.Jimbo then overlay.Jimbo:remove() end
+                if overlay.content then overlay.content:remove() end
+                overlay:remove()
+                if G and rawget(G, 'OVERLAY_TUTORIAL') == overlay then rawset(G, 'OVERLAY_TUTORIAL', nil) end
                 G.SETTINGS.tutorial_progress.hold_parts[_part]=true
                 return true
             end
-            return G.OVERLAY_TUTORIAL.step > step or G.OVERLAY_TUTORIAL.skip_steps
+            return overlay.step > step or overlay.skip_steps
         end
     }), 'tutorial') 
     G.SETTINGS.paused = false
