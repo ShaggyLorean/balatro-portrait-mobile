@@ -2308,7 +2308,16 @@ function tutorial_info(args)
                     args.highlight[#args.highlight+1] = G.OVERLAY_TUTORIAL.content
                 end
                 if args.button_listen then G.OVERLAY_TUTORIAL.button_listen = args.button_listen end
-                if not args.no_button then G.OVERLAY_TUTORIAL.Jimbo:add_button(button.button, button.func, button.colour, button.update_func, true) end
+                if not args.no_button then
+                    G.OVERLAY_TUTORIAL.Jimbo:add_button(button.button, button.func, button.colour, button.update_func, true)
+                    if G.F_PORTRAIT and G.OVERLAY_TUTORIAL.Jimbo.children.button and G.OVERLAY_TUTORIAL.Jimbo.children.speech_bubble then
+                        G.OVERLAY_TUTORIAL.Jimbo.children.button:set_alignment({
+                            major = G.OVERLAY_TUTORIAL.Jimbo.children.speech_bubble,
+                            type = 'bm',
+                            offset = {x = 0, y = 0.2},
+                        })
+                    end
+                end
                 G.OVERLAY_TUTORIAL.Jimbo:say_stuff(2*(#(G.localization.misc.tutorial[args.text_key] or {}))+1)
                 if args.snap_to then
                     G.E_MANAGER:add_event(Event({
