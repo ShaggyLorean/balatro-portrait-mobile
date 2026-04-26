@@ -813,10 +813,14 @@ function set_main_menu_UI()
         x_offset_plus = pc.x_offset_plus
         y_offset_base = pc.y_offset_base
     end
+    local menu_x_offset = x_offset_base*2+x_offset_plus
+    if G.F_PORTRAIT then
+        menu_x_offset = 0
+    end
 
     G.MAIN_MENU_UI = UIBox{
         definition = create_UIBox_main_menu_buttons(), 
-        config = {align="bmi", offset = {x=x_offset_base*2+x_offset_plus,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
+        config = {align="bmi", offset = {x=menu_x_offset,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
     }
     G.MAIN_MENU_UI.alignment.offset.y = y_offset_base
     G.MAIN_MENU_UI:align_to_major()
@@ -992,6 +996,19 @@ function add_round_eval_row(config)
     local width = G.round_eval.T.w - 0.51
     local num_dollars = config.dollars or 1
     local scale = 0.9
+    local function center_round_eval()
+        if G.F_PORTRAIT and G.round_eval and G.ROOM and G.ROOM.T then
+            local x = (G.ROOM.T.w - G.round_eval.T.w)/2
+            if G.round_eval.role and G.round_eval.role.offset and G.round_eval.role.major then
+                local major = G.round_eval.role.major:get_major()
+                local major_x = major and major.major and (major.major.T.x + (major.offset and major.offset.x or 0)) or G.round_eval.role.major.T.x
+                G.round_eval.role.offset.x = x - major_x
+            end
+            G.round_eval.T.x = x
+            G.round_eval.VT.x = x
+            G.round_eval.velocity.x = 0
+        end
+    end
 
     if config.name ~= 'bottom' then
         if config.name ~= 'blind1' then
@@ -1003,6 +1020,7 @@ function add_round_eval_row(config)
                             {n=G.UIT.O, config={object = DynaText({string = {'......................................'}, colours = {G.C.WHITE},shadow = true, float = true, y_offset = -30, scale = 0.45, spacing = 13.5, font = G.LANGUAGES['en-us'].font, pop_in = 0})}}
                         }}
                         G.round_eval:add_child(spacer,G.round_eval:get_UIE_by_ID(config.bonus and 'bonus_round_eval' or 'base_round_eval'))
+                        center_round_eval()
                         return true
                     end
                 }))
@@ -1075,6 +1093,7 @@ function add_round_eval_row(config)
                     G.GAME.blind:juice_up()
                 end
                 G.round_eval:add_child(full_row,G.round_eval:get_UIE_by_ID(config.bonus and 'bonus_round_eval' or 'base_round_eval'))
+                center_round_eval()
                 play_sound('cancel', config.pitch or 1)
                 play_sound('highlight1',( 1.5*config.pitch) or 1, 0.2)
                 if config.card then config.card:juice_up(0.7, 0.46) end
@@ -1092,6 +1111,7 @@ function add_round_eval_row(config)
                                 {n=G.UIT.O, config={object = DynaText({string = {localize('$')..num_dollars}, colours = {G.C.MONEY}, shadow = true, pop_in = 0, scale = 0.65, float = true})}}
                             }},
                             G.round_eval:get_UIE_by_ID('dollar_'..config.name))
+                    center_round_eval()
 
                     play_sound('coin3', 0.9+0.2*math.random(), 0.7)
                     play_sound('coin6', 1.3, 0.8)
@@ -1107,6 +1127,7 @@ function add_round_eval_row(config)
                             G.round_eval:add_child(
                                 {n=G.UIT.R, config={align = "cm", id = 'dollar_row_'..(dollar_row+1)..'_'..config.name}, nodes={}},
                                 G.round_eval:get_UIE_by_ID('dollar_'..config.name))
+                                center_round_eval()
                                 dollar_row = dollar_row+1
                         end
 
@@ -1118,6 +1139,7 @@ function add_round_eval_row(config)
                         end
 
                         G.round_eval:add_child(r,G.round_eval:get_UIE_by_ID('dollar_row_'..(dollar_row)..'_'..config.name))
+                        center_round_eval()
                         G.VIBRATION = G.VIBRATION + 0.4
                         return true
                     end
@@ -1140,6 +1162,7 @@ function add_round_eval_row(config)
                       offset ={x=0,y=0.4},
                       major = G.round_eval}
                 }
+                center_round_eval()
 
                 --local left_text = {n=G.UIT.R, config={id = 'cash_out_button', align = "cm", padding = 0.1, minw = 2, r = 0.15, colour = G.C.ORANGE, shadow = true, hover = true, one_press = true, button = 'cash_out', focus_args = {snap_to = true}}, nodes={
                 --    {n=G.UIT.T, config={text = localize('b_cash_out')..": ", scale = 1, colour = G.C.UI.TEXT_LIGHT, shadow = true}},
@@ -2268,7 +2291,15 @@ function tutorial_info(args)
     local row_dollars_chips = G.HUD:get_UIE_by_ID('row_dollars_chips')
     local align = args.align or "tm"
     local step = args.step or 1
-    local attach = args.attach or {major = row_dollars_chips, type = 'tm', offset = {x=0, y=-0.5}}
+    local source_attach = args.attach or {major = row_dollars_chips, type = 'tm', offset = {x=0, y=-0.5}}
+    local attach = {
+        major = source_attach.major,
+        type = source_attach.type,
+        offset = {
+            x = source_attach.offset and source_attach.offset.x or 0,
+            y = source_attach.offset and source_attach.offset.y or 0
+        }
+    }
     if G.F_PORTRAIT then
         if attach.offset then
             attach.offset.y = (attach.offset.y or 0) + 2

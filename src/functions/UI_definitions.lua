@@ -1886,6 +1886,9 @@ end
   
 function create_UIBox_round_evaluation()
   local width = G.hand.T.w-2
+  if G.F_PORTRAIT and G.ROOM and G.ROOM.T then
+    width = math.min(width, G.ROOM.T.w - 1.2)
+  end
   local t = {n=G.UIT.ROOT, config = {align = 'tm',colour = G.C.CLEAR}, nodes={
     UIBox_dyn_container(
       {
@@ -6771,7 +6774,7 @@ function create_UIBox_main_menu_buttons()
     local t = {
       n=G.UIT.ROOT, config = {align = "bm", colour = G.C.CLEAR}, nodes={
         {n=G.UIT.C, config={align = "bm"}, nodes={
-          {n=G.UIT.R, config={align = "cm", padding = 0.15, r = 2, emboss = 0.1, colour = G.C.L_BLACK}, nodes={
+          {n=G.UIT.R, config={align = "cm", padding = 0.15, r = 2, emboss = 0.1, colour = G.C.L_BLACK, mid = true}, nodes={
             -- Row 1: Languages + Play
             {n=G.UIT.R, config={align = "cm", minw = 4, minh = 0.8, padding = 0.15}, nodes={
               UIBox_button{id = 'main_menu_play', button = not G.SETTINGS.tutorial_complete and "start_run" or "setup_run", colour = G.C.BLUE, minw = 5.55, minh = 2, emboss = 1, label = {localize('b_play_cap')}, scale = text_scale*3, col = true},

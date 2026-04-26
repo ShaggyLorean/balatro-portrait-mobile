@@ -3338,11 +3338,23 @@ function Game:update_round_eval(dt)
                 G.GAME.facing_blind = nil
                 save_run()
                 ease_background_colour_blind(G.STATES.ROUND_EVAL)
+                local round_eval_align = G.F_PORTRAIT and "b" or "bm"
                 G.round_eval = UIBox{
                     definition = create_UIBox_round_evaluation(),
-                    config = {align="bm", offset = {x=0,y=G.ROOM.T.y + 19},major = G.hand, bond = 'Weak'}
+                    config = {align=round_eval_align, offset = {x=0,y=G.ROOM.T.y + 19},major = G.hand, bond = 'Weak'}
                 }
                 G.round_eval.alignment.offset.x = 0
+                if G.F_PORTRAIT and G.ROOM and G.ROOM.T then
+                    local x = (G.ROOM.T.w - G.round_eval.T.w)/2
+                    if G.round_eval.role and G.round_eval.role.offset and G.round_eval.role.major then
+                        local major = G.round_eval.role.major:get_major()
+                        local major_x = major and major.major and (major.major.T.x + (major.offset and major.offset.x or 0)) or G.round_eval.role.major.T.x
+                        G.round_eval.role.offset.x = x - major_x
+                    end
+                    G.round_eval.T.x = x
+                    G.round_eval.VT.x = x
+                    G.round_eval.velocity.x = 0
+                end
                 G.E_MANAGER:add_event(Event({
                     trigger = 'immediate',
                     func = function()

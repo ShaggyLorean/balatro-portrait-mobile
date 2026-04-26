@@ -33,7 +33,7 @@ PORTRAIT_CONFIG = {
     main_menu = {
         x_offset_base = 0.7,
         x_offset_plus = 0.2,
-        y_offset_base = -0.7,
+        y_offset_base = -1.2,
     },
     view_deck_scale = 0.8,
     game_over_scale = 1.2,
