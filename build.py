@@ -193,11 +193,21 @@ def setup_resources(balatro_path=None):
 
     if not balatro_path:
         print()
-        print("  Path to Balatro.exe:")
+        print("  Path to Balatro game file:")
         print("    Windows  D:\\Steam\\steamapps\\common\\Balatro\\Balatro.exe")
         print("    Linux    ~/.steam/steam/steamapps/common/Balatro/Balatro.exe")
-        print("    macOS    ~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.exe")
+        print("    macOS    ~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app/Contents/Resources/Balatro.love")
+        print("             (you can also pass the .app bundle path — it will be found automatically)")
         balatro_path = input("  > ").strip().strip('"').strip("'")
+
+    balatro_path = os.path.expanduser(balatro_path)
+
+    # If the user points at the .app bundle, find the .love file inside it
+    if os.path.isdir(balatro_path) and balatro_path.rstrip("/").endswith(".app"):
+        love_path = os.path.join(balatro_path, "Contents", "Resources", "Balatro.love")
+        if os.path.exists(love_path):
+            print(f"  Detected macOS app bundle — using Balatro.love inside it.")
+            balatro_path = love_path
 
     if not os.path.exists(balatro_path):
         print(f"  ERROR: File not found: {balatro_path}")
