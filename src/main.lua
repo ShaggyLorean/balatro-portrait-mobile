@@ -523,6 +523,7 @@ function love.resize(w, h)
 			if G.CANVAS then G.CANVAS:release() end
 			G.CANVAS = love.graphics.newCanvas(w*G.CANV_SCALE, h*G.CANV_SCALE, {type = '2d', readable = true})
 			if G.CANVAS then G.CANVAS:setFilter('linear', 'linear') end
+			if G.CANVAS then G.CANVAS:setWrap('clampzero') end
 			return
 		end
 		G.F_PORTRAIT = true
@@ -625,6 +626,7 @@ function love.resize(w, h)
 	if G.CANVAS then G.CANVAS:release() end
 	G.CANVAS = love.graphics.newCanvas(w*G.CANV_SCALE, h*G.CANV_SCALE, {type = '2d', readable = true})
 	G.CANVAS:setFilter('linear', 'linear')
+	G.CANVAS:setWrap('clampzero')
 	
 	love.graphics.setScissor()
 	love.graphics.origin()

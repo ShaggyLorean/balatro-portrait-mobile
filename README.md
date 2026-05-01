@@ -1,6 +1,6 @@
 # Balatro Portrait Mobile
 
-A portrait mode mod for Balatro on Android - optimized for mobile gaming.
+A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 
 <img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/98c0f4eb-68d6-43c4-9f8d-1908eea24711" />
 
@@ -13,68 +13,57 @@ A portrait mode mod for Balatro on Android - optimized for mobile gaming.
 
 ## Features
 
-- **Portrait Mode**: Fully optimized vertical layout for mobile devices
-- **Redesigned HUD**: Score, buttons, and info panels repositioned for portrait
-- **Touch-Optimized**: Works perfectly with touchscreen controls
-- **Full Game Support**: All features work in portrait mode
-- **Mod Support (Lovely)**: Optional [Lovely](https://github.com/ethangreen-dev/lovely-injector) integration for loading mods on Android
+- **Portrait Mode** — Fully optimized vertical layout for mobile
+- **Touch Controls** — Responsive touchscreen support with anti-jitter
+- **Redesigned HUD** — Score, buttons, and panels repositioned for portrait
+- **Full Game Support** — All Balatro features work in portrait mode
+- **Mod Support** — Optional [Lovely](https://github.com/ethangreen-dev/lovely-injector) integration for loading mods on Android
 
 ## Requirements
 
-- **Balatro** - You must own a legal copy of the game
-- **Python 3.6+** - For build scripts
-- **Android device** - Android 5.0+ recommended
+- **Balatro** — You must own a legal copy of the game
+- **Python 3.6+** — For the build script
+- **Android device** — Android 5.0+ recommended
 
-> **Cross-Platform:** Works on Windows, MacOS and Linux.
+> **Cross-platform:** Builds on Windows, macOS, and Linux.
 
 ## Quick Start
 
-### Step 1: Clone the Repository
+### 1. Clone the repository
 
 ```
 git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git
 cd balatro-portrait-mobile
 ```
 
-### Step 2: Get Balatro
-
-**You must own a legal copy of Balatro.**
-
-1. Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
-2. Find your Balatro.exe location:
-   - **Steam**: Right-click Balatro → Manage → Browse Local Files
-   - Default: `C:\Program Files\Steam\steamapps\common\Balatro\Balatro.exe`
-
-### Step 3: Run the Auto Builder
+### 2. Run the build script
 
 ```
 python build.py
 ```
 
-The unified `build.py` script will automatically handle the entire process. If this is your first time, it will:
-1. **Ask for your Balatro.exe path** and automatically extract all necessary game files.
-2. **Present Optional Patches**:
+The script handles everything — on first run it will ask for your Balatro.exe path and extract the necessary game files automatically.
 
-1. **CRT Shader Patch:**
-   - If you see a **black ellipse** covering part of the screen, enable this to disable CRT.
-   - If your game works fine, skip this to keep the CRT visual effects.
+**Build options (asked once, saved for future runs):**
 
-2. **Readabletro Typography & Textures:**
-   - Enable to apply the [Readabletro](https://github.com/bladeSk/readabletro) mod.
-   - Replaces the pixel font with a smoother typography (TypoQuik-Bold).
-   - Resolves texture bugs and replaces card/UI textures with high-resolution, anti-aliased variants.
+| Option | Default | Description |
+|--------|---------|-------------|
+| CRT patch | off | Disables the CRT shader for desktop portrait testing. Android always disables CRT automatically — skip this unless you test on PC. |
+| Readabletro | off | Applies the [Readabletro](https://github.com/bladeSk/readabletro) mod: TypoQuik-Bold font, high-res card and UI textures. |
+| Lovely mod support | on | Embeds the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime so mods can be loaded. Requires a rooted device. |
 
-3. **Lovely Mod Support:**
-   - Enable to embed the [Lovely](https://github.com/ethangreen-dev/lovely-injector) mod framework.
-   - You can also run the build silently with flags: `python build.py --crt --readabletro --with-lovely`
+You can also pass flags to skip the prompts:
 
-*(Your configuration will be saved in `.buildconfig.json` for rapid, single-click rebuilds later)*
+```
+python build.py --no-crt --no-readabletro --with-lovely
+python build.py --balatro "D:\Steam\steamapps\common\Balatro\Balatro.exe" --force
+```
 
-### Step 4: Install on Android
+Run `python build.py --help` or check the top of `build.py` for all available flags.
 
-Transfer the generated APK to your phone and install it.
+### 3. Install on your device
 
-Or natively deploy via ADB if your device is plugged in:
+Transfer the APK to your phone and install it, or deploy directly via ADB:
 
 ```
 adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
@@ -84,69 +73,75 @@ adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
 
 ```
 balatro-portrait-mobile/
-├── src/                    # Modified source files (portrait mode)
-├── game_original_files/    # Extracted game files (created by setup.py)
+├── src/                        # Modified Lua source files (portrait mode)
+│   ├── portrait_config.lua     # Centralized scaling and layout config
+│   ├── game.lua                # Core game logic (portrait adaptations)
+│   ├── globals.lua             # Feature flags, Android-specific settings
+│   ├── main.lua                # Entry point, input handling, canvas setup
+│   └── ...
+├── patches/
+│   └── readabletro/            # Optional Readabletro font and texture patch
 ├── docs/
-│   └── MODDING.md          # Mod installation guide
-├── setup.py                # Setup script (extracts & copies files)
-├── rebuild_game.py         # Creates Game.love
-└── build_apk.py            # Builds the APK (with optional Lovely support)
+│   └── MODDING.md              # Mod installation guide
+└── build.py                    # Unified build script (setup + Game.love + APK)
 ```
+
+> `src/resources/`, `src/localization/`, and `game_original_files/` are generated
+> locally from your Balatro copy and are not included in this repository.
 
 ## Mod Support (Lovely)
 
-Balatro Portrait Mobile supports the [Lovely](https://github.com/ethangreen-dev/lovely-injector) mod framework for loading mods on Android.
-
-> **Root Required**: Installing mods requires a **rooted Android device** (e.g. via [Magisk](https://github.com/topjohnwu/Magisk)). The mod directory is located in the root filesystem (`/data/user/0/`), which is not accessible without root.
-
-Build with `--with-lovely` (or answer "yes" during the build prompt) to embed the Lovely runtime. After installation:
+Build with Lovely enabled (default) to embed the mod runtime. After installation:
 
 1. Launch the game once to create the folder structure
 2. Install [Material Files](https://play.google.com/store/apps/details?id=me.zhanghai.android.files)
 3. Navigate to: `/data/user/0/com.unofficial.balatro/files/save/ASET/Mods/`
 4. Place your mod folders there and restart the game
 
-See [docs/MODDING.md](docs/MODDING.md) for detailed instructions and troubleshooting.
+> **Root required** — mod directories are inside `/data/`, which needs root access (e.g. [Magisk](https://github.com/topjohnwu/Magisk)).
+
+See [docs/MODDING.md](docs/MODDING.md) for detailed instructions.
 
 ## Troubleshooting
 
-### "Game won't start"
+### Game won't start
 
-- Make sure setup.py completed successfully
-- Check that `src/resources/` and `src/localization/` exist
+Make sure the first-run resource extraction completed successfully.
+`src/resources/` and `src/localization/` must exist. Re-run `python build.py` if they're missing.
 
-### "Build fails"
+### Build fails
 
-- Ensure Python 3.6+ is installed: `python --version`
-- JDK is downloaded automatically during build
+- Check Python version: `python --version` (3.6+ required)
+- JDK is downloaded automatically — no manual install needed
+- Internet connection required for first build (downloads ~250 MB of tools)
 
-### "Black ellipse covering part of the screen"
+### Display looks cut off or shows a colored sliver at the bottom
 
-This is caused by the CRT shader not rendering correctly in portrait mode on some devices.
+This was caused by the CRT shader not handling portrait mode correctly on tall devices (e.g. Samsung Galaxy S23+).
 
-**Solution**: Rebuild with CRT patch enabled:
+**Fixed in v1.9.6:** Android now automatically disables the CRT shader. No manual action needed — just rebuild.
 
-```
-python rebuild_game.py
-```
+### Prices look higher than expected
 
-When asked "Apply CRT disable patch?", answer **yes**.
+In-game price increases are **base Balatro mechanics**, not a bug in this mod. Common causes:
+- **Overpriced voucher** — multiplies Tarot/Planet pack prices by 1.5×
+- **Inflation joker** — adds $1 to all item prices each round
 
 ## Credits
 
-- **LocalThunk** - Original Balatro game
-- **LÖVE** - 2D game framework
-- **Contributors** - Portrait mode modifications
-- **KtourzaJeremy** - Some huge pull requests
-- **[ethangreen-dev](https://github.com/ethangreen-dev)** - Lovely injector
-- **[WilsontheWolf](https://github.com/WilsontheWolf)** - Lovely Mobile Maker & lmm-love-android
-- **[bladeSk](https://github.com/bladeSk)** - Readabletro mod (fonts, shaders, textures)
+- **LocalThunk** — Original Balatro game
+- **LÖVE** — 2D game framework
+- **KtourzaJeremy** — Pull requests
+- **[ethangreen-dev](https://github.com/ethangreen-dev)** — Lovely injector
+- **[WilsontheWolf](https://github.com/WilsontheWolf)** — Lovely Mobile Maker
+- **[bladeSk](https://github.com/bladeSk)** — Readabletro mod (fonts, shaders, textures)
+- **[blake502](https://github.com/blake502)** — Balatro APK Maker (APK patch tools)
 
 ## Disclaimer
 
 This is an unofficial mod. You must own a legal copy of Balatro to use this.
-The original game files are NOT included in this repository.
+Original game files are **not** included in this repository.
 
 ## License
 
-This mod is provided as-is for personal use. All rights to Balatro belong to LocalThunk.
+Provided as-is for personal use. All rights to Balatro belong to LocalThunk.

@@ -66,6 +66,7 @@ function Game:set_globals()
         self.F_MOBILE_UI = true
         self.F_EXTERNAL_LINKS = false
         self.F_HAPTIC = true
+        self.F_NO_CRT = true
     end
 
     if love.system.getOS() == 'Nintendo Switch' then

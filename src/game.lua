@@ -2957,9 +2957,10 @@ end
 love.graphics.pop()
     
     love.graphics.setCanvas(G.AA_CANVAS)
+    love.graphics.clear(0, 0, 0, 1)
     love.graphics.push()
         love.graphics.setColor(G.C.WHITE)
-    if (not G.recording_mode or G.video_control) and true then
+    if (not G.recording_mode or G.video_control) and not G.F_NO_CRT then
         G.ARGS.eased_cursor_pos = G.ARGS.eased_cursor_pos or {x=G.CURSOR.T.x,y=G.CURSOR.T.y, sx = G.CONTROLLER.cursor_position.x, sy = G.CONTROLLER.cursor_position.y}
         G.screenwipe_amt = G.screenwipe_amt and (0.95*G.screenwipe_amt + 0.05*((self.screenwipe and 0.4 or self.screenglitch and 0.4) or 0)) or 1
         G.SETTINGS.GRAPHICS.crt = G.SETTINGS.GRAPHICS.crt*0.3

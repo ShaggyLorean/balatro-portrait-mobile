@@ -1,43 +1,37 @@
-# Build artifacts
+# Build output
 *.apk
 *.love
 *.keystore
+
+# Python
 __pycache__/
+*.pyc
+
+# Build artifacts and downloaded tools
+balatro-mobile-maker/
 *.tmp
-*.exe
-*.dll
-*.ppdb
-*.pdb
-*.bak
 
-# IDE and editor files
-*.sln
-.vscode/
-.idea/
-
-# Logs
-logcat*.txt
-
-# Build cache
+# Build cache / saved config
 .build_cache.json
 .buildconfig.json
 
-# Temporary files
-.DS_Store
-.temp_*
-calisanapk/
-
-# Original game files (DO NOT COMMIT - Copyright)
-game_dump/
+# Extracted game files — generated locally from your Balatro copy, never committed
+game_original_files/
 src/resources/
 src/localization/
-game_original_files/resources/
-game_original_files/localization/
-game_original_files/*.lua
-game_original_files/engine/
-game_original_files/functions/
-game_original_files/version.jkr
 
-# APK build folder (downloaded tools + output)
-balatro-mobile-maker/
+# Editor / tools
+.vscode/
+.idea/
+.DS_Store
+.claude/
 
+# Logs
+logcat*.txt
+*.log
+
+# Windows
+*.dll
+*.exe
+*.pdb
+*.ppdb
