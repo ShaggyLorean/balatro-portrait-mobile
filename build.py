@@ -112,13 +112,14 @@ class BuildProfiler:
     def report(self):
         total = sum(d for _, d in self.steps)
         wall  = time.time() - self._wall
-        print(f"\n{'─' * 50}")
+        sep = "-" * 50
+        print(f"\n{sep}")
         print("Build time breakdown:")
         for name, d in self.steps:
             pct = d / total * 100 if total else 0
             print(f"  {name:<28}  {d:>5.1f}s  ({pct:.0f}%)")
         print(f"  {'Total':<28}  {wall:>5.1f}s")
-        print(f"{'─' * 50}")
+        print(sep)
 
 
 class _Step:
@@ -606,7 +607,7 @@ def _parse_args():
 
 def main():
     print("=" * 60)
-    print("  BALATRO PORTRAIT MOBILE — BUILD")
+    print("  BALATRO PORTRAIT MOBILE - BUILD")
     print("=" * 60)
 
     cli = _parse_args()
