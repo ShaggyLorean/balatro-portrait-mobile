@@ -1,6 +1,7 @@
 # Build output
 *.apk
 *.love
+*.love.part
 *.keystore
 
 # Python
