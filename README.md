@@ -115,11 +115,17 @@ Make sure the first-run resource extraction completed successfully.
 - JDK is downloaded automatically — no manual install needed
 - Internet connection required for first build (downloads ~250 MB of tools)
 
-### Display looks cut off or shows a colored sliver at the bottom
+### Black ellipse or colored sliver at the bottom of the screen
 
-This was caused by the CRT shader not handling portrait mode correctly on tall devices (e.g. Samsung Galaxy S23+).
+The CRT shader can cause visual artifacts on some devices in portrait mode.
 
-**Fixed in v1.9.6:** Android now automatically disables the CRT shader. No manual action needed — just rebuild.
+**Solution:** Rebuild with the CRT patch enabled:
+
+```
+python build.py --crt
+```
+
+Or answer **yes** to "Apply CRT patch?" during the interactive build.
 
 ### Prices look higher than expected
 

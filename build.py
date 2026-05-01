@@ -63,8 +63,8 @@ LOVE_APK_URL   = "https://github.com/love2d/love-android/releases/download/11.5a
 LOVELY_APK_URL = "https://lmm.shorty.systems/base.apk"
 
 # These strings must match exactly what's in src/game.lua
-CRT_PATCH_ORIGINAL = 'if (not G.recording_mode or G.video_control) and not G.F_NO_CRT then'
-CRT_PATCH_MODIFIED = 'if (not G.recording_mode or G.video_control) and not G.F_NO_CRT and not G.F_PORTRAIT then'
+CRT_PATCH_ORIGINAL = 'if (not G.recording_mode or G.video_control) and true then'
+CRT_PATCH_MODIFIED = 'if (not G.recording_mode or G.video_control) and true and not G.F_PORTRAIT then'
 
 GAME_LOVE_EXCLUDE = {"smali", ".pyc", "__pycache__", ".git", ".gitignore", ".bak", ".build_cache.json"}
 
@@ -636,10 +636,10 @@ def main():
             print("  ── Build options ──────────────────────────────────────")
             print()
             print("  1. CRT Shader Patch")
-            print("     Android automatically disables CRT (fixes the bottom-edge")
-            print("     artifact on tall phones). This option ALSO disables CRT")
-            print("     when testing portrait mode on desktop.")
-            print("     Skip unless you develop/test on PC.")
+            print("     On some devices the CRT shader causes visual artifacts in")
+            print("     portrait mode: a black ellipse or a thin colored sliver at")
+            print("     the bottom of the screen. Enable this to disable CRT and")
+            print("     fix those issues. If your game looks fine, skip it.")
             config["crt"] = _ask("     Apply CRT patch?", default=False)
             print()
             print("  2. Readabletro")
