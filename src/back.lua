@@ -25,7 +25,7 @@ end
 
 function Back:generate_UI(other, ui_scale, min_dims, challenge)
     min_dims = min_dims or 0.7
-    ui_scale = ui_scale or 0.9
+    ui_scale = ui_scale or 1
     local back_config = other or self.effect.center
     local name_to_check = other and other.name or self.name
     local effect_config = other and other.config  or self.effect.config
@@ -35,21 +35,21 @@ function Back:generate_UI(other, ui_scale, min_dims, challenge)
 
     if not back_config.unlocked then
         if not back_config.unlock_condition then 
-            localize{type = 'descriptions', key = 'demo_locked', set = "Other", nodes = loc_nodes, vars = loc_args}
+            localize{type = 'descriptions', key = 'demo_locked', set = "Other", nodes = loc_nodes, vars = loc_args, desc_scale = ui_scale}
         elseif back_config.unlock_condition.type == 'win_deck' then
             local other_name = localize('k_unknown')
             if G.P_CENTERS[back_config.unlock_condition.deck].unlocked then 
                 other_name = localize{type = 'name_text', set = 'Back', key = back_config.unlock_condition.deck}
             end
             loc_args = {other_name}
-            localize{type = 'descriptions', key = 'deck_locked_win', set = "Other", nodes = loc_nodes, vars = loc_args}
+            localize{type = 'descriptions', key = 'deck_locked_win', set = "Other", nodes = loc_nodes, vars = loc_args, desc_scale = ui_scale}
         elseif back_config.unlock_condition.type == 'discover_amount' then 
             loc_args = {tostring(back_config.unlock_condition.amount)}
-            localize{type = 'descriptions', key = 'deck_locked_discover', set = "Other", nodes = loc_nodes, vars = loc_args}
+            localize{type = 'descriptions', key = 'deck_locked_discover', set = "Other", nodes = loc_nodes, vars = loc_args, desc_scale = ui_scale}
         elseif back_config.unlock_condition.type == 'win_stake' then 
             local other_name = localize{type = 'name_text', set = 'Stake', key = G.P_CENTER_POOLS.Stake[back_config.unlock_condition.stake].key}
             loc_args = {other_name, colours = {get_stake_col(back_config.unlock_condition.stake)}}
-            localize{type = 'descriptions', key = 'deck_locked_stake', set = "Other", nodes = loc_nodes, vars = loc_args}
+            localize{type = 'descriptions', key = 'deck_locked_stake', set = "Other", nodes = loc_nodes, vars = loc_args, desc_scale = ui_scale}
         end
     else
         if name_to_check == 'Blue Deck' then loc_args = {effect_config.hands}
@@ -70,7 +70,7 @@ function Back:generate_UI(other, ui_scale, min_dims, challenge)
         elseif name_to_check == 'Plasma Deck' then loc_args = {effect_config.ante_scaling}
         elseif name_to_check == 'Erratic Deck' then
         end
-        localize{type = 'descriptions', key = back_config.key, set = 'Back', nodes = loc_nodes, vars = loc_args}
+        localize{type = 'descriptions', key = back_config.key, set = 'Back', nodes = loc_nodes, vars = loc_args, desc_scale = ui_scale}
     end
 
     return 

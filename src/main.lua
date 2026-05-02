@@ -31,6 +31,17 @@ local function _logcat(tag, msg)
         end)
     end
 end
+
+local function _normalize_touch_coords(x, y, dx, dy)
+    local tx, ty, tdx, tdy = x, y, dx, dy
+    if type(tx) == 'number' and type(ty) == 'number' and tx >= 0 and tx <= 1 and ty >= 0 and ty <= 1 then
+        local w, h = love.graphics.getDimensions()
+        tx, ty = tx * w, ty * h
+        if type(tdx) == 'number' then tdx = tdx * w end
+        if type(tdy) == 'number' then tdy = tdy * h end
+    end
+    return tx, ty, tdx, tdy
+end
 require "engine/object"
 require "bit"
 require "engine/string_packer"
@@ -76,7 +87,8 @@ function love.run()
 		run_time = love.timer.getTime()
 		if love.event and G and G.CONTROLLER then
 			love.event.pump()
-			local _n,_a,_b,_c,_d,_e,_f,touched
+			local input_events = {}
+			local native_touch_mouse_events = {}
 			for name, a,b,c,d,e,f in love.event.poll() do
 				if name == "quit" then
 					if not love.quit or not love.quit() then
@@ -84,24 +96,32 @@ function love.run()
 					end
 				end
 				if name == 'touchpressed' then
-					_n = 'mousepressed'
-					local tx, ty = b, c
-					if type(tx) == 'number' and type(ty) == 'number' and tx >= 0 and tx <= 1 and ty >= 0 and ty <= 1 then
-						local w, h = love.graphics.getDimensions()
-						tx, ty = tx * w, ty * h
-					end
-					_a, _b = tx, ty
-					_c = 1
-					touched = true
-					_logcat("BALATRO_INPUT", string.format("TOUCH: raw=(%s,%s) final=(%s,%s)", tostring(b), tostring(c), tostring(_a), tostring(_b)))
+					native_touch_mouse_events.mousepressed = true
+					local tx, ty = _normalize_touch_coords(b, c)
+					input_events[#input_events + 1] = {'mousepressed', tx, ty, 1, true, nil, nil, true}
+					_logcat("BALATRO_INPUT", string.format("TOUCH: raw=(%s,%s) final=(%s,%s)", tostring(b), tostring(c), tostring(tx), tostring(ty)))
+				elseif name == 'touchreleased' then
+					native_touch_mouse_events.mousereleased = true
+					local tx, ty = _normalize_touch_coords(b, c)
+					input_events[#input_events + 1] = {'mousereleased', tx, ty, 1, true, nil, nil, true}
+				elseif name == 'touchmoved' then
+					native_touch_mouse_events.mousemoved = true
+					local tx, ty, tdx, tdy = _normalize_touch_coords(b, c, d, e)
+					input_events[#input_events + 1] = {'mousemoved', tx, ty, tdx or 0, tdy or 0, true, nil, true}
 				elseif name == 'mousepressed' then
-					_n,_a,_b,_c,_d,_e,_f = name,a,b,c,d,e,f
+					input_events[#input_events + 1] = {name,a,b,c,d,e,f}
+				elseif name == 'mousereleased' or name == 'mousemoved' then
+					input_events[#input_events + 1] = {name,a,b,c,d,e,f}
 				else
 					love.handlers[name](a,b,c,d,e,f)
 				end
 			end
-			if _n then
-				love.handlers['mousepressed'](_a,_b,_c,touched)
+			for _, ev in ipairs(input_events) do
+				local name = ev[1]
+				local from_touch_mouse = (name == 'mousemoved' and ev[6] == true) or ((name == 'mousepressed' or name == 'mousereleased') and ev[5] == true)
+				if not (native_touch_mouse_events[name] and from_touch_mouse and not ev[8]) then
+					love.handlers[name](ev[2], ev[3], ev[4], ev[5], ev[6], ev[7])
+				end
 			end
 		end
 
@@ -295,11 +315,16 @@ function love.mousepressed(x, y, button, touch)
     if not (G and G.CONTROLLER) then return end
 
     if touch and G.CONTROLLER.cursor_position then
+        G.CONTROLLER.touch_position = G.CONTROLLER.touch_position or {x = 0, y = 0, active = false, seen = false}
+        G.CONTROLLER.touch_position.x = x
+        G.CONTROLLER.touch_position.y = y
+        G.CONTROLLER.touch_position.active = true
+        G.CONTROLLER.touch_position.seen = true
         G.CONTROLLER.cursor_position.x = x
         G.CONTROLLER.cursor_position.y = y
         if G.CURSOR and G.CURSOR.T then
-            G.CURSOR.T.x = x/(G.TILESCALE*G.TILESIZE) - (G.ROOM and G.ROOM.T and G.ROOM.T.x or 0)
-            G.CURSOR.T.y = y/(G.TILESCALE*G.TILESIZE) - (G.ROOM and G.ROOM.T and G.ROOM.T.y or 0)
+            G.CURSOR.T.x = x/(G.TILESCALE*G.TILESIZE)
+            G.CURSOR.T.y = y/(G.TILESCALE*G.TILESIZE)
         end
     end
 
@@ -317,12 +342,35 @@ function love.mousepressed(x, y, button, touch)
 end
 
 
-function love.mousereleased(x, y, button)
+function love.mousereleased(x, y, button, touch)
+    if not (G and G.CONTROLLER) then return end
+    if touch and G.CONTROLLER.touch_position then
+        G.CONTROLLER.touch_position.x = x
+        G.CONTROLLER.touch_position.y = y
+        G.CONTROLLER.touch_position.active = false
+        G.CONTROLLER.touch_position.seen = true
+        G.CONTROLLER.cursor_position.x = x
+        G.CONTROLLER.cursor_position.y = y
+    end
+    G.CONTROLLER:set_HID_flags(touch and 'touch' or 'mouse')
     if button == 1 then G.CONTROLLER:L_cursor_release(x, y) end
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
+    if not (G and G.CONTROLLER) then return end
+    dx = dx or 0
+    dy = dy or 0
 	G.CONTROLLER.last_touch_time = G.CONTROLLER.last_touch_time or -1
+
+    if istouch then
+        G.CONTROLLER.touch_position = G.CONTROLLER.touch_position or {x = 0, y = 0, active = false, seen = false}
+        G.CONTROLLER.touch_position.x = x
+        G.CONTROLLER.touch_position.y = y
+        G.CONTROLLER.touch_position.active = true
+        G.CONTROLLER.touch_position.seen = true
+        G.CONTROLLER.last_touch_time = G.TIMERS.UPTIME
+        G.CONTROLLER:set_HID_flags('touch')
+    end
 
 	if istouch and math.abs(dx) < PORTRAIT_CONFIG.anti_jitter_threshold and math.abs(dy) < PORTRAIT_CONFIG.anti_jitter_threshold then
 		return

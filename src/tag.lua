@@ -526,9 +526,7 @@ function Tag:generate_UI(_size)
                 
                 -- Sets dynamic popup alignment based on screen orientation and hand setting
                 if G.F_PORTRAIT then
-                    -- 'tl' aligns left borders and places above, 'tr' aligns right borders and places above
-                    local popup_align = (G.SETTINGS.play_main_hand == 1) and 'tr' or 'tl'
-                    _self.config.h_popup_config = {align = popup_align, offset = {x = 0, y = -0.2}, parent = _self}
+                    _self.config.h_popup_config = {align = 'tm', offset = {x = 0, y = -0.2}, parent = _self}
                 else
                     -- Original landscape configuration
                     _self.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = _self}

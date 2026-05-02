@@ -450,7 +450,13 @@ function CardArea:align_cards()
 
     local usable_w = self.T.w
     if G.F_PORTRAIT then
-        usable_w = usable_w * PORTRAIT_CONFIG.usable_w_factor
+        local pc = PORTRAIT_CONFIG or {}
+        usable_w = usable_w * (pc.usable_w_factor or 0.96)
+        if self.config.type == 'hand' and G.ROOM and G.ROOM.T then
+            local room_padding = pc.hand_screen_padding or 0.28
+            local max_usable_w = math.max(self.card_w or G.CARD_W, G.ROOM.T.w - 2*room_padding)
+            usable_w = math.min(usable_w, max_usable_w)
+        end
     end
     
     if self.config.type == 'hand' and (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK  or G.STATE == G.STATES.PLANET_PACK) then

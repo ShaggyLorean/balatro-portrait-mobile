@@ -4268,6 +4268,9 @@ function Card:move(dt)
     Moveable.move(self, dt)
     if self.children.h_popup then
         self.children.h_popup:set_alignment(self:align_h_popup())
+        if prepare_portrait_popup_fit then
+            prepare_portrait_popup_fit(self.children.h_popup)
+        end
     end
 end
 
@@ -4289,7 +4292,8 @@ function Card:align_h_popup()
             local room_h = G.ROOM and G.ROOM.T and G.ROOM.T.h or 20
             local card_cx = self.T.x + self.T.w / 2
             local card_cy = self.T.y + self.T.h / 2
-            local edge_margin = 1.5
+            -- Margin large enough for typical popup half-width (~2 tiles) so the tooltip stays inside the screen
+            local edge_margin = 2.5
 
             if card_cy > room_h * 0.55 then
                 popup_direction = 'tm'
@@ -4299,10 +4303,11 @@ function Card:align_h_popup()
                 offset_y_bm = focused_ui and 0.15 or 0.2
             end
 
+            -- Push popup back into screen when card is near edges (room_w/2 is screen center)
             if card_cx < edge_margin then
-                offset_x = 0.3
+                offset_x = edge_margin - card_cx + 0.2
             elseif card_cx > room_w - edge_margin then
-                offset_x = -0.3
+                offset_x = (room_w - edge_margin) - card_cx - 0.2
             else
                 offset_x = 0
             end
@@ -4314,6 +4319,10 @@ function Card:align_h_popup()
             xy_bond = 'Strong',
             r_bond = 'Weak',
             wh_bond = 'Weak',
+            fit_to_room = G.F_PORTRAIT and true or nil,
+            lr_clamp = nil,
+            can_drag = G.F_PORTRAIT and false or nil,
+            snap_to_fit = G.F_PORTRAIT and true or nil,
             offset = {
                 x = offset_x,
                 y = focused_ui and (

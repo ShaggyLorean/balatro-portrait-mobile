@@ -19,6 +19,7 @@ self.cursor_up = {T = {x=0, y=0}, target = nil, time = 0.1, handled = true}
 self.cursor_hover = {T = {x=0, y=0}, target = nil, time = 0, handled = true}
 self.cursor_collider = nil --The node that collides with the cursor this frame
 self.cursor_position = {x=0,y=0} --NOT IN GAME UNITS
+self.touch_position = {x=0, y=0, active=false, seen=false}
 
 --For key presses, hold times, and if they are released directly from LOVE
 self.pressed_keys = {}
@@ -173,8 +174,13 @@ function Controller:set_cursor_position()
             self.focused.target= nil
         end
 
-        --Set the position of the cursor to the love position of the mouse, derive cursor transform from that
-        self.cursor_position.x, self.cursor_position.y = love.mouse.getPosition()
+        -- Android touch can report a stale mouse position on some launches, so keep touch coordinates event-driven.
+        if self.HID.touch and self.touch_position and self.touch_position.seen then
+            self.cursor_position.x = self.touch_position.x
+            self.cursor_position.y = self.touch_position.y
+        elseif self.HID.mouse then
+            self.cursor_position.x, self.cursor_position.y = love.mouse.getPosition()
+        end
         G.CURSOR.T.x = self.cursor_position.x/(G.TILESCALE*G.TILESIZE)
         G.CURSOR.T.y = self.cursor_position.y/(G.TILESCALE*G.TILESIZE)
         G.CURSOR.VT.x = G.CURSOR.T.x
@@ -1383,4 +1389,3 @@ function Controller:navigate_focus(dir)
     --Set the cursor to be in the correct position for that target
     self:update_cursor()
 end
-

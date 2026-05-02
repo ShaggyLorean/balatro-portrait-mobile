@@ -29,6 +29,9 @@ function UIBox:init(args)
     if args.config then
         self.config = args.config
         args.config.major = args.config.major or args.config.parent or self
+        if args.config.instance_type == 'POPUP' and apply_portrait_tooltip_fit then
+            apply_portrait_tooltip_fit(args.config)
+        end
 
         self:set_alignment({
             major = args.config.major,
@@ -49,6 +52,9 @@ function UIBox:init(args)
             self.states.collide.can = true
         else
             self.states.collide.can = args.config.can_collide
+        end
+        if args.config.can_drag ~= nil then
+            self.states.drag.can = args.config.can_drag
         end
 
         self.parent = self.config.parent
@@ -84,10 +90,14 @@ function UIBox:init(args)
         self.VT.y = self.VT.y - self.Mid.role.offset.y + (self.Mid.parent.config.padding or 0)
     end
 
-    if self.alignment and self.alignment.lr_clamp then
+    if self.config and self.config.fit_to_room then
+        self:fit_to_room()
+    elseif self.alignment and self.alignment.lr_clamp then
         self:lr_clamp()
     end
-
+    if self.config and self.config.snap_to_fit and prepare_portrait_popup_fit then
+        prepare_portrait_popup_fit(self)
+    end
     self.UIRoot:initialize_VT(true)
     if getmetatable(self) == UIBox then
         if args.config.instance_type then
@@ -313,13 +323,48 @@ function UIBox:recalculate()
     self.T.w = self.UIRoot.T.w
     self.T.h = self.UIRoot.T.h
     G.REFRESH_FRAME_MAJOR_CACHE = (G.REFRESH_FRAME_MAJOR_CACHE or 0) + 1
+    if self.config and self.config.fit_to_room then
+        self:align_to_major()
+        self:fit_to_room()
+        if self.config.snap_to_fit and prepare_portrait_popup_fit then
+            prepare_portrait_popup_fit(self)
+        end
+    end
     self.UIRoot:initialize_VT()
     G.REFRESH_FRAME_MAJOR_CACHE = (G.REFRESH_FRAME_MAJOR_CACHE > 1 and G.REFRESH_FRAME_MAJOR_CACHE - 1 or nil)
 end
 
 function UIBox:move(dt)
     Moveable.move(self, dt)
+    self:fit_to_room()
+    if self.config and self.config.snap_to_fit and prepare_portrait_popup_fit then
+        prepare_portrait_popup_fit(self)
+    end
     Moveable.move(self.UIRoot, dt)
+end
+
+function UIBox:fit_to_room()
+    if not (G and G.F_PORTRAIT and G.ROOM and G.ROOM.T and self.config and self.config.fit_to_room) then return end
+
+    local dx, dy = 0, 0
+    if get_portrait_room_fit_delta then
+        dx, dy = get_portrait_room_fit_delta(self, {
+            screen_padding = self.config.screen_padding,
+            touch_above_cursor = self.config.touch_above_cursor,
+            touch_gap = self.config.touch_gap
+        })
+    end
+
+    if dx ~= 0 or dy ~= 0 then
+        self.T.x = self.T.x + dx
+        self.T.y = self.T.y + dy
+        self.VT.x = self.T.x
+        self.VT.y = self.T.y
+        self:calculate_parrallax()
+        if self.UIRoot and self.UIRoot.initialize_VT then
+            self.UIRoot:initialize_VT()
+        end
+    end
 end
 
 function UIBox:drag(offset)

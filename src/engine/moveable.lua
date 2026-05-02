@@ -320,10 +320,20 @@ function Moveable:move(dt)
 end
 
 function Moveable:lr_clamp()
-    if self.T.x < 0 then self.T.x = 0 end
-    if self.VT.x < 0 then self.VT.x = 0 end
-    if (self.T.x + self.T.w) > G.ROOM.T.w then self.T.x = G.ROOM.T.w - self.T.w end
-    if (self.VT.x + self.VT.w) > G.ROOM.T.w  then self.VT.x = G.ROOM.T.w - self.VT.w end
+    if not G.ROOM or not G.ROOM.T then return end
+    local room_w = G.ROOM.T.w
+    if self.T.w >= room_w then
+        self.T.x = 0
+    else
+        if self.T.x < 0 then self.T.x = 0 end
+        if (self.T.x + self.T.w) > room_w then self.T.x = room_w - self.T.w end
+    end
+    if self.VT.w >= room_w then
+        self.VT.x = 0
+    else
+        if self.VT.x < 0 then self.VT.x = 0 end
+        if (self.VT.x + self.VT.w) > room_w  then self.VT.x = room_w - self.VT.w end
+    end
 end
 
 function Moveable:glue_to_major(major_tab)

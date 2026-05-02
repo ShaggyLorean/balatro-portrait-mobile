@@ -8,14 +8,13 @@ Usage:
     python build.py [options]
 
 Options:
-    --crt                 Disable CRT shader for all portrait modes
-                          (Android disables it automatically; this also covers desktop)
-    --no-crt              Keep CRT shader enabled
-    --readabletro         Apply Readabletro font and high-res texture patch
+    --crt                 Apply the CRT-disabling portrait patch
+    --no-crt              Keep the source CRT shader path unchanged (default)
+    --readabletro         Apply Readabletro font and high-res texture patch (default)
     --no-readabletro      Skip Readabletro patch
     --with-lovely         Build with Lovely mod support embedded
-    --no-lovely           Build vanilla (no mod support)
-    --balatro PATH        Path to Balatro.exe (skips the interactive prompt)
+    --no-lovely           Build vanilla, no mod support (default)
+    --balatro PATH        Path to Balatro game file (skips the interactive prompt)
     --skip-setup          Skip resource extraction (if src/resources already exists)
     --skip-apk            Only build Game.love, skip APK packaging
     --force               Force Game.love rebuild even if sources are unchanged
@@ -40,6 +39,11 @@ import zipfile
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
+DEFAULT_BUILD_CONFIG = {
+    "crt": False,
+    "readabletro": True,
+    "lovely": False,
+}
 
 WORKDIR  = os.path.abspath("balatro-mobile-maker")
 JDK_DIR  = os.path.join(WORKDIR, "jdk")
@@ -65,6 +69,12 @@ LOVELY_APK_URL = "https://lmm.shorty.systems/base.apk"
 # These strings must match exactly what's in src/game.lua
 CRT_PATCH_ORIGINAL = 'if (not G.recording_mode or G.video_control) and true then'
 CRT_PATCH_MODIFIED = 'if (not G.recording_mode or G.video_control) and true and not G.F_PORTRAIT then'
+CRT_MASK_ORIGINAL = '''    //smoothly transition the edge to black
+    //buffer for the outer edge, this gets wonky if there is no buffer
+    MY_HIGHP_OR_MEDIUMP number mask = (1.0 - smoothstep(1.0-feather_fac,1.0,abs(tc.x) - BUFF))
+                * (1.0 - smoothstep(1.0-feather_fac,1.0,abs(tc.y) - BUFF));'''
+CRT_MASK_MODIFIED = CRT_MASK_ORIGINAL + '''
+    mask = 1.0 - (1.0 - mask) * clamp(crt_intensity/(0.16*0.3), 0.0, 1.0);'''
 
 GAME_LOVE_EXCLUDE = {"smali", ".pyc", "__pycache__", ".git", ".gitignore", ".bak", ".build_cache.json"}
 
@@ -138,7 +148,13 @@ class _Step:
 def _ask(prompt, default=None):
     hint = f" [{'y' if default else 'n'}]" if default is not None else ""
     while True:
-        r = input(f"{prompt}{hint}: ").strip().lower()
+        try:
+            r = input(f"{prompt}{hint}: ").strip().lower()
+        except EOFError:
+            if default is not None:
+                print(f"{prompt}{hint}: {'y' if default else 'n'}")
+                return default
+            raise
         if not r and default is not None:
             return default
         if r in ("y", "yes"):
@@ -186,18 +202,27 @@ def _download(url, dest):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def setup_resources(balatro_path=None):
-    """Extract resources and localization from Balatro.exe into src/."""
+    """Extract resources and localization from the Balatro game file into src/."""
     script_dir      = os.path.dirname(os.path.abspath(__file__))
     game_files_dir  = os.path.join(script_dir, "game_original_files")
     src_dir         = os.path.join(script_dir, "src")
 
     if not balatro_path:
         print()
-        print("  Path to Balatro.exe:")
+        print("  Path to Balatro game file:")
         print("    Windows  D:\\Steam\\steamapps\\common\\Balatro\\Balatro.exe")
         print("    Linux    ~/.steam/steam/steamapps/common/Balatro/Balatro.exe")
-        print("    macOS    ~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.exe")
+        print("    macOS    ~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app/Contents/Resources/Balatro.love")
+        print("             (you can also pass the .app bundle path - it will be found automatically)")
         balatro_path = input("  > ").strip().strip('"').strip("'")
+
+    balatro_path = os.path.expanduser(balatro_path)
+
+    if os.path.isdir(balatro_path) and balatro_path.rstrip("/").endswith(".app"):
+        love_path = os.path.join(balatro_path, "Contents", "Resources", "Balatro.love")
+        if os.path.exists(love_path):
+            print("  Detected macOS app bundle - using Balatro.love inside it.")
+            balatro_path = love_path
 
     if not os.path.exists(balatro_path):
         print(f"  ERROR: File not found: {balatro_path}")
@@ -285,6 +310,23 @@ def _apply_crt_patch(src_dir, apply):
         f.write(content)
 
 
+def _apply_crt_slider_mask_patch(src_dir):
+    crt_shader = os.path.join(src_dir, "resources", "shaders", "CRT.fs")
+    if not os.path.exists(crt_shader):
+        return
+    with open(crt_shader, "r", encoding="utf-8") as f:
+        content = f.read()
+    if CRT_MASK_MODIFIED in content:
+        return
+    if CRT_MASK_ORIGINAL not in content:
+        print("  Warning: CRT slider mask patch target not found in CRT.fs - skipping.")
+        return
+    content = content.replace(CRT_MASK_ORIGINAL, CRT_MASK_MODIFIED)
+    with open(crt_shader, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("  CRT edge mask now follows the CRT slider.")
+
+
 def _apply_readabletro(src_dir, apply):
     font_src        = os.path.join("patches", "readabletro", "fonts", "TypoQuik-Bold.ttf")
     font_dst        = os.path.join(src_dir, "resources", "fonts", "TypoQuik-Bold.ttf")
@@ -367,6 +409,7 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
 
     if apply_crt:
         _apply_crt_patch(src_dir, apply=True)
+    _apply_crt_slider_mask_patch(src_dir)
     if apply_readabletro:
         _apply_readabletro(src_dir, apply=True)
 
@@ -640,25 +683,25 @@ def main():
             print("     portrait mode: a black ellipse or a thin colored sliver at")
             print("     the bottom of the screen. Enable this to disable CRT and")
             print("     fix those issues. If your game looks fine, skip it.")
-            config["crt"] = _ask("     Apply CRT patch?", default=False)
+            config["crt"] = _ask("     Apply CRT patch?", default=DEFAULT_BUILD_CONFIG["crt"])
             print()
             print("  2. Readabletro")
             print("     Replaces the pixel font with TypoQuik-Bold and adds")
             print("     high-resolution card and UI textures.")
-            config["readabletro"] = _ask("     Apply Readabletro?", default=False)
+            config["readabletro"] = _ask("     Apply Readabletro?", default=DEFAULT_BUILD_CONFIG["readabletro"])
             print()
             print("  3. Lovely Mod Support")
             print("     Embeds the Lovely runtime so mods (e.g. Steamodded)")
             print("     can be loaded. Requires a rooted device to install mods.")
-            config["lovely"] = _ask("     Enable Lovely?", default=True)
+            config["lovely"] = _ask("     Enable Lovely?", default=DEFAULT_BUILD_CONFIG["lovely"])
             print()
             with open(CONFIG_FILE, "w") as f:
                 json.dump(config, f, indent=2)
             print("  Settings saved to .buildconfig.json")
 
-    apply_crt         = cli.get("crt",          config.get("crt",         False))
-    apply_readabletro = cli.get("readabletro",   config.get("readabletro", False))
-    use_lovely        = cli.get("lovely",        config.get("lovely",      True))
+    apply_crt         = cli.get("crt",          config.get("crt",         DEFAULT_BUILD_CONFIG["crt"]))
+    apply_readabletro = cli.get("readabletro",   config.get("readabletro", DEFAULT_BUILD_CONFIG["readabletro"]))
+    use_lovely        = cli.get("lovely",        config.get("lovely",      DEFAULT_BUILD_CONFIG["lovely"]))
     balatro_path      = cli.get("balatro_path",  None)
     force             = cli.get("force",         False)
 

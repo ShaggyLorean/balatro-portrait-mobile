@@ -268,12 +268,18 @@ function Node:hover()
     if self.config and self.config.h_popup then
         if not self.children.h_popup then 
             self.config.h_popup_config.instance_type = 'POPUP'
+            if apply_portrait_tooltip_fit then
+                apply_portrait_tooltip_fit(self.config.h_popup_config)
+            end
             self.children.h_popup = UIBox{
                 definition = self.config.h_popup,
                 config = self.config.h_popup_config,
             }
             self.children.h_popup.states.collide.can = false
-            self.children.h_popup.states.drag.can = true
+            self.children.h_popup.states.drag.can = not G.F_PORTRAIT
+            if prepare_portrait_popup_fit then
+                prepare_portrait_popup_fit(self.children.h_popup)
+            end
         end
     end
 end

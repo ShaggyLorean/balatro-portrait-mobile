@@ -1151,6 +1151,8 @@ function Game:delete_run()
         if self.blind_select then self.blind_select:remove(); self.blind_select = nil end
         if self.booster_pack then self.booster_pack:remove(); self.booster_pack = nil end
         if self.MAIN_MENU_UI then self.MAIN_MENU_UI:remove(); self.MAIN_MENU_UI = nil end
+        if self.PROFILE_BUTTON then self.PROFILE_BUTTON:remove(); self.PROFILE_BUTTON = nil end
+        if self.LANGUAGE_BUTTON then self.LANGUAGE_BUTTON:remove(); self.LANGUAGE_BUTTON = nil end
         if self.SPLASH_FRONT then self.SPLASH_FRONT:remove(); self.SPLASH_FRONT = nil end
         if self.SPLASH_BACK then self.SPLASH_BACK:remove(); self.SPLASH_BACK = nil end
         if self.SPLASH_LOGO then self.SPLASH_LOGO:remove(); self.SPLASH_LOGO = nil end

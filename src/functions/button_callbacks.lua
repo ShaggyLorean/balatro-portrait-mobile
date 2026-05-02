@@ -1313,9 +1313,13 @@ G.FUNCS.RUN_SETUP_check_back = function(e)
   if G.GAME.viewed_back.name ~= e.config.id then 
     --removes the UI from the previously selected back and adds the new one
 
+    local mobile_ui = PORTRAIT_CONFIG and PORTRAIT_CONFIG.mobile_ui or {}
+    local setup_back_desc_scale = G.F_PORTRAIT and (mobile_ui.run_setup_back_desc_scale or 0.72) or nil
+    local setup_back_min_dims = G.F_PORTRAIT and (mobile_ui.run_setup_back_min_dims or 0.76) or nil
+
     e.config.object:remove() 
     e.config.object = UIBox{
-      definition = G.GAME.viewed_back:generate_UI(),
+      definition = G.GAME.viewed_back:generate_UI(nil, setup_back_desc_scale, setup_back_min_dims),
       config = {offset = {x=0,y=0}, align = 'cm', parent = e}
     }
     e.config.id = G.GAME.viewed_back.name
@@ -2240,11 +2244,22 @@ end
 
   G.FUNCS.show_infotip = function(e)
     if e.config.ref_table then 
+      local info_align, info_offset = 'cl', {x=-0.03,y=0}
+      if get_portrait_side_tooltip_config then
+        info_align, info_offset = get_portrait_side_tooltip_config(e)
+      end
       e.children.info = UIBox{
         definition = {n=G.UIT.ROOT, config = {align = 'cm', colour = G.C.CLEAR, padding = 0.02}, nodes=e.config.ref_table},
-        config = {offset = {x=-0.03,y=0}, align = 'cl', parent = e}
+        config = {offset = info_offset, align = info_align, parent = e, can_collide = false}
       }
       e.children.info:align_to_major()
+      e.children.info.states.collide.can = false
+      e.children.info.states.drag.can = false
+      if fit_portrait_side_tooltip then
+        fit_portrait_side_tooltip(e.children.info, e)
+      elseif prepare_portrait_popup_fit then
+        prepare_portrait_popup_fit(e.children.info)
+      end
       e.config.ref_table = nil
     end
   end
@@ -2437,6 +2452,7 @@ end
     G.SETTINGS.COMP.submission_name = true
     if G.MAIN_MENU_UI then G.MAIN_MENU_UI:remove() end
     if G.PROFILE_BUTTON then G.PROFILE_BUTTON:remove() end
+    if G.LANGUAGE_BUTTON then G.LANGUAGE_BUTTON:remove() end
     set_main_menu_UI()
     G:save_progress()
     G.FILE_HANDLER.force = true
@@ -2446,6 +2462,7 @@ end
     G.SETTINGS.COMP.name = ''
     if G.MAIN_MENU_UI then G.MAIN_MENU_UI:remove() end
     if G.PROFILE_BUTTON then G.PROFILE_BUTTON:remove() end
+    if G.LANGUAGE_BUTTON then G.LANGUAGE_BUTTON:remove() end
     set_main_menu_UI()
   end
 
@@ -2730,8 +2747,9 @@ end
     -- Dynamic Y-limit to account for Portrait mode's lower UI placement
     local y_limit = G.F_PORTRAIT and 50 or 10
 
-    if not e.config.ref_table.run_info and G.blind_select and G.blind_select.VT.y < y_limit and e.config.id and G.blind_select_opts[string.lower(e.config.id)] then 
-      if e.UIBox.role.xy_bond ~= 'Weak' then e.UIBox:set_role({xy_bond = 'Weak'}) end
+    if not e.config.ref_table.run_info and G.blind_select and G.blind_select.VT.y < y_limit and e.config.id and G.blind_select_opts[string.lower(e.config.id)] then
+      -- Portrait: skip xy_bond change to keep blind cards locked in row layout (prevents fly-away)
+      if not G.F_PORTRAIT and e.UIBox.role.xy_bond ~= 'Weak' then e.UIBox:set_role({xy_bond = 'Weak'}) end
       if (e.config.ref_table.deck ~= 'on' and e.config.id == G.GAME.blind_on_deck) or
         (e.config.ref_table.deck ~= 'off' and e.config.id ~= G.GAME.blind_on_deck) then
 
@@ -2751,9 +2769,9 @@ end
             _border.config.outline_colour = _border.config.outline and _border.config.outline_colour or get_blind_main_colour(e.config.id)
             _border.config.outline = 1.5
             
-            -- Elevates the active blind visually
+            -- Elevates the active blind visually (portrait: no y-shift to prevent row drift)
             local y_offset_active = G.F_PORTRAIT and 0 or -0.9
-            _blind_choice.alignment.offset.y = y_offset_active
+            if not G.F_PORTRAIT then _blind_choice.alignment.offset.y = y_offset_active end
             
             if _tag and _tag_container then 
               _tag_container.children[2].config.draw_after = false
@@ -2784,19 +2802,22 @@ end
             _border.config.outline_colour = nil
             _border.config.outline = nil
             
-            -- Pushes inactive blinds down visually
-            local y_offset_inactive = G.F_PORTRAIT and 1.2 or -0.2
+            -- Pushes inactive blinds down visually (portrait: no y-shift to prevent row drift)
+            local y_offset_inactive = G.F_PORTRAIT and 0 or -0.2
             _blind_choice.alignment.offset.y = y_offset_inactive
             
             if _tag and _tag_container then 
               if G.GAME.round_resets.blind_states[e.config.id] == 'Skipped' or
                 G.GAME.round_resets.blind_states[e.config.id] == 'Defeated' then
-                _tag_container.children[2]:set_role({xy_bond = 'Weak'})
-                _tag_container.children[2]:align(0, 10)
-                _tag_container.children[1]:set_role({xy_bond = 'Weak'})
-                _tag_container.children[1]:align(0, 10)
+                if not _tag_container.config.finished_blind_offset_applied then
+                  _tag_container.children[2]:set_role({xy_bond = 'Weak'})
+                  _tag_container.children[2]:align(0, 10)
+                  _tag_container.children[1]:set_role({xy_bond = 'Weak'})
+                  _tag_container.children[1]:align(0, 10)
+                  _tag_container.config.finished_blind_offset_applied = true
+                end
               end
-              if G.GAME.round_resets.blind_states[e.config.id] == 'Skipped' then
+              if G.GAME.round_resets.blind_states[e.config.id] == 'Skipped' and not _blind_choice.children.alert then
                 _blind_choice.children.alert = UIBox{
                   definition = create_UIBox_card_alert({text_rot = -0.35, no_bg = true,text = localize('k_skipped_cap'), bump_amount = 1, scale = 0.9, maxw = 3.4}),
                   config = {
@@ -2829,9 +2850,11 @@ end
     if (e.states.hover.is or e.parent.states.hover.is) and (e.created_on_pause == G.SETTINGS.paused) and
       not e.parent.children.alert then
         local _sprite = e.config.ref_table:get_uibox_table()
+        local popup_align = 'tm'
+        local popup_offset = {x = 0, y = G.F_PORTRAIT and -0.45 or -0.1}
         e.parent.children.alert = UIBox{
           definition = G.UIDEF.card_h_popup(_sprite),
-          config = {align="tm", offset = {x = 0, y = -0.1},
+          config = {align=popup_align, offset = popup_offset,
           major = e.parent,
           instance_type = 'POPUP'},
       }
@@ -2839,6 +2862,7 @@ end
       play_sound('paper1', math.random()*0.1 + 0.55, 0.42)
       play_sound('tarot2', math.random()*0.1 + 0.55, 0.09)
       e.parent.children.alert.states.collide.can = false
+      e.parent.children.alert.states.drag.can = false
     elseif e.parent.children.alert and
     ((not e.states.collide.is and not e.parent.states.collide.is) or (e.created_on_pause ~= G.SETTINGS.paused)) then
       e.parent.children.alert:remove()
@@ -2916,35 +2940,50 @@ end
         trigger = 'immediate',
         func = function()
           play_sound('other1')
-          G.blind_select_opts.boss:set_role({xy_bond = 'Weak'})
-          G.blind_select_opts.boss.alignment.offset.y = 20
+          -- Portrait: skip slide-out animation to prevent layout drift
+          if not G.F_PORTRAIT then
+            G.blind_select_opts.boss:set_role({xy_bond = 'Weak'})
+            G.blind_select_opts.boss.alignment.offset.y = 20
+          end
           return true
         end
       }))
     G.E_MANAGER:add_event(Event({
       trigger = 'after',
-      delay = 0.3,
+      delay = G.F_PORTRAIT and 0.05 or 0.3,
       func = (function()
         local par = G.blind_select_opts.boss.parent
         G.GAME.round_resets.blind_choices.Boss = get_new_boss()
 
+        -- Remember the OLD boss's actual screen position before removing it,
+        -- so the new UIBox can start from the same spot (and not snap to T={x,0,0,0}).
+        local prev_T = G.blind_select_opts.boss and G.blind_select_opts.boss.T
+        local init_T = prev_T
+            and {prev_T.x, prev_T.y, prev_T.w, prev_T.h}
+            or {par.T.x, 0, 0, 0}
+
         G.blind_select_opts.boss:remove()
         G.blind_select_opts.boss = UIBox{
-          T = {par.T.x, 0, 0, 0, },
+          T = init_T,
           definition =
             {n=G.UIT.ROOT, config={align = "cm", colour = G.C.CLEAR}, nodes={
               UIBox_dyn_container({create_UIBox_blind_choice('Boss')},false,get_blind_main_colour('Boss'), mix_colours(G.C.BLACK, get_blind_main_colour('Boss'), 0.8))
             }},
           config = {align="bmi",
-                    offset = {x=0,y=G.ROOM.T.y + 9},
+                    offset = {x=0,y=G.F_PORTRAIT and 0 or (G.ROOM.T.y + 9)},
                     major = par,
-                    xy_bond = 'Weak'
+                    xy_bond = G.F_PORTRAIT and 'Strong' or 'Weak'
                   }
         }
         par.config.object = G.blind_select_opts.boss
         par.config.object:recalculate()
         G.blind_select_opts.boss.parent = par
         G.blind_select_opts.boss.alignment.offset.y = 0
+        if G.F_PORTRAIT then
+            -- Force-snap to the row slot so it doesn't render at its initial T.
+            G.blind_select_opts.boss:align_to_major()
+            G.blind_select_opts.boss:hard_set_VT()
+        end
         
         G.E_MANAGER:add_event(Event({blocking = false, trigger = 'after', delay = 0.5,func = function()
             G.CONTROLLER.locks.boss_reroll = nil

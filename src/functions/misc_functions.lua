@@ -1827,6 +1827,7 @@ function localize(args, misc_cat)
         end
         local desc_scale = G.LANG.font.DESCSCALE
         if G.F_MOBILE_UI then desc_scale = desc_scale*1.5 end
+        if args.desc_scale then desc_scale = desc_scale*args.desc_scale end
         if args.type == 'name' then
           final_line[#final_line+1] = {n=G.UIT.O, config={
             object = DynaText({string = {assembled_string},

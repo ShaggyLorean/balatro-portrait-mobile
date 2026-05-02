@@ -804,14 +804,19 @@ function set_alerts()
 end
 
 function set_main_menu_UI()
+    if G.PROFILE_BUTTON then G.PROFILE_BUTTON:remove(); G.PROFILE_BUTTON = nil end
+    if G.LANGUAGE_BUTTON then G.LANGUAGE_BUTTON:remove(); G.LANGUAGE_BUTTON = nil end
+
     local x_offset_base = 0
     local x_offset_plus = 0
     local y_offset_base = 0
+    local corner_y_offset = 0
     if G.F_PORTRAIT then
         local pc = PORTRAIT_CONFIG.main_menu
         x_offset_base = pc.x_offset_base
         x_offset_plus = pc.x_offset_plus
         y_offset_base = pc.y_offset_base
+        corner_y_offset = pc.corner_y_offset or y_offset_base
     end
     local menu_x_offset = x_offset_base*2+x_offset_plus
     if G.F_PORTRAIT then
@@ -819,7 +824,7 @@ function set_main_menu_UI()
     end
 
     G.MAIN_MENU_UI = UIBox{
-        definition = create_UIBox_main_menu_buttons(), 
+        definition = create_UIBox_main_menu_buttons(),
         config = {align="bmi", offset = {x=menu_x_offset,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
     }
     G.MAIN_MENU_UI.alignment.offset.y = y_offset_base
@@ -828,14 +833,22 @@ function set_main_menu_UI()
         blockable = false,
         blocking = false,
         func = (function()
+            if not G.MAIN_MENU_UI then return true end
             if (not G.F_DISP_USERNAME) or (type(G.F_DISP_USERNAME) == 'string') then
                 G.PROFILE_BUTTON = UIBox{
-                    definition =  create_UIBox_profile_button(), 
-                        config = {align="bli", offset = {x=-10,y=y_offset_base}, major = G.ROOM_ATTACH, bond = 'Weak'}}
-                    G.PROFILE_BUTTON.alignment.offset.x = x_offset_base
-                    G.PROFILE_BUTTON:align_to_major()
-                return true
+                    definition = create_UIBox_profile_button(),
+                    config = {align="bli", offset = {x=-10,y=corner_y_offset}, major = G.ROOM_ATTACH, bond = 'Weak'}}
+                G.PROFILE_BUTTON.alignment.offset.x = x_offset_base
+                G.PROFILE_BUTTON:align_to_major()
             end
+            if G.F_PORTRAIT and not G.F_ENGLISH_ONLY then
+                G.LANGUAGE_BUTTON = UIBox{
+                    definition = create_UIBox_language_button(),
+                    config = {align="bri", offset = {x=10,y=corner_y_offset}, major = G.ROOM_ATTACH, bond = 'Weak'}}
+                G.LANGUAGE_BUTTON.alignment.offset.x = -x_offset_base
+                G.LANGUAGE_BUTTON:align_to_major()
+            end
+            return true
         end)
       }))
 
@@ -1151,17 +1164,23 @@ function add_round_eval_row(config)
         G.E_MANAGER:add_event(Event({
             trigger = 'before',delay = 0.5,
             func = function()
-                UIBox{
-                    definition = {n=G.UIT.ROOT, config={align = 'cm', colour = G.C.CLEAR}, nodes={
-                        {n=G.UIT.R, config={id = 'cash_out_button', align = "cm", padding = 0.1, minw = 7, r = 0.15, colour = G.C.ORANGE, shadow = true, hover = true, one_press = true, button = 'cash_out', focus_args = {snap_to = true}}, nodes={
-                            {n=G.UIT.T, config={text = localize('b_cash_out')..": ", scale = 1, colour = G.C.UI.TEXT_LIGHT, shadow = true}},
-                            {n=G.UIT.T, config={text = localize('$')..config.dollars, scale = 1.2*scale, colour = G.C.WHITE, shadow = true, juice = true}}
-                    }},}},
-                    config = {
-                      align = 'tmi',
-                      offset ={x=0,y=0.4},
-                      major = G.round_eval}
-                }
+                local cash_out_button = {n=G.UIT.R, config={id = 'cash_out_button', align = "cm", padding = G.F_PORTRAIT and 0.03 or 0.1, minw = G.F_PORTRAIT and 5.7 or 7, r = 0.15, colour = G.C.ORANGE, shadow = true, hover = true, one_press = true, button = 'cash_out', focus_args = {snap_to = true}}, nodes={
+                    {n=G.UIT.T, config={text = localize('b_cash_out')..": ", scale = G.F_PORTRAIT and 0.82 or 1, colour = G.C.UI.TEXT_LIGHT, shadow = true}},
+                    {n=G.UIT.T, config={text = localize('$')..config.dollars, scale = G.F_PORTRAIT and 1.0 or 1.2*scale, colour = G.C.WHITE, shadow = true, juice = true}}
+                }}
+                if G.F_PORTRAIT then
+                    G.round_eval:add_child(cash_out_button, G.round_eval:get_UIE_by_ID('eval_bottom'))
+                else
+                    UIBox{
+                        definition = {n=G.UIT.ROOT, config={align = 'cm', colour = G.C.CLEAR}, nodes={
+                            cash_out_button,
+                        }},
+                        config = {
+                          align = 'tmi',
+                          offset ={x=0,y=0.4},
+                          major = G.round_eval}
+                    }
+                end
                 center_round_eval()
 
                 --local left_text = {n=G.UIT.R, config={id = 'cash_out_button', align = "cm", padding = 0.1, minw = 2, r = 0.15, colour = G.C.ORANGE, shadow = true, hover = true, one_press = true, button = 'cash_out', focus_args = {snap_to = true}}, nodes={

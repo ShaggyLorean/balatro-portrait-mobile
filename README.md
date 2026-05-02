@@ -42,21 +42,22 @@ cd balatro-portrait-mobile
 python build.py
 ```
 
-The script handles everything — on first run it will ask for your Balatro.exe path and extract the necessary game files automatically.
+The script handles everything — on first run it will ask for your Balatro game file path and extract the necessary game files automatically.
 
 **Build options (asked once, saved for future runs):**
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| CRT patch | off | Disables the CRT shader for desktop portrait testing. Android always disables CRT automatically — skip this unless you test on PC. |
-| Readabletro | off | Applies the [Readabletro](https://github.com/bladeSk/readabletro) mod: TypoQuik-Bold font, high-res card and UI textures. |
-| Lovely mod support | on | Embeds the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime so mods can be loaded. Requires a rooted device. |
+| CRT patch | off | Applies the CRT-disabling portrait patch. The default 2.0 build keeps this off. |
+| Readabletro | on | Applies the [Readabletro](https://github.com/bladeSk/readabletro) mod: TypoQuik-Bold font, high-res card and UI textures. |
+| Lovely mod support | off | Embeds the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime so mods can be loaded. Requires a rooted device. |
 
 You can also pass flags to skip the prompts:
 
 ```
-python build.py --no-crt --no-readabletro --with-lovely
+python build.py --no-crt --readabletro --no-lovely
 python build.py --balatro "D:\Steam\steamapps\common\Balatro\Balatro.exe" --force
+python build.py --balatro "~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app" --force
 ```
 
 Run `python build.py --help` or check the top of `build.py` for all available flags.
