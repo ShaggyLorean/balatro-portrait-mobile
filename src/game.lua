@@ -2429,6 +2429,14 @@ function Game:start_run(args)
         definition = create_UIBox_HUD_blind(),
         config = {major = G.HUD:get_UIE_by_ID('row_blind'), align = 'cm', offset = {x=0,y=-10}, bond = 'Weak'}
     }
+    -- Attach the debuff-text func AFTER construction so G.HUD_blind is set.
+    -- We use portrait_HUD_blind_debuff (defined in button_callbacks.lua) instead
+    -- of HUD_blind_debuff so SMODS's structural override doesn't mutate our
+    -- text nodes (which would crash set_wh — see button_callbacks for details).
+    local _hb_d1 = self.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_1')
+    if _hb_d1 then _hb_d1.config.func = 'portrait_HUD_blind_debuff' end
+    local _hb_d2 = self.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_2')
+    if _hb_d2 then _hb_d2.config.func = 'portrait_HUD_blind_debuff' end
     self.HUD_tags = {}
 
     G.hand_text_area = {

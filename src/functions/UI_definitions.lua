@@ -1341,10 +1341,18 @@ function create_UIBox_HUD_blind()
         {n=G.UIT.R, config={align = "cm", padding = body_pad}, nodes={
           {n=G.UIT.R, config={align = "cm", minh = line_h, maxw = body_maxw}, nodes={
             {n=G.UIT.T, config={ref_table = {val = ''}, ref_value = 'val', scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, func = 'HUD_blind_debuff_prefix'}},
-            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 1, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_1', func = 'HUD_blind_debuff'}}
+            -- Note: func='HUD_blind_debuff' is intentionally NOT set here. It is
+            -- attached after the UIBox is constructed (see game.lua start_run).
+            -- engine/ui.lua:149 invokes node funcs during UIBox init via
+            -- calculate_xywh, but G.HUD_blind isn't assigned until UIBox{}
+            -- returns — so SMODS's overridden HUD_blind_debuff (which asserts
+            -- G.HUD_blind == e.UIBox) crashes when run during init. Deferring
+            -- the func attachment to post-construction sidesteps this for
+            -- both vanilla and SMODS-modded runs.
+            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 1, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_1'}}
           }},
           {n=G.UIT.R, config={align = "cm", minh = line_h, maxw = body_maxw}, nodes={
-            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 2, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_2', func = 'HUD_blind_debuff'}}
+            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 2, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_2'}}
           }},
         }},
         {n=G.UIT.R, config={align = "cm",padding = lower_pad}, nodes={
@@ -1726,7 +1734,18 @@ function create_UIBox_HUD_vertical()
         {n=G.UIT.R, config={align = "ct", padding = 0.02, minw = panel_minw}, nodes={
 
           -- Left Column: Reserving Space for the Blind
-          {n=G.UIT.C, config={align = "cm", id = 'row_blind', minw = blind_minw, minh = blind_minh}, nodes={}},
+          -- SMODS-compat: SMODS's lovely/blind_ui.toml injects a 'row_blind_bottom'
+          -- spacer into the LANDSCAPE row_blind (G.UIT.R + minh=3.75 pattern) and
+          -- then patches game.lua to anchor HUD_blind to that spacer. Our portrait
+          -- row_blind is a G.UIT.C and doesn't match the lovely pattern, so the
+          -- spacer never gets injected here — leaving HUD_blind anchor-less and
+          -- invisible whenever SMODS is loaded. We mirror the spacer ourselves so
+          -- G.HUD:get_UIE_by_ID('row_blind_bottom') resolves in both layouts.
+          -- Vanilla behavior is unchanged: HUD_blind anchors to row_blind (cm)
+          -- and the inner spacer just occupies the column's reserved height.
+          {n=G.UIT.C, config={align = "cm", id = 'row_blind', minw = blind_minw, minh = blind_minh}, nodes={
+            {n=G.UIT.B, config={w=0, h=blind_minh, id = 'row_blind_bottom'}, nodes={}}
+          }},
 
           -- Space at the middle
           {n=G.UIT.C, config={w = 0.28}, nodes={}},

@@ -432,6 +432,12 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
     def _skip(path):
         return any(p in path for p in GAME_LOVE_EXCLUDE)
 
+    # Lovely-injector regex patches anchor on '\n' newlines. If a Lua source has
+    # CRLF (e.g. Windows autocrlf checkout), some SMODS regex patches fail to match
+    # and leave behind dangling original code that creates Lua syntax errors at runtime
+    # (observed: "ambiguous syntax (function call x new statement)" near the leftover
+    # `(k==6 or k ==16 ...)` block in create_UIBox_your_collection_blinds).
+    # Normalize all packaged Lua files to LF so patches apply correctly.
     count = 0
     with zipfile.ZipFile(output_file, "w", zipfile.ZIP_DEFLATED) as zf:
         for root, dirs, files in os.walk(src_dir):
@@ -440,7 +446,15 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
                 if _skip(fn):
                     continue
                 fp = os.path.join(root, fn)
-                zf.write(fp, os.path.relpath(fp, src_dir))
+                arc = os.path.relpath(fp, src_dir)
+                if fn.endswith(".lua"):
+                    with open(fp, "rb") as f:
+                        data = f.read()
+                    if b"\r\n" in data:
+                        data = data.replace(b"\r\n", b"\n")
+                    zf.writestr(arc.replace(os.sep, "/"), data)
+                else:
+                    zf.write(fp, arc)
                 count += 1
 
     if apply_crt:

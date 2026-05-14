@@ -137,7 +137,7 @@ end
 --**e** Is the UIE that called this function
 G.FUNCS.HUD_blind_debuff = function(e)
   if G.GAME.blind and G.GAME.blind.loc_debuff_text and G.GAME.blind.loc_debuff_text ~= '' then
-    if e.parent.config.minh == 0 or e.config.prev_loc ~= G.GAME.blind.loc_debuff_text then  
+    if e.parent.config.minh == 0 or e.config.prev_loc ~= G.GAME.blind.loc_debuff_text then
       e.parent.config.minh = 0.35
       e.config.scale = 0.36
       if G.GAME.blind.loc_debuff_lines[e.config.ref_value] == '' then e.config.scale = 0.0; e.parent.config.minh = 0.001 end
@@ -145,13 +145,27 @@ G.FUNCS.HUD_blind_debuff = function(e)
       e.UIBox:recalculate(true)
     end
   else
-    if e.parent.config.minh > 0 then  
+    if e.parent.config.minh > 0 then
       e.parent.config.minh = 0
       e.config.scale = 0
       e.UIBox:recalculate(true)
     end
   end
 end
+
+-- Portrait-only alias for the HUD debuff text nodes.
+-- SMODS replaces G.FUNCS.HUD_blind_debuff with a structural version that
+-- assumes `e` is a container with child rows and calls set_parent_child to
+-- mutate them; when applied to our portrait text nodes (which have no
+-- children) it adds malformed children whose T field never gets initialized,
+-- so set_wh crashes with "attempt to index field 'T' (a nil value)".
+--
+-- By referencing this aliased name from the text nodes instead, the SMODS
+-- override never touches them. Lua resolves G.FUNCS[name] by table lookup at
+-- call time, so SMODS reassigning G.FUNCS.HUD_blind_debuff doesn't affect the
+-- function value held in G.FUNCS.portrait_HUD_blind_debuff — which still
+-- points to the vanilla portrait behavior above.
+G.FUNCS.portrait_HUD_blind_debuff = G.FUNCS.HUD_blind_debuff
 
 --Adds the prefix for the debuff text for the wheel blind
 --
@@ -2963,11 +2977,26 @@ end
             or {par.T.x, 0, 0, 0}
 
         G.blind_select_opts.boss:remove()
+        -- Mirror compact_blind_choice's wrapper instead of UIBox_dyn_container.
+        -- UIBox_dyn_container hardcodes minh=30 and landscape paddings, which
+        -- forces the rerolled boss to balloon vertically in portrait mode
+        -- ("tail extending and sliding upward"). The triple-row wrapper below
+        -- uses portrait-aware paddings and has no minh constraint, matching
+        -- the layout the boss had on first render.
+        local mobile_blind = (PORTRAIT_CONFIG.mobile_ui and PORTRAIT_CONFIG.mobile_ui.blind_choice) or {}
+        local boss_main_colour = get_blind_main_colour('Boss')
+        local boss_bg_colour = mix_colours(G.C.BLACK, boss_main_colour, 0.8)
         G.blind_select_opts.boss = UIBox{
           T = init_T,
           definition =
             {n=G.UIT.ROOT, config={align = "cm", colour = G.C.CLEAR}, nodes={
-              UIBox_dyn_container({create_UIBox_blind_choice('Boss')},false,get_blind_main_colour('Boss'), mix_colours(G.C.BLACK, get_blind_main_colour('Boss'), 0.8))
+              {n=G.UIT.R, config = {align = "cm", padding = G.F_PORTRAIT and (mobile_blind.wrapper_pad or 0.012) or 0.03, colour = G.C.UI.TRANSPARENT_DARK, r=0.1}, nodes={
+                {n=G.UIT.R, config = {align = "cm", padding = G.F_PORTRAIT and (mobile_blind.wrapper_inner_pad or 0.018) or 0.04, colour = boss_main_colour, r=0.1}, nodes={
+                  {n=G.UIT.R, config = {align = "tm", colour = boss_bg_colour, r=0.1, padding = G.F_PORTRAIT and (mobile_blind.wrapper_inner_pad or 0.018) or 0.04}, nodes={
+                    create_UIBox_blind_choice('Boss')
+                  }}
+                }}
+              }}
             }},
           config = {align="bmi",
                     offset = {x=0,y=G.F_PORTRAIT and 0 or (G.ROOM.T.y + 9)},
