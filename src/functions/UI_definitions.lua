@@ -1338,7 +1338,15 @@ function create_UIBox_HUD_blind()
         }},
       }},
       {n=G.UIT.R, config={align = "cm", minh = body_h, r = 0.1,colour = G.C.DYN_UI.DARK}, nodes={
-        {n=G.UIT.R, config={align = "cm", padding = body_pad}, nodes={
+        -- id = 'HUD_blind_debuff' so SMODS.juice_up_blind (utils.lua:256) can
+        -- find this wrapper. SMODS's blind_ui.toml regex patch was supposed
+        -- to add it but only matches the vanilla landscape structure (specific
+        -- scales/paddings/dimensions) — our portrait HUD uses different
+        -- values, so the patch silently no-op'd and SMODS crashed with
+        -- "attempt to index local 'ui_elem' (a nil value)" whenever a
+        -- debuffed card scored. Adding the id here is a no-op for vanilla
+        -- (nothing else queries this ID) and unblocks SMODS's juice path.
+        {n=G.UIT.R, config={align = "cm", padding = body_pad, id = 'HUD_blind_debuff'}, nodes={
           {n=G.UIT.R, config={align = "cm", minh = line_h, maxw = body_maxw}, nodes={
             {n=G.UIT.T, config={ref_table = {val = ''}, ref_value = 'val', scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, func = 'HUD_blind_debuff_prefix'}},
             -- Note: func='HUD_blind_debuff' is intentionally NOT set here. It is
