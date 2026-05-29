@@ -4417,6 +4417,23 @@ function Card:draw(layer)
             self.tilt_var.my = ((0.5 + 0.5*self.ambient_tilt*math.sin(tilt_angle))*self.VT.h+self.VT.y+G.ROOM.T.y)*G.TILESIZE*G.TILESCALE
             self.tilt_var.amt = self.ambient_tilt*(0.5+math.cos(tilt_angle))*tilt_factor
         end
+
+        -- Portrait/touch fix: clamp the virtual cursor that drives the 3D tilt
+        -- shader to within one card extent of the card's own centre. On desktop the
+        -- cursor already sits on the hovered card so this is a no-op, but on touch the
+        -- stale/far cursor_position (or a TILESCALE change during a canvas refresh)
+        -- could push the tilt distance huge and shear the card into a warped
+        -- parallelogram. Bounding the distance keeps the tilt subtle and warp-proof.
+        if G.TILESCALE and G.TILESIZE and G.ROOM and self.VT then
+            local px = G.TILESIZE*G.TILESCALE
+            local center_x = (self.VT.x + 0.5*self.VT.w + G.ROOM.T.x)*px
+            local center_y = (self.VT.y + 0.5*self.VT.h + G.ROOM.T.y)*px
+            local max_dx = math.max(self.VT.w, 0.1)*px
+            local max_dy = math.max(self.VT.h, 0.1)*px
+            self.tilt_var.mx = math.max(center_x - max_dx, math.min(center_x + max_dx, self.tilt_var.mx))
+            self.tilt_var.my = math.max(center_y - max_dy, math.min(center_y + max_dy, self.tilt_var.my))
+        end
+
         --Any particles
         if self.children.particles then self.children.particles:draw() end
 
