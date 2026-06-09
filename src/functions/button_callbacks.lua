@@ -3378,3 +3378,33 @@ G.FUNCS.wipe_off = function()
     end
   }))
 end
+
+--Portrait: visibility + juice driver for the floating hand-preview chip above
+--the hand. Runs every frame via the UIBox root's func; shows the chip only
+--while the player is actively selecting cards, and bounces it (juice_up +
+--text pulse) whenever it appears or the detected poker hand changes.
+G.FUNCS.hand_preview_visibility = function(e)
+    local box = e.UIBox
+    if not box then return end
+    local show = G.STATE == G.STATES.SELECTING_HAND
+        and G.hand and #G.hand.highlighted > 0
+        and not G.OVERLAY_MENU and not G.TAROT_INTERRUPT
+        and not G.SETTINGS.paused
+    local was_visible = box.states.visible
+    box.states.visible = not not show
+    if not show then
+        box.hand_preview_last = nil
+        return
+    end
+    local hn = G.GAME.current_round.current_hand.handname
+    if was_visible and box.hand_preview_last == hn then return end
+    box.hand_preview_last = hn
+    local pill = box:get_UIE_by_ID('hand_preview_pill')
+    if pill then pill:juice_up(0.06, 0.03) end
+    for _, id in ipairs({'hand_preview_name', 'hand_preview_chips', 'hand_preview_mult'}) do
+        local uie = box:get_UIE_by_ID(id)
+        if uie and uie.config.object and uie.config.object.pulse then
+            uie.config.object:pulse(0.4)
+        end
+    end
+end

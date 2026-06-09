@@ -28,7 +28,25 @@ PORTRAIT_CONFIG = {
     challenge_page_size_landscape = 10,
     jokers_y = 11,
     anti_jitter_threshold = 3.5,
-    fps_cap = 60,
+    fps_cap = 'auto', -- 'auto' = match display refresh rate (90/120 Hz), or a number like 60
+    disable_touch_tilt = true, -- kill the cursor-lean tilt on touch (root fix for sheared-card warp)
+    score_text_mult = 1.3, -- portrait multiplier for floating score/attention popups
+    deck_position = 'shelf', -- 'shelf' (top row, default) or 'bottom_right' (experimental)
+    gestures = {
+        enabled = true,
+        min_swipe = 1.4, -- min vertical travel in game units to count as a flick
+        max_dx_ratio = 0.6, -- horizontal drift allowed relative to vertical travel
+        max_time = 0.45, -- max press-to-release seconds for a flick
+    },
+    hand_preview = {
+        enabled = true,
+        scale = 0.55,
+        y_offset = -1.15, -- distance above the hand area
+    },
+    joker_slots = {
+        enabled = true,
+        alpha = 0.16, -- outline opacity for empty joker/consumable slots
+    },
     safe_area_y = 0.85,
     tooltip_screen_padding = 0.12,
     tooltip_touch_gap = 1.6,
@@ -86,8 +104,9 @@ PORTRAIT_CONFIG = {
         hud_blind_debuff_scale = 0.88,
         hud_blind_chip_row_h = 0.48,
         hud_blind_reward_h = 0.34,
-        hud_button_minw = 2.0,
-        hud_button_minh = 0.82,
+        hud_button_minw = 1.95,
+        hud_button_minh = 0.78,
+        card_button_mult = 1.4, -- portrait size multiplier for Use/Sell buttons on cards
         run_setup_back_desc_scale = 0.72,
         run_setup_back_min_dims = 0.76,
         run_setup_back_desc_h = 1.9,

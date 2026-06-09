@@ -237,19 +237,21 @@ function create_UIBox_high_scores_filling(_resp)
 end
 
 function G.UIDEF.use_and_sell_buttons(card)
+  -- Portrait: PC-sized Use/Sell buttons are too small for thumbs; scale them up.
+  local m = G.F_PORTRAIT and ((PORTRAIT_CONFIG.mobile_ui and PORTRAIT_CONFIG.mobile_ui.card_button_mult) or 1.4) or 1
   local sell = nil
   local use = nil
   if card.area and card.area.config.type == 'joker' then
     sell = {n=G.UIT.C, config={align = "cr"}, nodes={
-      {n=G.UIT.C, config={ref_table = card, align = "cr",padding = 0.1, r=0.08, minw = 1.25, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'sell_card', func = 'can_sell_card'}, nodes={
-        {n=G.UIT.B, config = {w=0.1,h=0.6}},
+      {n=G.UIT.C, config={ref_table = card, align = "cr",padding = 0.1*m, r=0.08, minw = 1.25*m, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'sell_card', func = 'can_sell_card'}, nodes={
+        {n=G.UIT.B, config = {w=0.1,h=0.6*m}},
         {n=G.UIT.C, config={align = "tm"}, nodes={
-          {n=G.UIT.R, config={align = "cm", maxw = 1.25}, nodes={
-            {n=G.UIT.T, config={text = localize('b_sell'),colour = G.C.UI.TEXT_LIGHT, scale = 0.4, shadow = true}}
+          {n=G.UIT.R, config={align = "cm", maxw = 1.25*m}, nodes={
+            {n=G.UIT.T, config={text = localize('b_sell'),colour = G.C.UI.TEXT_LIGHT, scale = 0.4*m, shadow = true}}
           }},
           {n=G.UIT.R, config={align = "cm"}, nodes={
-            {n=G.UIT.T, config={text = localize('$'),colour = G.C.WHITE, scale = 0.4, shadow = true}},
-            {n=G.UIT.T, config={ref_table = card, ref_value = 'sell_cost_label',colour = G.C.WHITE, scale = 0.55, shadow = true}}
+            {n=G.UIT.T, config={text = localize('$'),colour = G.C.WHITE, scale = 0.4*m, shadow = true}},
+            {n=G.UIT.T, config={ref_table = card, ref_value = 'sell_cost_label',colour = G.C.WHITE, scale = 0.55*m, shadow = true}}
           }}
         }}
       }},
@@ -262,16 +264,16 @@ function G.UIDEF.use_and_sell_buttons(card)
           {n=G.UIT.R, config={mid = true}, nodes={
           }},
           {n=G.UIT.R, config={ref_table = card, r = 0.08, padding = 0.1, align = "bm", minw = 0.5*card.T.w - 0.15, minh = 0.8*card.T.h, maxw = 0.7*card.T.w - 0.15, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
-            {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55, shadow = true}}
+            {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55*m, shadow = true}}
           }},
       }}
     end
-    use = 
+    use =
     {n=G.UIT.C, config={align = "cr"}, nodes={
-      
-      {n=G.UIT.C, config={ref_table = card, align = "cr",maxw = 1.25, padding = 0.1, r=0.08, minw = 1.25, minh = (card.area and card.area.config.type == 'joker') and 0 or 1, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
-        {n=G.UIT.B, config = {w=0.1,h=0.6}},
-        {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55, shadow = true}}
+
+      {n=G.UIT.C, config={ref_table = card, align = "cr",maxw = 1.25*m, padding = 0.1*m, r=0.08, minw = 1.25*m, minh = (card.area and card.area.config.type == 'joker') and 0 or 1*m, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
+        {n=G.UIT.B, config = {w=0.1,h=0.6*m}},
+        {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55*m, shadow = true}}
       }}
     }}
   elseif card.area and card.area == G.pack_cards then
@@ -931,6 +933,9 @@ end
     args = args or {}
     args.text = args.text or 'test'
     args.scale = args.scale or 1
+    if G.F_PORTRAIT and G.STAGE == G.STAGES.RUN then
+      args.scale = args.scale * (PORTRAIT_CONFIG.score_text_mult or 1)
+    end
     args.colour = copy_table(args.colour or G.C.WHITE)
     args.hold = (args.hold or 0) + 0.1*(G.SPEEDFACTOR)
     args.pos = args.pos or {x = 0, y = 0}
@@ -1696,23 +1701,22 @@ function create_UIBox_HUD_vertical()
   -- ==========================================
   local pos = G.SETTINGS.runinfo_options_button_pos or 1
 
+  -- Compact, muted chrome buttons: red/orange stays reserved for Discard and
+  -- gameplay actions, so these no longer compete with Play/Discard for attention.
   local run_info_button =
   {n=G.UIT.C, config={id='run_info_container', align="cm", padding=0.04}, nodes={
-    {n=G.UIT.R, config={id='run_info_button', align="cm", minh=button_minh, minw=button_minw, padding=0.025, r=0.1, hover=true, colour=G.C.RED, button="run_info", shadow=true}, nodes={
-      {n=G.UIT.R, config={align="cm", padding=0, maxw=1.25}, nodes={
-        {n=G.UIT.T, config={text=localize('b_run_info_1'), scale=1.1*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
-      }},
-      {n=G.UIT.R, config={align="cm", padding=0, maxw=1.25}, nodes={
-        {n=G.UIT.T, config={text=localize('b_run_info_2'), scale=0.95*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true, focus_args={button=G.F_GUIDE and 'guide' or 'back', orientation='bm'}, func='set_button_pip'}}
+    {n=G.UIT.R, config={id='run_info_button', align="cm", minh=button_minh, minw=button_minw, padding=0.025, r=0.1, hover=true, colour=G.C.GREY, button="run_info", shadow=true}, nodes={
+      {n=G.UIT.R, config={align="cm", padding=0, maxw=2.0}, nodes={
+        {n=G.UIT.T, config={text=localize('b_run_info_1')..' '..localize('b_run_info_2'), scale=0.95*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true, focus_args={button=G.F_GUIDE and 'guide' or 'back', orientation='bm'}, func='set_button_pip'}}
       }}
     }}
   }}
 
   local options_button =
   {n=G.UIT.C, config={id='options_container', align="cm", padding=0.04}, nodes={
-    {n=G.UIT.R, config={align="cm", minh=button_minh, minw=button_minw, padding=0.025, r=0.1, hover=true, colour=G.C.ORANGE, button="options", shadow=true}, nodes={
-      {n=G.UIT.C, config={align="cm", maxw=1.25, focus_args={button='start', orientation='bm'}, func='set_button_pip'}, nodes={
-        {n=G.UIT.T, config={text=localize('b_options'), scale=scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
+    {n=G.UIT.R, config={align="cm", minh=button_minh, minw=button_minw, padding=0.025, r=0.1, hover=true, colour=G.C.GREY, button="options", shadow=true}, nodes={
+      {n=G.UIT.C, config={align="cm", maxw=2.0, focus_args={button='start', orientation='bm'}, func='set_button_pip'}, nodes={
+        {n=G.UIT.T, config={text=localize('b_options'), scale=0.95*scale, colour=G.C.UI.TEXT_LIGHT, shadow=true}}
       }}
     }}
   }}
@@ -1773,6 +1777,30 @@ function create_UIBox_HUD_vertical()
       }}
     }},
     buttons
+  }}
+end
+
+-- Portrait: small floating chip above the hand showing the currently selected
+-- poker hand (name, level, chips X mult) so the eye stays in the thumb zone
+-- instead of travelling to the HUD at the top of the screen on every tap.
+function create_UIBox_hand_preview()
+  local hp = PORTRAIT_CONFIG.hand_preview or {}
+  local s = hp.scale or 0.55
+  local ch = G.GAME.current_round.current_hand
+  return {n=G.UIT.ROOT, config={align='cm', padding=0.02, colour=G.C.CLEAR, func='hand_preview_visibility', id='hand_preview_root'}, nodes={
+    {n=G.UIT.R, config={id='hand_preview_pill', align='cm', padding=0.09, r=0.12, colour=darken(G.C.BLACK, 0.1), emboss=0.05, outline=1.2, outline_colour=adjust_alpha(G.C.WHITE, 0.12)}, nodes={
+      {n=G.UIT.O, config={id='hand_preview_name', object=DynaText({string={{ref_table=ch, ref_value='handname_text'}}, colours={G.C.UI.TEXT_LIGHT}, shadow=true, float=true, scale=s*1.15})}},
+      {n=G.UIT.B, config={w=0.1, h=0.1}},
+      {n=G.UIT.T, config={ref_table=ch, ref_value='hand_level', scale=s*0.75, colour=G.C.UI.TEXT_LIGHT, shadow=true}},
+      {n=G.UIT.B, config={w=0.18, h=0.1}},
+      {n=G.UIT.C, config={align='cm', r=0.1, padding=0.05, minw=0.95, colour=G.C.UI_CHIPS, emboss=0.05}, nodes={
+        {n=G.UIT.O, config={id='hand_preview_chips', object=DynaText({string={{ref_table=ch, ref_value='chip_text'}}, colours={G.C.UI.TEXT_LIGHT}, font=G.LANGUAGES['en-us'].font, shadow=true, float=true, scale=s})}}
+      }},
+      {n=G.UIT.T, config={text=' X ', lang=G.LANGUAGES['en-us'], scale=s, colour=G.C.UI_MULT, shadow=true}},
+      {n=G.UIT.C, config={align='cm', r=0.1, padding=0.05, minw=0.95, colour=G.C.UI_MULT, emboss=0.05}, nodes={
+        {n=G.UIT.O, config={id='hand_preview_mult', object=DynaText({string={{ref_table=ch, ref_value='mult_text'}}, colours={G.C.UI.TEXT_LIGHT}, font=G.LANGUAGES['en-us'].font, shadow=true, float=true, scale=s})}}
+      }}
+    }}
   }}
 end
 

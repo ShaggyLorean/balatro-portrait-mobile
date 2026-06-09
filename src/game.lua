@@ -1159,6 +1159,7 @@ function Game:delete_run()
         if self.GAME_OVER_UI then self.GAME_OVER_UI:remove(); self.GAME_OVER_UI = nil end
         if self.collection_alert then self.collection_alert:remove(); self.collection_alert = nil end
         if self.HUD then self.HUD:remove(); self.HUD = nil end
+        if self.hand_preview then self.hand_preview:remove(); self.hand_preview = nil end
         if self.HUD_blind then self.HUD_blind:remove(); self.HUD_blind = nil end
         if self.HUD_tags then
             for k, v in pairs(self.HUD_tags) do
@@ -2438,6 +2439,16 @@ function Game:start_run(args)
     local _hb_d2 = self.HUD_blind:get_UIE_by_ID('HUD_blind_debuff_2')
     if _hb_d2 then _hb_d2.config.func = 'portrait_HUD_blind_debuff' end
     self.HUD_tags = {}
+
+    if G.F_PORTRAIT and PORTRAIT_CONFIG.hand_preview and PORTRAIT_CONFIG.hand_preview.enabled then
+        if self.hand_preview then self.hand_preview:remove(); self.hand_preview = nil end
+        self.hand_preview = UIBox{
+            definition = create_UIBox_hand_preview(),
+            config = {align = 'tm', offset = {x = 0, y = PORTRAIT_CONFIG.hand_preview.y_offset or -0.65}, major = self.hand, bond = 'Weak'}
+        }
+        self.hand_preview.states.collide.can = false
+        self.hand_preview.states.visible = false
+    end
 
     G.hand_text_area = {
         chips = self.HUD:get_UIE_by_ID('hand_chips'),

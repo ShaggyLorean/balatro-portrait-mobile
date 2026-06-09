@@ -17,11 +17,18 @@ function set_screen_positions()
             G.hand.T.x = (room_w - G.hand.T.w) / 2
             G.hand.T.y = room_h - G.hand.T.h - bottom_margin - pc.hand_base_offset
 
-            local ideal_play_y = G.hand.T.y - G.play.T.h - 1.5
+            -- Center the played-card "stage" in the gap between the joker shelf
+            -- and the hand, instead of hugging the hand and leaving the middle
+            -- of the screen empty. The hand slides up ~3 units while selecting,
+            -- so center against that raised position to avoid overlap.
             local jokers_bottom_limit = G.jokers.T.y + G.jokers.T.h + 2.5
-            
+            local shelf_bottom = G.jokers.T.y + G.jokers.T.h
+            local hand_top_selecting = G.hand.T.y - 3
+            local centered_play_y = shelf_bottom + (hand_top_selecting - shelf_bottom - G.play.T.h) / 2
+
             G.play.T.x = (room_w - G.play.T.w) / 2
-            G.play.T.y = math.max(ideal_play_y, jokers_bottom_limit)
+            G.play.T.y = math.min(centered_play_y, hand_top_selecting - G.play.T.h - 0.5)
+            G.play.T.y = math.max(G.play.T.y, jokers_bottom_limit)
 
             if G.SETTINGS.play_main_hand == 2 then
                 G.consumeables.T.x = G.jokers.T.x + G.jokers.T.w - G.consumeables.T.w
@@ -37,6 +44,11 @@ function set_screen_positions()
                 G.deck.T.y = G.jokers.T.y - G.jokers.T.h - 0.6
             end
             
+            if pc.deck_position == 'bottom_right' then
+                G.deck.T.x = room_w - G.deck.T.w - 0.25
+                G.deck.T.y = G.hand.T.y - G.deck.T.h - 0.5
+            end
+
             G.discard.T.x = G.play.T.x + G.play.T.w + pc.discard_x_offset
             G.discard.T.y = G.play.T.y
         else

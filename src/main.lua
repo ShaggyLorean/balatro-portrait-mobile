@@ -138,7 +138,14 @@ function love.run()
 		
 		local os_name = (love and love.system and love.system.getOS) and love.system.getOS() or 'Windows'
 		local is_mobile = (os_name == 'Android' or os_name == 'iOS')
-		G.FPS_CAP = G.FPS_CAP or (is_mobile and (PORTRAIT_CONFIG and PORTRAIT_CONFIG.fps_cap or 60) or 500)
+		if not G.FPS_CAP then
+			local cap = is_mobile and (PORTRAIT_CONFIG and PORTRAIT_CONFIG.fps_cap or 60) or 500
+			if cap == 'auto' then
+				local ok, _, _, flags = pcall(love.window.getMode)
+				cap = (ok and flags and flags.refreshrate and flags.refreshrate > 0) and flags.refreshrate or 60
+			end
+			G.FPS_CAP = cap
+		end
 		
 		if run_time < 1./G.FPS_CAP then love.timer.sleep(1./G.FPS_CAP - run_time) end
 	end
@@ -320,6 +327,7 @@ function love.mousepressed(x, y, button, touch)
         G.CONTROLLER.touch_position.y = y
         G.CONTROLLER.touch_position.active = true
         G.CONTROLLER.touch_position.seen = true
+        G.CONTROLLER.gesture_start = {x = x, y = y, t = love.timer.getTime()}
         G.CONTROLLER.cursor_position.x = x
         G.CONTROLLER.cursor_position.y = y
         if G.CURSOR and G.CURSOR.T then
@@ -342,6 +350,38 @@ function love.mousepressed(x, y, button, touch)
 end
 
 
+--Portrait swipe gestures: a quick vertical flick on selected cards plays
+--(swipe up) or discards (swipe down) the highlighted hand. Uses the same
+--guards as the Play/Discard buttons (can_play/can_discard).
+local function _check_swipe_gesture(x, y)
+    local gz = PORTRAIT_CONFIG and PORTRAIT_CONFIG.gestures
+    if not (gz and gz.enabled and G.F_PORTRAIT) then return end
+    local gs = G.CONTROLLER and G.CONTROLLER.gesture_start
+    if G.CONTROLLER then G.CONTROLLER.gesture_start = nil end
+    if not gs then return end
+    if not (G.STATE == G.STATES.SELECTING_HAND and G.hand and #G.hand.highlighted > 0) then return end
+    if G.OVERLAY_MENU or G.TAROT_INTERRUPT or G.SETTINGS.paused then return end
+    if G.play and G.play.cards[1] then return end
+    if love.timer.getTime() - gs.t > (gz.max_time or 0.45) then return end
+
+    local unit = (G.TILESCALE or 1) * (G.TILESIZE or 20)
+    if unit <= 0 then return end
+    local dx, dy = (x - gs.x)/unit, (y - gs.y)/unit
+    if math.abs(dy) < (gz.min_swipe or 1.4) then return end
+    if math.abs(dx) > math.abs(dy) * (gz.max_dx_ratio or 0.6) then return end
+    if gs.y < 0.5 * love.graphics.getHeight() then return end
+
+    if dy < 0 then
+        if G.GAME and G.GAME.blind and not G.GAME.blind.block_play and #G.hand.highlighted <= 5 then
+            G.FUNCS.play_cards_from_highlighted()
+        end
+    else
+        if G.GAME and G.GAME.current_round and G.GAME.current_round.discards_left > 0 then
+            G.FUNCS.discard_cards_from_highlighted()
+        end
+    end
+end
+
 function love.mousereleased(x, y, button, touch)
     if not (G and G.CONTROLLER) then return end
     if touch and G.CONTROLLER.touch_position then
@@ -353,7 +393,10 @@ function love.mousereleased(x, y, button, touch)
         G.CONTROLLER.cursor_position.y = y
     end
     G.CONTROLLER:set_HID_flags(touch and 'touch' or 'mouse')
-    if button == 1 then G.CONTROLLER:L_cursor_release(x, y) end
+    if button == 1 then
+        G.CONTROLLER:L_cursor_release(x, y)
+        if touch then _check_swipe_gesture(x, y) end
+    end
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)

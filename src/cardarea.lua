@@ -293,12 +293,13 @@ function CardArea:draw()
         (self.config.type == 'deck' and self ~= G.deck) or
         (self.config.type == 'shop' and self ~= G.shop_vouchers) then
     else
-        if not self.children.area_uibox then 
+        if not self.children.area_uibox then
+                local count_scale = G.F_PORTRAIT and 0.42 or 0.3
                 local card_count = self ~= G.shop_vouchers and {n=G.UIT.R, config={align = self == G.jokers and 'cl' or self == G.hand and 'cm' or 'cr', padding = 0.03, no_fill = true}, nodes={
                     {n=G.UIT.B, config={w = 0.1,h=0.1}},
-                    {n=G.UIT.T, config={ref_table = self.config, ref_value = 'card_count', scale = 0.3, colour = G.C.WHITE}},
-                    {n=G.UIT.T, config={text = '/', scale = 0.3, colour = G.C.WHITE}},
-                    {n=G.UIT.T, config={ref_table = self.config, ref_value = 'card_limit', scale = 0.3, colour = G.C.WHITE}},
+                    {n=G.UIT.T, config={ref_table = self.config, ref_value = 'card_count', scale = count_scale, colour = G.C.WHITE}},
+                    {n=G.UIT.T, config={text = '/', scale = count_scale, colour = G.C.WHITE}},
+                    {n=G.UIT.T, config={ref_table = self.config, ref_value = 'card_limit', scale = count_scale, colour = G.C.WHITE}},
                     {n=G.UIT.B, config={w = 0.1,h=0.1}}
                 }} or nil
 
@@ -325,6 +326,35 @@ function CardArea:draw()
                 }
             end
         self.children.area_uibox:draw()
+    end
+
+    -- Portrait: outline the empty joker/consumable slots so the shelf reads as
+    -- reserved capacity instead of dead felt (drawn under the cards).
+    if G.F_PORTRAIT and PORTRAIT_CONFIG.joker_slots and PORTRAIT_CONFIG.joker_slots.enabled
+        and (self == G.jokers or self == G.consumeables)
+        and self.config.card_limit and self.config.card_limit > 0
+        and #self.cards < self.config.card_limit then
+        local limit = self.config.card_limit
+        local slot_w, slot_h = G.CARD_W*0.94, G.CARD_H*0.94
+        local r, g, b, a = love.graphics.getColor()
+        local lw = love.graphics.getLineWidth()
+        love.graphics.push()
+        love.graphics.scale(G.TILESCALE, G.TILESCALE)
+        love.graphics.setColor(1, 1, 1, PORTRAIT_CONFIG.joker_slots.alpha or 0.16)
+        love.graphics.setLineWidth(1.5)
+        for i = 1, limit do
+            local sx
+            if limit == 1 then
+                sx = self.VT.x + (self.VT.w - slot_w)/2
+            else
+                sx = self.VT.x + (i-1)*(self.VT.w - slot_w)/(limit-1)
+            end
+            local sy = self.VT.y + (self.VT.h - slot_h)/2
+            love.graphics.rectangle('line', sx*G.TILESIZE, sy*G.TILESIZE, slot_w*G.TILESIZE, slot_h*G.TILESIZE, 4, 4)
+        end
+        love.graphics.setLineWidth(lw)
+        love.graphics.setColor(r, g, b, a)
+        love.graphics.pop()
     end
 
     self:draw_boundingrect()

@@ -79,6 +79,19 @@ self.HID = {
     axis_cursor = false,
 }
 
+--Mobile: start in touch mode with the cursor parked offscreen. The default
+--mouse mode reads love.mouse.getPosition() before any touch has happened,
+--which reports a phantom position on Android and hover-selects whatever
+--card sits under it on launch (e.g. a shop joker with its tooltip open).
+--set_cursor_position only moves the cursor after a real touch is seen.
+if love.system.getOS() == 'Android' or love.system.getOS() == 'iOS' then
+    self.HID.mouse = false
+    self.HID.touch = true
+    self.HID.last_type = 'touch'
+    self.cursor_position.x = -9999
+    self.cursor_position.y = -9999
+end
+
 --The gamepad most recently used, if any
 self.GAMEPAD = {object = nil, mapping = nil, name = nil}
 self.GAMEPAD_CONSOLE = '' --Valid button icons for Xbox, Playstation and Nintendo controllers
