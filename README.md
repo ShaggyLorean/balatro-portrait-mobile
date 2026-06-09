@@ -1,5 +1,7 @@
 # Balatro Portrait Mobile
 
+[![CI](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml)
+
 A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 
 <img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/98c0f4eb-68d6-43c4-9f8d-1908eea24711" />
@@ -15,7 +17,10 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 
 - **Portrait Mode** — Fully optimized vertical layout for mobile
 - **Touch Controls** — Responsive touchscreen support with anti-jitter
-- **Redesigned HUD** — Score, buttons, and panels repositioned for portrait
+- **Swipe Gestures** — Flick selected cards up to play, down to discard
+- **Hand Preview** — Floating chip above your cards shows the selected poker hand (name, level, chips × mult)
+- **Redesigned HUD** — Score, buttons, and panels repositioned for portrait, with thumb-sized touch targets
+- **High Refresh Rate** — Matches your display (90/120 Hz) automatically
 - **Full Game Support** — All Balatro features work in portrait mode
 - **Mod Support** — Optional [Lovely](https://github.com/ethangreen-dev/lovely-injector) integration for loading mods on Android
 
@@ -151,4 +156,7 @@ Original game files are **not** included in this repository.
 
 ## License
 
-Provided as-is for personal use. All rights to Balatro belong to LocalThunk.
+The build tooling, documentation, and portrait-mode modifications in this
+repository are released under the [MIT License](LICENSE). All rights to
+Balatro — including any game code and assets this project derives from —
+belong to LocalThunk / Playstack. See the scope note in [LICENSE](LICENSE).

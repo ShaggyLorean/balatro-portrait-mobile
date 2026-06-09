@@ -6,7 +6,7 @@ Balatro Portrait Mobile supports the [Lovely](https://github.com/ethangreen-dev/
 
 ## Building with Lovely
 
-When running `build_apk.py`, select **yes** when asked about Lovely mod support:
+When running `build.py`, select **yes** when asked about Lovely mod support:
 
 ```
 Enable Lovely mod support? (y/n): y
@@ -15,7 +15,7 @@ Enable Lovely mod support? (y/n): y
 Or use the CLI flag:
 
 ```
-python build_apk.py --with-lovely
+python build.py --with-lovely
 ```
 
 This builds the APK using [Lovely Mobile Maker](https://github.com/WilsontheWolf/lovely-mobile-maker)'s base, which has `liblovely.so` embedded.

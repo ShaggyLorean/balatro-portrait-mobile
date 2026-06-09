@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lua-syntax:
+    name: Lua syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq luajit
+
+      - name: Check all Lua sources compile
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            if ! luajit -bl "$f" /dev/null 2>/tmp/err; then
+              echo "::error file=$f::$(cat /tmp/err)"
+              fail=1
+            fi
+          done < <(find src -name '*.lua')
+          exit $fail
+
+  python-build:
+    name: Build script check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile build.py
+        run: python -m py_compile build.py
+
+      - name: Smoke-test Game.love packaging
+        run: |
+          # No game files in CI (copyrighted) — packaging src/ alone is enough
+          # to catch path bugs and patch-target drift in build.py.
+          mkdir -p src/resources/fonts src/resources/shaders src/localization
+          python build.py --no-crt --no-readabletro --no-lovely --skip-setup --skip-apk --force
+          test -f Game.love && unzip -l Game.love | tail -3

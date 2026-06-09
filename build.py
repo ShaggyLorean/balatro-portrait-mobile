@@ -20,6 +20,7 @@ Options:
     --force               Force Game.love rebuild even if sources are unchanged
 """
 
+import argparse
 import hashlib
 import json
 import os
@@ -37,6 +38,8 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
+MOD_VERSION = "2.2.0"
+
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
 DEFAULT_BUILD_CONFIG = {
@@ -50,21 +53,34 @@ JDK_DIR  = os.path.join(WORKDIR, "jdk")
 JAVA_BIN = os.path.join(JDK_DIR, "bin", "java")  # resolved after JDK extraction
 
 if os.name == "nt":
-    JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip"
+    JDK_URL    = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip"
+    JDK_SHA256 = "d1c5a1c674bf472838c4d63c46c2e23a8efd399362e40abebd4eee4988bc2130"
 elif platform.system() == "Darwin":
-    JDK_URL = (
-        "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz"
-        if platform.machine() == "arm64"
-        else "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz"
-    )
+    if platform.machine() == "arm64":
+        JDK_URL    = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-aarch64.tar.gz"
+        JDK_SHA256 = "489c96c8a4d3592811d1907346c05b75c12642729f83576982b9f62d0aafc672"
+    else:
+        JDK_URL    = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-macos-x64.tar.gz"
+        JDK_SHA256 = "cf7d2c967088ac71b29cf28ad791a071bbf2c1dab333dd73dc0e791cb974c1f6"
 else:
-    JDK_URL = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz"
+    JDK_URL    = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-linux-x64.tar.gz"
+    JDK_SHA256 = "b535a58db80aeb5cc0d5e85ae6cb3f621d7f269ca1b36832f1aed3842cede4f4"
 
 APKTOOL_URL    = "https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"
 SIGNER_URL     = "https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar"
 PATCH_URL      = "https://github.com/blake502/balatro-apk-maker/releases/download/Additional-Tools-1.0/Balatro-APK-Patch.zip"
 LOVE_APK_URL   = "https://github.com/love2d/love-android/releases/download/11.5a/love-11.5-android-embed.apk"
+# The LMM base APK is rebuilt upstream without version-pinned URLs, so it cannot
+# be hash-pinned here. All version-pinned downloads above are SHA-256 verified.
 LOVELY_APK_URL = "https://lmm.shorty.systems/base.apk"
+
+TOOL_SHA256 = {
+    JDK_URL:      JDK_SHA256,
+    APKTOOL_URL:  "7956eb04194300ce0d0a84ad18771eebc94b89fb8d1ddcce8ea4c056818646f4",
+    SIGNER_URL:   "e1299fd6fcf4da527dd53735b56127e8ea922a321128123b9c32d619bba1d835",
+    PATCH_URL:    "efa47e113b15b2963a193ff6b988544f58e0dab26a75b439943d55dba0f5b489",
+    LOVE_APK_URL: "dcf71c1b54c5b5a09598ef1e6cf4852ced5e5e612de3d0f30cfdd39b5014e889",
+}
 
 # These strings must match exactly what's in src/game.lua
 CRT_PATCH_ORIGINAL = 'if (not G.recording_mode or G.video_control) and true then'
@@ -164,9 +180,33 @@ def _ask(prompt, default=None):
         print("  Please enter y or n.")
 
 
+def _sha256_of(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _verify_download(url, dest):
+    expected = TOOL_SHA256.get(url)
+    if not expected:
+        return
+    actual = _sha256_of(dest)
+    if actual != expected:
+        print(f"  ERROR: SHA-256 mismatch for {os.path.basename(dest)}")
+        print(f"    expected: {expected}")
+        print(f"    actual:   {actual}")
+        print("  The download may be corrupted or tampered with.")
+        print(f"  Delete the file and re-run: {dest}")
+        os.remove(dest)
+        sys.exit(1)
+
+
 def _download(url, dest):
     if os.path.exists(dest):
         print(f"  Already downloaded: {os.path.basename(dest)}")
+        _verify_download(url, dest)
         return
     print(f"  Downloading {os.path.basename(dest)} ...")
     tmp = dest + ".part"
@@ -195,6 +235,7 @@ def _download(url, dest):
             os.remove(tmp)
         print(f"\n  ERROR: could not download {url}: {exc}")
         sys.exit(1)
+    _verify_download(url, dest)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -485,7 +526,10 @@ def _setup_jdk():
                 z.extractall(WORKDIR)
         else:
             with tarfile.open(archive, "r:gz") as t:
-                t.extractall(WORKDIR)
+                if hasattr(tarfile, "data_filter"):
+                    t.extractall(WORKDIR, filter="data")
+                else:
+                    t.extractall(WORKDIR)
         for item in os.listdir(WORKDIR):
             if item.startswith("jdk-"):
                 shutil.move(os.path.join(WORKDIR, item), JDK_DIR)
@@ -557,6 +601,8 @@ def build_apk(use_lovely=False, profiler=None):
                 m = f.read()
             m = m.replace("systems.shorty.lmm", "com.unofficial.balatro")
             m = re.sub(r'android:label="[^"]+"',         'android:label="Balatro"',          m)
+            m = re.sub(r'android:versionCode="[^"]+"',   f'android:versionCode="{int(time.time())}"', m)
+            m = re.sub(r'android:versionName="[^"]+"',   f'android:versionName="{MOD_VERSION}-lovely"', m)
             m = re.sub(r'\sandroid:debuggable="[^"]+"',  "",                                  m)
             m = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="portrait"', m)
             m = re.sub(r'android:configChanges="[^"]+"',
@@ -569,7 +615,7 @@ def build_apk(use_lovely=False, profiler=None):
             with open(manifest_path) as f:
                 m = f.read()
             m = re.sub(r'android:versionCode="[^"]+"', f'android:versionCode="{int(time.time())}"', m)
-            m = re.sub(r'android:versionName="[^"]+"', 'android:versionName="1.0.0n-FULL-p1"',      m)
+            m = re.sub(r'android:versionName="[^"]+"', f'android:versionName="{MOD_VERSION}"',      m)
             for orient in ["landscape","sensorLandscape","userLandscape","reverseLandscape",
                            "fullSensor","sensor","nosensor","unspecified"]:
                 m = m.replace(f'screenOrientation="{orient}"', 'screenOrientation="portrait"')
@@ -634,27 +680,41 @@ def build_apk(use_lovely=False, profiler=None):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _parse_args():
-    args = sys.argv[1:]
-    flags = {}
+    parser = argparse.ArgumentParser(
+        prog="build.py",
+        description="Balatro Portrait Mobile - unified build script "
+                    "(resource extraction, Game.love creation, APK packaging).",
+    )
+    crt = parser.add_mutually_exclusive_group()
+    crt.add_argument("--crt",    dest="crt", action="store_true",  default=None,
+                     help="apply the CRT-disabling portrait patch")
+    crt.add_argument("--no-crt", dest="crt", action="store_false",
+                     help="keep the CRT shader unchanged (default)")
 
-    def _flag(pos, neg, key):
-        if pos in args:
-            flags[key] = True
-        elif neg in args:
-            flags[key] = False
+    rdb = parser.add_mutually_exclusive_group()
+    rdb.add_argument("--readabletro",    dest="readabletro", action="store_true", default=None,
+                     help="apply Readabletro font and high-res texture patch (default)")
+    rdb.add_argument("--no-readabletro", dest="readabletro", action="store_false",
+                     help="skip Readabletro patch")
 
-    _flag("--crt",         "--no-crt",          "crt")
-    _flag("--readabletro", "--no-readabletro",   "readabletro")
-    _flag("--with-lovely", "--no-lovely",        "lovely")
+    lov = parser.add_mutually_exclusive_group()
+    lov.add_argument("--with-lovely", dest="lovely", action="store_true", default=None,
+                     help="build with Lovely mod support embedded")
+    lov.add_argument("--no-lovely",   dest="lovely", action="store_false",
+                     help="build vanilla, no mod support (default)")
 
-    if "--balatro" in args:
-        i = args.index("--balatro")
-        if i + 1 < len(args):
-            flags["balatro_path"] = args[i + 1]
+    parser.add_argument("--balatro", dest="balatro_path", metavar="PATH",
+                        help="path to the Balatro game file (skips the interactive prompt)")
+    parser.add_argument("--skip-setup", action="store_true",
+                        help="skip resource extraction (if src/resources already exists)")
+    parser.add_argument("--skip-apk", action="store_true",
+                        help="only build Game.love, skip APK packaging")
+    parser.add_argument("--force", action="store_true",
+                        help="force Game.love rebuild even if sources are unchanged")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {MOD_VERSION}")
 
-    flags["force"]      = "--force"      in args
-    flags["skip_setup"] = "--skip-setup" in args
-    flags["skip_apk"]   = "--skip-apk"  in args
+    ns = parser.parse_args()
+    flags = {k: v for k, v in vars(ns).items() if v is not None}
     return flags
 
 
