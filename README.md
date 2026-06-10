@@ -4,14 +4,18 @@
 
 A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 
-<img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/98c0f4eb-68d6-43c4-9f8d-1908eea24711" />
-
-<img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/1250c840-783b-41b7-9ff8-ed80e9771038" />
-
-<img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/b9e61dbd-6ab2-490e-8804-cf91597aaa53" />
-
-<img width="1080" height="2376" alt="image" src="https://github.com/user-attachments/assets/9ba49f0a-4e8b-4937-a095-ff21b31bab56" />
-
+<table>
+<tr>
+  <td><img src="https://github.com/user-attachments/assets/14852345-7ef5-4ec6-a6e7-c1cf6f2e0b89" width="280"/></td>
+  <td><img src="https://github.com/user-attachments/assets/217ba77c-806a-4d97-8b2e-7190d2fd60cc" width="280"/></td>
+  <td><img src="https://github.com/user-attachments/assets/6de70f06-d749-456f-8d96-f9f3d56a28ef" width="280"/></td>
+</tr>
+<tr>
+  <td><img src="https://github.com/user-attachments/assets/b7449786-0ac3-4401-b2ba-021f16473862" width="280"/></td>
+  <td><img src="https://github.com/user-attachments/assets/0b09babe-76d0-4fca-9c7f-331042da5b3a" width="280"/></td>
+  <td><img src="https://github.com/user-attachments/assets/23f5d4e5-dd41-4594-a82e-27a9e343a50f" width="280"/></td>
+</tr>
+</table>
 
 ## Features
 
