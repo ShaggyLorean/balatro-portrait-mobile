@@ -57,7 +57,7 @@ function Game:set_globals()
         self.F_CRASH_REPORTS = false
     end
 
-    if love.system.getOS() == 'Android' then
+    if love.system.getOS() == 'Android' or love.system.getOS() == 'iOS' then
         self.F_SAVE_TIMER = 5
         self.F_ENGLISH_ONLY = false
         self.F_CRASH_REPORTS = false

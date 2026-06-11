@@ -371,6 +371,17 @@ local function _check_swipe_gesture(x, y)
     if math.abs(dx) > math.abs(dy) * (gz.max_dx_ratio or 0.6) then return end
     if gs.y < 0.5 * love.graphics.getHeight() then return end
 
+    -- If the flick started on a hand card, it must be one of the selected
+    -- cards — flicking an unselected card must not throw the selection.
+    local pressed = G.CONTROLLER.cursor_down and G.CONTROLLER.cursor_down.target
+    if pressed and pressed.area == G.hand and not pressed.highlighted then return end
+
+    -- Lift the whole selection together so the gesture reads as "throw the
+    -- selected hand", not "throw one card".
+    for _, card in ipairs(G.hand.highlighted) do
+        if card.juice_up then card:juice_up(0.25, 0.1) end
+    end
+
     if dy < 0 then
         if G.GAME and G.GAME.blind and not G.GAME.blind.block_play and #G.hand.highlighted <= 5 then
             G.FUNCS.play_cards_from_highlighted()

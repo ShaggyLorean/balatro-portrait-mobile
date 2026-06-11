@@ -2,6 +2,21 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.3.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.3.0) - 2026-06-11
+
+Experimental iOS support and swipe-gesture refinements based on user feedback.
+
+**New: iOS build (EXPERIMENTAL, testers wanted):**
+
+- **`python build.py --ios` produces a sideloadable `balatro-portrait.ipa`** — no Xcode or macOS needed. The build downloads the prebuilt unsigned LÖVE iOS app shell from [balatro-apk-maker](https://github.com/blake502/balatro-apk-maker)'s Additional Tools (SHA-256 verified, contains no game data), inserts your locally built `Game.love` into `Payload/Balatro.app/`, locks `Info.plist` to portrait orientation, and stamps the mod version. Sideload with Sideloadly or AltStore, which re-sign the IPA with your own Apple ID — see the new [docs/IOS.md](docs/IOS.md) for the full guide, the 7-day free-account caveat, and the list of things we need testers to verify (notch/safe-area, ProMotion 120 Hz, haptics). **Untested by the maintainer** (no iOS device) — please report results either way.
+- **iOS now gets the mobile feature flags.** `globals.lua` only set `F_MOBILE_UI`, `F_VERTICAL_SETTINGS`, `F_HAPTIC` etc. for Android; on iOS the game would have behaved like a desktop build. The Android branch now covers iOS too. The engine code was already iOS-safe: the launch phantom-cursor fix, swipe gestures, and `fps_cap = 'auto'` all check for both platforms, and Android-only calls (`setHint`, logcat) are guarded.
+- Lovely mod support remains Android-only (`liblovely.so`); the IPA is always vanilla.
+
+**Swipe gesture refinements (user feedback):**
+
+- **Flicking an unselected card no longer throws the selection.** If the flick starts on a hand card, that card must be one of the highlighted ones — previously, flicking any card (or any spot in the lower half) played/discarded whatever happened to be selected, which felt inconsistent.
+- **The whole selection now lifts together.** On a successful flick, every highlighted card gets a `juice_up` pop at the same moment, so the gesture reads as "throw the selected hand" rather than "throw one card and the rest follow". Manual drag-to-reorder is unaffected (slow or horizontal drags never trigger the gesture).
+
 ## [v2.2.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.2.0) - 2026-06-10
 
 Mobile gameplay UX overhaul: swipe gestures, a floating hand preview, thumb-sized touch targets, high-refresh-rate support, and root fixes for two long-standing phantom-input bugs that made the game feel like a PC port. Every new behavior is tunable (or can be disabled) from `src/portrait_config.lua`.

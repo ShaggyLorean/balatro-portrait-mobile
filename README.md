@@ -36,12 +36,14 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 - **High Refresh Rate** — Matches your display (90/120 Hz) automatically
 - **Full Game Support** — All Balatro features work in portrait mode
 - **Mod Support** — Optional [Lovely](https://github.com/ethangreen-dev/lovely-injector) integration for loading mods on Android
+- **iOS (experimental)** — Build a sideloadable `.ipa` with `--ios` ([guide](docs/IOS.md))
 
 ## Requirements
 
 - **Balatro** — You must own a legal copy of the game
 - **Python 3.6+** — For the build script
 - **Android device** — Android 5.0+ recommended
+- **iOS device** — Experimental; sideload via Sideloadly/AltStore, see [docs/IOS.md](docs/IOS.md)
 
 > **Cross-platform:** Builds on Windows, macOS, and Linux.
 
@@ -68,7 +70,8 @@ The script handles everything — on first run it will ask for your Balatro game
 |--------|---------|-------------|
 | CRT patch | off | Applies the CRT-disabling portrait patch. The default 2.0 build keeps this off. |
 | Readabletro | on | Applies the [Readabletro](https://github.com/bladeSk/readabletro) mod: TypoQuik-Bold font, high-res card and UI textures. |
-| Lovely mod support | off | Embeds the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime so mods can be loaded. Requires a rooted device. |
+| Lovely mod support | off | Embeds the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime so mods can be loaded. Requires a rooted device. Android only. |
+| iOS build | off | **Experimental.** Also produces `balatro-portrait.ipa` for sideloading with Sideloadly/AltStore. See [docs/IOS.md](docs/IOS.md). |
 
 You can also pass flags to skip the prompts:
 
@@ -82,11 +85,15 @@ Run `python build.py --help` or check the top of `build.py` for all available fl
 
 ### 3. Install on your device
 
-Transfer the APK to your phone and install it, or deploy directly via ADB:
+**Android** — transfer the APK to your phone and install it, or deploy directly via ADB:
 
 ```
 adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
 ```
+
+**iOS (experimental)** — build with `--ios`, then sideload `balatro-portrait.ipa`
+with [Sideloadly](https://sideloadly.io/) or [AltStore](https://altstore.io/).
+Full guide: [docs/IOS.md](docs/IOS.md). Untested by the maintainer — testers welcome!
 
 ## Project Structure
 
@@ -101,8 +108,9 @@ balatro-portrait-mobile/
 ├── patches/
 │   └── readabletro/            # Optional Readabletro font and texture patch
 ├── docs/
-│   └── MODDING.md              # Mod installation guide
-└── build.py                    # Unified build script (setup + Game.love + APK)
+│   ├── MODDING.md              # Mod installation guide (Android, Lovely)
+│   └── IOS.md                  # Experimental iOS build & sideloading guide
+└── build.py                    # Unified build script (setup + Game.love + APK/IPA)
 ```
 
 > `src/resources/`, `src/localization/`, and `game_original_files/` are generated

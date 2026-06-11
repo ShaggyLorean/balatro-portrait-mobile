@@ -1,5 +1,6 @@
 # Build output
 *.apk
+*.ipa
 *.love
 *.love.part
 *.keystore

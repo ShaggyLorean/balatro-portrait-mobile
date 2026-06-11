@@ -14,6 +14,8 @@ Options:
     --no-readabletro      Skip Readabletro patch
     --with-lovely         Build with Lovely mod support embedded
     --no-lovely           Build vanilla, no mod support (default)
+    --ios                 Also build an iOS .ipa for sideloading (EXPERIMENTAL)
+    --no-ios              Skip the iOS build (default)
     --balatro PATH        Path to Balatro game file (skips the interactive prompt)
     --skip-setup          Skip resource extraction (if src/resources already exists)
     --skip-apk            Only build Game.love, skip APK packaging
@@ -25,6 +27,7 @@ import hashlib
 import json
 import os
 import platform
+import plistlib
 import re
 import shutil
 import subprocess
@@ -38,7 +41,7 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-MOD_VERSION = "2.2.0"
+MOD_VERSION = "2.3.0"
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
@@ -46,6 +49,7 @@ DEFAULT_BUILD_CONFIG = {
     "crt": False,
     "readabletro": True,
     "lovely": False,
+    "ios": False,
 }
 
 WORKDIR  = os.path.abspath("balatro-mobile-maker")
@@ -74,12 +78,19 @@ LOVE_APK_URL   = "https://github.com/love2d/love-android/releases/download/11.5a
 # be hash-pinned here. All version-pinned downloads above are SHA-256 verified.
 LOVELY_APK_URL = "https://lmm.shorty.systems/base.apk"
 
+# iOS (experimental): prebuilt unsigned LOVE iOS app shell from balatro-apk-maker.
+# Game.love is inserted into the .app, Info.plist is locked to portrait, and the
+# result is sideloaded with Sideloadly/AltStore which re-sign it with the user's
+# Apple ID — no Xcode or macOS needed.
+IOS_BASE_URL = "https://github.com/blake502/balatro-apk-maker/releases/download/Additional-Tools-1.0/balatro-base.ipa"
+
 TOOL_SHA256 = {
     JDK_URL:      JDK_SHA256,
     APKTOOL_URL:  "7956eb04194300ce0d0a84ad18771eebc94b89fb8d1ddcce8ea4c056818646f4",
     SIGNER_URL:   "e1299fd6fcf4da527dd53735b56127e8ea922a321128123b9c32d619bba1d835",
     PATCH_URL:    "efa47e113b15b2963a193ff6b988544f58e0dab26a75b439943d55dba0f5b489",
     LOVE_APK_URL: "dcf71c1b54c5b5a09598ef1e6cf4852ced5e5e612de3d0f30cfdd39b5014e889",
+    IOS_BASE_URL: "1b7a060dc06f7d3ea54fd24f04ff9fcedde7a0e3539c96bfee175499b723f661",
 }
 
 # These strings must match exactly what's in src/game.lua
@@ -676,6 +687,68 @@ def build_apk(use_lovely=False, profiler=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Step 4 — iOS IPA build (experimental)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def build_ipa(profiler=None):
+    """Package Game.love into an unsigned, portrait-locked iOS .ipa.
+
+    The base is a prebuilt LOVE iOS app shell (no game data). We rewrite the
+    archive instead of appending so Info.plist can be replaced: orientation is
+    locked to portrait and the bundle version is set to MOD_VERSION. The IPA is
+    unsigned by design — Sideloadly/AltStore re-sign it at install time.
+    """
+    game_love_src = os.path.abspath("Game.love")
+    if not os.path.exists(game_love_src):
+        print("  ERROR: Game.love not found — run the build step first.")
+        sys.exit(1)
+
+    os.makedirs(WORKDIR, exist_ok=True)
+    p = profiler or BuildProfiler()
+
+    base_ipa  = os.path.join(WORKDIR, "balatro-base.ipa")
+    out_ipa   = "balatro-portrait.ipa"
+    plist_arc = "Payload/Balatro.app/Info.plist"
+    love_arc  = "Payload/Balatro.app/game.love"
+
+    with p.step("Download iOS base"):
+        _download(IOS_BASE_URL, base_ipa)
+
+    with p.step("Pack IPA"):
+        print("  Packing IPA (portrait-locked Info.plist + game.love) ...")
+        if os.path.exists(out_ipa):
+            os.remove(out_ipa)
+        with zipfile.ZipFile(base_ipa, "r") as zin, \
+             zipfile.ZipFile(out_ipa, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                if item.filename in (plist_arc, love_arc):
+                    continue
+                # passing the original ZipInfo preserves unix permissions on
+                # the Balatro executable inside the .app bundle
+                zout.writestr(item, zin.read(item.filename))
+
+            plist = plistlib.loads(zin.read(plist_arc))
+            plist["UISupportedInterfaceOrientations"] = ["UIInterfaceOrientationPortrait"]
+            plist["UISupportedInterfaceOrientations~ipad"] = ["UIInterfaceOrientationPortrait"]
+            plist["CFBundleShortVersionString"] = MOD_VERSION
+            plist["CFBundleVersion"] = MOD_VERSION
+            zout.writestr(plist_arc, plistlib.dumps(plist))
+
+            zout.write(game_love_src, love_arc)
+
+    p.report()
+    size_mb = os.path.getsize(out_ipa) / 1_048_576
+    print(f"\n{'=' * 60}")
+    print("  iOS build complete — EXPERIMENTAL (untested by maintainer)")
+    print(f"  IPA: {out_ipa}  ({size_mb:.2f} MB)")
+    print(f"{'=' * 60}")
+    print()
+    print("  Sideload with Sideloadly or AltStore (signs with your Apple ID).")
+    print("  Lovely mod support is Android-only; the IPA is always vanilla.")
+    print("  See docs/IOS.md for instructions — and please report results!")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # CLI flag parser
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -702,6 +775,12 @@ def _parse_args():
                      help="build with Lovely mod support embedded")
     lov.add_argument("--no-lovely",   dest="lovely", action="store_false",
                      help="build vanilla, no mod support (default)")
+
+    ios = parser.add_mutually_exclusive_group()
+    ios.add_argument("--ios",    dest="ios", action="store_true", default=None,
+                     help="also build an iOS .ipa for sideloading (EXPERIMENTAL)")
+    ios.add_argument("--no-ios", dest="ios", action="store_false",
+                     help="skip the iOS build (default)")
 
     parser.add_argument("--balatro", dest="balatro_path", metavar="PATH",
                         help="path to the Balatro game file (skips the interactive prompt)")
@@ -742,6 +821,7 @@ def main():
                 print(f"    CRT patch (desktop portrait):  {'yes' if config.get('crt') else 'no'}")
                 print(f"    Readabletro:                   {'yes' if config.get('readabletro') else 'no'}")
                 print(f"    Lovely mod support:            {'yes' if config.get('lovely') else 'no'}")
+                print(f"    iOS .ipa (experimental):       {'yes' if config.get('ios') else 'no'}")
                 print()
                 if not _ask("  Use these settings?", default=True):
                     config = {}
@@ -769,6 +849,12 @@ def main():
             print("     can be loaded. Requires a rooted device to install mods.")
             config["lovely"] = _ask("     Enable Lovely?", default=DEFAULT_BUILD_CONFIG["lovely"])
             print()
+            print("  4. iOS Build (EXPERIMENTAL)")
+            print("     Also produces balatro-portrait.ipa for sideloading with")
+            print("     Sideloadly or AltStore. Untested by the maintainer —")
+            print("     feedback welcome. Lovely is not available on iOS.")
+            config["ios"] = _ask("     Build iOS .ipa?", default=DEFAULT_BUILD_CONFIG["ios"])
+            print()
             with open(CONFIG_FILE, "w") as f:
                 json.dump(config, f, indent=2)
             print("  Settings saved to .buildconfig.json")
@@ -776,38 +862,46 @@ def main():
     apply_crt         = cli.get("crt",          config.get("crt",         DEFAULT_BUILD_CONFIG["crt"]))
     apply_readabletro = cli.get("readabletro",   config.get("readabletro", DEFAULT_BUILD_CONFIG["readabletro"]))
     use_lovely        = cli.get("lovely",        config.get("lovely",      DEFAULT_BUILD_CONFIG["lovely"]))
+    build_ios         = cli.get("ios",           config.get("ios",         DEFAULT_BUILD_CONFIG["ios"]))
     balatro_path      = cli.get("balatro_path",  None)
     force             = cli.get("force",         False)
+
+    total = 4 if build_ios else 3
 
     # ── Step 1 — Resources ──────────────────────────────────────────────────
     needs_setup = not os.path.exists(os.path.join("src", "resources"))
     print()
     if cli.get("skip_setup"):
-        print("[1/3] Skipping resource setup (--skip-setup).")
+        print(f"[1/{total}] Skipping resource setup (--skip-setup).")
     elif needs_setup:
-        print("[1/3] Game resources not found — extracting from Balatro.exe ...")
+        print(f"[1/{total}] Game resources not found — extracting from Balatro.exe ...")
         setup_resources(balatro_path)
     else:
-        print("[1/3] Resources already present.")
+        print(f"[1/{total}] Resources already present.")
 
     # ── Step 2 — Game.love ─────────────────────────────────────────────────
     print()
-    print("[2/3] Building Game.love ...")
+    print(f"[2/{total}] Building Game.love ...")
     build_game_love(apply_crt=apply_crt, apply_readabletro=apply_readabletro, force=force)
 
     # ── Step 3 — APK ───────────────────────────────────────────────────────
     if cli.get("skip_apk"):
         print()
-        print("[3/3] Skipping APK build (--skip-apk).")
-        return
+        print(f"[3/{total}] Skipping APK build (--skip-apk).")
+    else:
+        print()
+        print(f"[3/{total}] Building APK ...")
+        build_apk(use_lovely=use_lovely, profiler=BuildProfiler())
 
-    print()
-    print("[3/3] Building APK ...")
-    build_apk(use_lovely=use_lovely, profiler=BuildProfiler())
+        print()
+        print("  Install on device:")
+        print("    adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk")
 
-    print()
-    print("  Install on device:")
-    print("    adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk")
+    # ── Step 4 — iOS IPA (experimental) ────────────────────────────────────
+    if build_ios:
+        print()
+        print(f"[4/{total}] Building iOS IPA (experimental) ...")
+        build_ipa(profiler=BuildProfiler())
 
 
 if __name__ == "__main__":
