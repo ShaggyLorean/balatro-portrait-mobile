@@ -1,3 +1,4 @@
+
 # Balatro Portrait Mobile
 
 [![CI](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml)
@@ -16,6 +17,7 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
   <td><img src="https://github.com/user-attachments/assets/23f5d4e5-dd41-4594-a82e-27a9e343a50f" width="280"/></td>
 </tr>
 </table>
+<img width="400" height="882" alt="output_final" src="https://github.com/user-attachments/assets/7edcadc5-a828-4b6e-acf7-c3f684995f45" />
 
 ## Features
 
