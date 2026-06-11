@@ -2,7 +2,9 @@
 
 Balatro Portrait Mobile supports the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime Lua injector for loading mods (such as [Steamodded](https://github.com/Steamodded/smods)) on Android.
 
-> **Root Required**: Installing mods requires a **rooted Android device** (e.g. via [Magisk](https://github.com/topjohnwu/Magisk)). The mod directory is located at `/data/user/0/`, which is only accessible with root privileges.
+> **No root required.** The recommended install method below uses Android's
+> storage access framework via Material Files and works on stock, unrooted
+> devices. Root (Magisk) and ADB remain available as alternatives.
 
 ## Building with Lovely
 
@@ -27,25 +29,39 @@ This builds the APK using [Lovely Mobile Maker](https://github.com/WilsontheWolf
 - [Material Files](https://play.google.com/store/apps/details?id=me.zhanghai.android.files) (free on Play Store)
 - A Lovely-enabled Balatro APK (built with `--with-lovely`)
 
-### Steps
+### Method 1 — No root (recommended)
 
 1. **Install and launch the game once** — this creates the required folder structure
 2. **Open Material Files**
-3. **Navigate to the mod directory:**
+3. Open the **menu** (hamburger icon, top left) → **Add storage…** → **External storage**
+4. In the picker, open the menu again and choose the **Balatro** app, then tap
+   **"Use this folder"** and allow access
+5. The app's storage now appears in the Material Files sidebar — navigate to
+   `ASET/Mods/`
+6. **Copy your mod folders** into `Mods/`
+7. **Restart Balatro**
 
-```
-/ > data > user > 0 > com.unofficial.balatro > files > save > ASET > Mods
-```
+> Credit: this method comes from Lovely Mobile Maker's FAQ — thanks to
+> cpt_mustard for confirming it works with this project's builds.
 
-> This path is in the **root directory** (`/`), NOT in `Android/data/`. You must navigate from the root `/` of the filesystem in Material Files.
+### Method 2 — Root (Magisk)
 
-4. **Copy your mod folders** into the `Mods` directory
-5. **Restart Balatro**
-
-### Full Path
+With a rooted device you can browse to the directory directly. In Material
+Files, tap the path bar, type `/` and navigate to:
 
 ```
 /data/user/0/com.unofficial.balatro/files/save/ASET/Mods/
+```
+
+> This path is in the **root directory** (`/`), NOT in `Android/data/`.
+
+### Method 3 — ADB
+
+If you have ADB set up, you can push mods directly:
+
+```bash
+adb push MyMod /data/local/tmp/MyMod
+adb shell run-as com.unofficial.balatro cp -r /data/local/tmp/MyMod files/save/ASET/Mods/
 ```
 
 ### Mod Folder Structure Example
@@ -64,12 +80,11 @@ Mods/
 
 ## Troubleshooting
 
-### "Can't find /data/user/0/ in Material Files"
+### "I can't see the Balatro app in Add storage → External storage"
 
-Material Files needs root-level filesystem access. When browsing:
-- Tap the path bar at the top
-- Type `/` and press Enter
-- Navigate through `data > user > 0 > com.unofficial.balatro`
+- Launch the game at least once first
+- The picker's app list lives behind the **menu of the document picker** (top
+  left in the file picker screen) — look for the app name there
 
 ### "Mods folder doesn't exist"
 
@@ -85,15 +100,6 @@ Launch the game at least once after installing the APK. Lovely creates the `ASET
 
 - Ensure the mod folder is inside `ASET/Mods/`, not nested deeper
 - Ensure you built with `--with-lovely` (vanilla builds don't have Lovely)
-
-## Using ADB (Alternative)
-
-If you have ADB set up, you can push mods directly:
-
-```bash
-adb push MyMod /data/local/tmp/MyMod
-adb shell run-as com.unofficial.balatro cp -r /data/local/tmp/MyMod files/save/ASET/Mods/
-```
 
 ## Notes
 

@@ -3,6 +3,8 @@
 Balatro Portrait Mobile - Unified Build Script
 
 Handles everything: resource extraction, Game.love creation, and APK packaging.
+Runs on Windows, macOS, Linux, and Termux on Android (no PC needed - install
+the native toolchain first: pkg install python openjdk-17 apktool).
 
 Usage:
     python build.py [options]
@@ -55,6 +57,12 @@ DEFAULT_BUILD_CONFIG = {
 WORKDIR  = os.path.abspath("balatro-mobile-maker")
 JDK_DIR  = os.path.join(WORKDIR, "jdk")
 JAVA_BIN = os.path.join(JDK_DIR, "bin", "java")  # resolved after JDK extraction
+
+# Termux (building directly on an Android phone): the downloaded desktop JDK
+# and the aapt binaries bundled inside the apktool jar are x86-64 only and
+# cannot run on ARM64 Android. Use the Termux-native packages instead:
+#   pkg install python openjdk-17 apktool
+IS_TERMUX = bool(os.environ.get("TERMUX_VERSION")) or os.path.isdir("/data/data/com.termux/files/usr")
 
 if os.name == "nt":
     JDK_URL    = "https://aka.ms/download-jdk/microsoft-jdk-21.0.3-windows-x64.zip"
@@ -523,6 +531,19 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _setup_jdk():
+    global JAVA_BIN
+    if IS_TERMUX:
+        java = shutil.which("java")
+        if not java:
+            print("  ERROR: Termux detected but 'java' was not found in PATH.")
+            print("  The desktop JDK cannot run on ARM64 Android - install the")
+            print("  native toolchain instead:")
+            print("    pkg install openjdk-17 apktool")
+            sys.exit(1)
+        JAVA_BIN = java
+        print(f"  Java (Termux native): {JAVA_BIN}")
+        return
+
     archive = os.path.join(WORKDIR, "openjdk.zip" if os.name == "nt" else "openjdk.tar.gz")
     _download(JDK_URL, archive)
 
@@ -546,7 +567,6 @@ def _setup_jdk():
                 shutil.move(os.path.join(WORKDIR, item), JDK_DIR)
                 break
 
-    global JAVA_BIN
     java_exe = "java.exe" if os.name == "nt" else "java"
     for root, _, files in os.walk(JDK_DIR):
         if java_exe in files and "bin" in root:
@@ -563,6 +583,24 @@ def _java(jar, args):
     if result.returncode != 0:
         print(f"  ERROR:\n{result.stderr}")
         sys.exit(1)
+
+
+def _apktool(jar, args):
+    """Run apktool. On Termux the jar's bundled aapt binaries are x86-64 only,
+    so the native 'apktool' package (patched aapt for Android) is used instead."""
+    if IS_TERMUX:
+        tool = shutil.which("apktool")
+        if not tool:
+            print("  ERROR: Termux detected but 'apktool' was not found in PATH.")
+            print("    pkg install apktool")
+            sys.exit(1)
+        result = subprocess.run([tool] + args, cwd=WORKDIR,
+                                capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"  ERROR:\n{result.stderr}")
+            sys.exit(1)
+        return
+    _java(jar, args)
 
 
 def build_apk(use_lovely=False, profiler=None):
@@ -587,8 +625,10 @@ def build_apk(use_lovely=False, profiler=None):
         _setup_jdk()
 
     with p.step("Download tools"):
-        for url, dest in [(APKTOOL_URL, apktool), (SIGNER_URL, signer),
-                          (PATCH_URL, patch_zip), (apk_url, base_apk)]:
+        downloads = [(SIGNER_URL, signer), (PATCH_URL, patch_zip), (apk_url, base_apk)]
+        if not IS_TERMUX:  # Termux uses the native apktool package
+            downloads.insert(0, (APKTOOL_URL, apktool))
+        for url, dest in downloads:
             _download(url, dest)
 
     apk_out = os.path.join(WORKDIR, "balatro-apk")
@@ -596,7 +636,7 @@ def build_apk(use_lovely=False, profiler=None):
         if os.path.exists(apk_out):
             shutil.rmtree(apk_out)
         print("  Unpacking APK ...")
-        _java(apktool, ["d", "-o", "balatro-apk", apk_fn])
+        _apktool(apktool, ["d", "-o", "balatro-apk", apk_fn])
 
     with p.step("Patch manifest"):
         patch_dir = os.path.join(WORKDIR, "Balatro-APK-Patch")
@@ -663,7 +703,7 @@ def build_apk(use_lovely=False, profiler=None):
 
     with p.step("Repack APK"):
         print("  Repacking APK ...")
-        _java(apktool, ["b", "-o", "balatro.apk", "balatro-apk"])
+        _apktool(apktool, ["b", "-o", "balatro.apk", "balatro-apk"])
 
     with p.step("Sign APK"):
         print("  Signing APK ...")

@@ -4,18 +4,43 @@ All notable changes to Balatro Portrait Mobile.
 
 ## [v2.3.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.3.0) - 2026-06-11
 
-Experimental iOS support and swipe-gesture refinements based on user feedback.
+Swipe Only mode, a full gesture overhaul, experimental iOS support, building directly on your phone via Termux, rootless mod installs — and root fixes for the launch-time layout shift and the last of the phantom-input bugs.
+
+**New: Swipe Only mode (Settings → Game):**
+
+- **Play without buttons.** A new toggle hides the Play Hand/Discard buttons entirely — swipe up plays, swipe down discards — leaving only a compact `Sort | Rank | Suit` strip under the hand and freeing the bottom of the screen for the cards. Gestures are force-enabled in this mode regardless of the `gestures.enabled` config, so the game can never become unplayable.
+- **Applies instantly, anywhere** — menu, shop, or mid-run. The layout flag is session-latched (`G.F_SWIPE_ONLY`) and the toggle is pure layout (button row swap + hand offset), so flipping it never desyncs live animations.
+- Boss-blind code that pokes the play button UIE is nil-guarded for buttonless layouts (`blind.lua`).
+
+**Swipe gesture overhaul (user feedback):**
+
+- **The selection moves together.** While a selected card is touch-dragged vertically, the rest of the highlighted cards visibly lift with it (`group_follow`), so throwing a 5-card flush reads as throwing five cards, not one. Horizontal drags are ignored — drag-to-reorder is untouched.
+- **Slow "carry and release" plays too.** A deliberate vertical drag past the threshold triggers play/discard even when slower than a flick, but only when it started on a selected card — matching what the group-follow animation promises.
+- **Flicking an unselected card no longer throws the selection.** A gesture starting on a hand card requires that card to be highlighted.
+- On a successful flick every highlighted card gets a `juice_up` pop at the same moment.
 
 **New: iOS build (EXPERIMENTAL, testers wanted):**
 
-- **`python build.py --ios` produces a sideloadable `balatro-portrait.ipa`** — no Xcode or macOS needed. The build downloads the prebuilt unsigned LÖVE iOS app shell from [balatro-apk-maker](https://github.com/blake502/balatro-apk-maker)'s Additional Tools (SHA-256 verified, contains no game data), inserts your locally built `Game.love` into `Payload/Balatro.app/`, locks `Info.plist` to portrait orientation, and stamps the mod version. Sideload with Sideloadly or AltStore, which re-sign the IPA with your own Apple ID — see the new [docs/IOS.md](docs/IOS.md) for the full guide, the 7-day free-account caveat, and the list of things we need testers to verify (notch/safe-area, ProMotion 120 Hz, haptics). **Untested by the maintainer** (no iOS device) — please report results either way.
-- **iOS now gets the mobile feature flags.** `globals.lua` only set `F_MOBILE_UI`, `F_VERTICAL_SETTINGS`, `F_HAPTIC` etc. for Android; on iOS the game would have behaved like a desktop build. The Android branch now covers iOS too. The engine code was already iOS-safe: the launch phantom-cursor fix, swipe gestures, and `fps_cap = 'auto'` all check for both platforms, and Android-only calls (`setHint`, logcat) are guarded.
+- **`python build.py --ios` produces a sideloadable `balatro-portrait.ipa`** — no Xcode or macOS needed. The build downloads the prebuilt unsigned LÖVE iOS app shell from [balatro-apk-maker](https://github.com/blake502/balatro-apk-maker)'s Additional Tools (SHA-256 verified, contains no game data), inserts your locally built `Game.love` into `Payload/Balatro.app/`, locks `Info.plist` to portrait orientation, and stamps the mod version. Sideload with Sideloadly or AltStore — see [docs/IOS.md](docs/IOS.md) for the full guide and the list of things we need testers to verify. **Untested by the maintainer** (no iOS device) — please report results either way.
+- **iOS now gets the mobile feature flags.** `globals.lua` only set `F_MOBILE_UI`, `F_VERTICAL_SETTINGS`, `F_HAPTIC` etc. for Android; on iOS the game would have behaved like a desktop build. The engine code was already iOS-safe.
 - Lovely mod support remains Android-only (`liblovely.so`); the IPA is always vanilla.
 
-**Swipe gesture refinements (user feedback):**
+**New: build on your phone (Termux), mod without root:**
 
-- **Flicking an unselected card no longer throws the selection.** If the flick starts on a hand card, that card must be one of the highlighted ones — previously, flicking any card (or any spot in the lower half) played/discarded whatever happened to be selected, which felt inconsistent.
-- **The whole selection now lifts together.** On a successful flick, every highlighted card gets a `juice_up` pop at the same moment, so the gesture reads as "throw the selected hand" rather than "throw one card and the rest follow". Manual drag-to-reorder is unaffected (slow or horizontal drags never trigger the gesture).
+- **Termux support in `build.py`.** The desktop JDK and the apktool jar's bundled aapt binaries are x86-64 only and can't run on ARM64 Android. The script now detects Termux and uses the native toolchain instead (`pkg install python openjdk-17 apktool`) — no PC needed to build the APK. Thanks to **cpt_mustard** (Reddit) for working this out and reporting back.
+- **Mods install without root.** Material Files → *Add storage…* → *External storage* → pick the Balatro app → *Use this folder* exposes `ASET/Mods/` on stock, unrooted devices (method from Lovely Mobile Maker's FAQ, confirmed against this project's builds). [docs/MODDING.md](docs/MODDING.md) now documents all three methods (SAF, root, ADB) with the no-root path as the recommended default.
+
+**Bug Fixes:**
+
+- **The splash screen and main menu no longer drift left until the first touch.** Root cause found via on-device telemetry: the v2.2.0 phantom-touch fix parked the virtual cursor at (-9999, -9999), and the room-shake parallax — which leans the whole ROOM toward the cursor every frame — translated that into a constant ~1.08-unit left shift (scaling with the screenshake setting). The cursor now parks just offscreen at (-100, -100): hover remains impossible before the first touch, while the parallax error drops to an imperceptible ~0.03 units.
+- **The rare "pre-clicked card on launch" is fully closed.** Android occasionally emits synthetic (non-touch) mouse events at boot with a phantom position; one slipping through flipped the controller back into mouse mode. All mouse-flavored events are now ignored on Android/iOS until a real touch has been seen.
+- **Boss debuff alerts no longer run off the screen** (e.g. The Arm's "Decrease level of played poker hand"): portrait popups clamp their max width to the room and shrink to fit.
+- **The boot loading card re-centers on every resize** — Android fires several resizes while the window settles (fullscreen, nav bar), and the card's once-computed position could go stale.
+- **Card-area widths clamp to the room** in `set_screen_positions`, so shelves can never overflow the screen edges regardless of scale settings.
+
+**Notes:**
+
+- `swipe_only.scale_mult` exists in `portrait_config.lua` to scale the whole UI up in Swipe Only mode, but ships disabled (1.0): changing `TILESCALE` mid-session desynced every previously computed position. Enable at your own risk.
 
 ## [v2.2.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.2.0) - 2026-06-10
 

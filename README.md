@@ -45,7 +45,8 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 - **Android device** — Android 5.0+ recommended
 - **iOS device** — Experimental; sideload via Sideloadly/AltStore, see [docs/IOS.md](docs/IOS.md)
 
-> **Cross-platform:** Builds on Windows, macOS, and Linux.
+> **Cross-platform:** Builds on Windows, macOS, Linux — and directly on your
+> Android phone via [Termux](https://termux.dev) (no PC needed, see below).
 
 ## Quick Start
 
@@ -95,6 +96,21 @@ adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
 with [Sideloadly](https://sideloadly.io/) or [AltStore](https://altstore.io/).
 Full guide: [docs/IOS.md](docs/IOS.md). Untested by the maintainer — testers welcome!
 
+### Building on Android itself (Termux, no PC)
+
+You can build the APK directly on your phone with [Termux](https://termux.dev).
+The desktop JDK and apktool jar don't run on ARM64 Android, so install the
+Termux-native toolchain — the build script detects Termux and uses it
+automatically:
+
+```
+pkg install python openjdk-17 apktool
+# copy your Balatro.exe (or Game.love) into the Termux home folder, then:
+python build.py --balatro ~/Balatro.exe
+```
+
+Install the produced APK with your file manager (enable "install unknown apps").
+
 ## Project Structure
 
 ```
@@ -118,16 +134,17 @@ balatro-portrait-mobile/
 
 ## Mod Support (Lovely)
 
-Build with Lovely enabled (default) to embed the mod runtime. After installation:
+Build with Lovely enabled to embed the mod runtime. After installation:
 
 1. Launch the game once to create the folder structure
 2. Install [Material Files](https://play.google.com/store/apps/details?id=me.zhanghai.android.files)
-3. Navigate to: `/data/user/0/com.unofficial.balatro/files/save/ASET/Mods/`
-4. Place your mod folders there and restart the game
+3. **No root needed:** in Material Files open the menu (top left) → *Add storage…*
+   → *External storage* → pick the Balatro app → *Use this folder*. The app's
+   storage appears in the sidebar — put your mod folders in `ASET/Mods/`
+4. Restart the game
 
-> **Root required** — mod directories are inside `/data/`, which needs root access (e.g. [Magisk](https://github.com/topjohnwu/Magisk)).
-
-See [docs/MODDING.md](docs/MODDING.md) for detailed instructions.
+Root (Magisk) or ADB also work as alternatives — see
+[docs/MODDING.md](docs/MODDING.md) for all three methods and troubleshooting.
 
 ## Troubleshooting
 
@@ -169,6 +186,7 @@ In-game price increases are **base Balatro mechanics**, not a bug in this mod. C
 - **[WilsontheWolf](https://github.com/WilsontheWolf)** — Lovely Mobile Maker
 - **[bladeSk](https://github.com/bladeSk)** — Readabletro mod (fonts, shaders, textures)
 - **[blake502](https://github.com/blake502)** — Balatro APK Maker (APK patch tools)
+- **cpt_mustard** (Reddit) — Termux build pointers, rootless mod-install method
 
 ## Disclaimer
 
