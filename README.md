@@ -5,7 +5,15 @@
 
 A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 
-<table>
+## Demo
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/7edcadc5-a828-4b6e-acf7-c3f684995f45" width="320" alt="demo"/>
+</p>
+
+## Screenshots
+
+<table align="center">
 <tr>
   <td><img src="https://github.com/user-attachments/assets/14852345-7ef5-4ec6-a6e7-c1cf6f2e0b89" width="280"/></td>
   <td><img src="https://github.com/user-attachments/assets/217ba77c-806a-4d97-8b2e-7190d2fd60cc" width="280"/></td>
@@ -17,7 +25,6 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
   <td><img src="https://github.com/user-attachments/assets/23f5d4e5-dd41-4594-a82e-27a9e343a50f" width="280"/></td>
 </tr>
 </table>
-<img width="400" height="882" alt="output_final" src="https://github.com/user-attachments/assets/7edcadc5-a828-4b6e-acf7-c3f684995f45" />
 
 ## Features
 
