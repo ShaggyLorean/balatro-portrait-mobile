@@ -317,7 +317,19 @@ function love.gamepadreleased(joystick, button)
     G.CONTROLLER:button_release(button)
 end
 
+--Mobile: Android/iOS occasionally emit synthetic (non-touch) mouse events at
+--launch with a phantom position. If one slips through before any real touch,
+--it flips the controller back into mouse mode and hover-selects whatever sits
+--under the phantom cursor (the rare "pre-clicked card on launch" bug). Ignore
+--all mouse-flavored events until a real touch has been seen.
+local _MOBILE_OS = love.system.getOS() == 'Android' or love.system.getOS() == 'iOS'
+local function _ignore_phantom_mouse(touch_flag)
+    if touch_flag or not _MOBILE_OS then return false end
+    return not (G and G.CONTROLLER and G.CONTROLLER.touch_position and G.CONTROLLER.touch_position.seen)
+end
+
 function love.mousepressed(x, y, button, touch)
+    if _ignore_phantom_mouse(touch) then return end
     _logcat("BALATRO_INPUT", string.format("MOUSEPRESSED: x=%s y=%s button=%s touch=%s", tostring(x), tostring(y), tostring(button), tostring(touch)))
     if not (G and G.CONTROLLER) then return end
 
@@ -355,14 +367,28 @@ end
 --guards as the Play/Discard buttons (can_play/can_discard).
 local function _check_swipe_gesture(x, y)
     local gz = PORTRAIT_CONFIG and PORTRAIT_CONFIG.gestures
-    if not (gz and gz.enabled and G.F_PORTRAIT) then return end
+    -- Swipe Only mode has no Play/Discard buttons, so gestures stay on there
+    -- regardless of the gestures.enabled config.
+    local gestures_on = gz and (gz.enabled or G.F_SWIPE_ONLY)
+    if not (gestures_on and G.F_PORTRAIT) then return end
     local gs = G.CONTROLLER and G.CONTROLLER.gesture_start
     if G.CONTROLLER then G.CONTROLLER.gesture_start = nil end
     if not gs then return end
     if not (G.STATE == G.STATES.SELECTING_HAND and G.hand and #G.hand.highlighted > 0) then return end
     if G.OVERLAY_MENU or G.TAROT_INTERRUPT or G.SETTINGS.paused then return end
     if G.play and G.play.cards[1] then return end
-    if love.timer.getTime() - gs.t > (gz.max_time or 0.45) then return end
+
+    -- If the gesture started on a hand card, it must be one of the selected
+    -- cards — flicking an unselected card must not throw the selection.
+    local pressed = G.CONTROLLER.cursor_down and G.CONTROLLER.cursor_down.target
+    local pressed_selected = pressed and pressed.area == G.hand and pressed.highlighted
+    if pressed and pressed.area == G.hand and not pressed_selected then return end
+
+    -- Fast flicks work from anywhere in the lower half. A slow vertical
+    -- "carry and release" also triggers, but only when the drag started on a
+    -- selected card — matching the group-follow animation where the whole
+    -- selection visibly moves with the finger.
+    if not pressed_selected and love.timer.getTime() - gs.t > (gz.max_time or 0.45) then return end
 
     local unit = (G.TILESCALE or 1) * (G.TILESIZE or 20)
     if unit <= 0 then return end
@@ -370,11 +396,6 @@ local function _check_swipe_gesture(x, y)
     if math.abs(dy) < (gz.min_swipe or 1.4) then return end
     if math.abs(dx) > math.abs(dy) * (gz.max_dx_ratio or 0.6) then return end
     if gs.y < 0.5 * love.graphics.getHeight() then return end
-
-    -- If the flick started on a hand card, it must be one of the selected
-    -- cards — flicking an unselected card must not throw the selection.
-    local pressed = G.CONTROLLER.cursor_down and G.CONTROLLER.cursor_down.target
-    if pressed and pressed.area == G.hand and not pressed.highlighted then return end
 
     -- Lift the whole selection together so the gesture reads as "throw the
     -- selected hand", not "throw one card".
@@ -394,6 +415,7 @@ local function _check_swipe_gesture(x, y)
 end
 
 function love.mousereleased(x, y, button, touch)
+    if _ignore_phantom_mouse(touch) then return end
     if not (G and G.CONTROLLER) then return end
     if touch and G.CONTROLLER.touch_position then
         G.CONTROLLER.touch_position.x = x
@@ -411,6 +433,7 @@ function love.mousereleased(x, y, button, touch)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
+    if _ignore_phantom_mouse(istouch) then return end
     if not (G and G.CONTROLLER) then return end
     dx = dx or 0
     dy = dy or 0
@@ -662,6 +685,14 @@ function love.resize(w, h)
 			if G.HUD then G.HUD:recalculate() end
 
 			set_screen_positions()
+
+			-- Boot loading card: its spawn position goes stale when Android
+			-- fires follow-up resizes while the window settles — re-center it.
+			if G.boot_loading_card and not G.boot_loading_card.REMOVED then
+				G.boot_loading_card.T.x = G.ROOM.T.w/2 - G.boot_loading_card.T.w/2
+				G.boot_loading_card.T.y = G.ROOM.T.h/2 - G.boot_loading_card.T.h/2
+				if G.boot_loading_card.hard_set_VT then G.boot_loading_card:hard_set_VT() end
+			end
 		end
 	else
 		if w/h < 1 then

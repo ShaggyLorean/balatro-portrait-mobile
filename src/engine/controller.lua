@@ -88,8 +88,12 @@ if love.system.getOS() == 'Android' or love.system.getOS() == 'iOS' then
     self.HID.mouse = false
     self.HID.touch = true
     self.HID.last_type = 'touch'
-    self.cursor_position.x = -9999
-    self.cursor_position.y = -9999
+    --Just offscreen, not far: the room-shake parallax leans the ROOM toward
+    --the cursor, so an extreme park position (e.g. -9999) visibly shifted the
+    --whole splash/menu left until the first touch. -100 keeps hover impossible
+    --while the parallax error stays imperceptible (~0.03 units).
+    self.cursor_position.x = -100
+    self.cursor_position.y = -100
 end
 
 --The gamepad most recently used, if any

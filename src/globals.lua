@@ -170,6 +170,7 @@ function Game:set_globals()
         screenshake = true,
         run_stake_stickers = false,
         haptic_enabled = true,
+        swipe_only_mode = false,
         rumble = self.F_RUMBLE,
         play_button_pos = 2,
         play_main_hand = 2,
@@ -571,6 +572,37 @@ function on_haptic_setting_changed(enabled)
     if not enabled then
         stop_haptics()
     end
+end
+
+--Builds (or rebuilds) the bottom button row. In Swipe Only mode the compact
+--sort strip is pinned to the bottom of the screen instead of riding under the
+--hand, so it never overlaps the cards during deal/play animations.
+function rebuild_buttons_uibox()
+    if G.buttons then G.buttons:remove(); G.buttons = nil end
+    local swipe_only = G.F_PORTRAIT and G.F_SWIPE_ONLY
+    -- Both modes attach under the hand (the proven render path); Swipe Only
+    -- shows the compact sort strip, offset past the hand's card counter so
+    -- the "8/8" label never overlaps it.
+    G.buttons = UIBox{
+        definition = create_UIBox_buttons(),
+        config = {align = 'bm', offset = {x=0, y=swipe_only and 0.45 or 0.3}, major = G.hand, bond = 'Weak'}
+    }
+end
+
+--Swipe Only mode: hides the Play Hand/Discard buttons (swipe up = play,
+--swipe down = discard) and scales the whole portrait UI up to use the freed
+--space. The layout flag (G.F_SWIPE_ONLY) is latched per session/stage: it is
+--re-read from the setting in Game:start_up and Game:prep_stage, so toggling
+--mid-run never reflows a live layout — it takes effect at the Main Menu.
+function on_swipe_only_setting_changed(enabled)
+    if G and G.save_settings then G:save_settings() end
+    if not G then return end
+    --With the global scale boost disabled the toggle is pure layout: swap the
+    --button row and let set_screen_positions apply the new hand offset. Safe
+    --to do live from anywhere (menu, shop, mid-run).
+    G.F_SWIPE_ONLY = not not enabled
+    if G.buttons then rebuild_buttons_uibox() end
+    if G.F_PORTRAIT then pcall(set_screen_positions) end
 end
 
 function trigger_haptic(pattern_name)

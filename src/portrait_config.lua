@@ -37,6 +37,15 @@ PORTRAIT_CONFIG = {
         min_swipe = 1.4, -- min vertical travel in game units to count as a flick
         max_dx_ratio = 0.6, -- horizontal drift allowed relative to vertical travel
         max_time = 0.45, -- max press-to-release seconds for a flick
+        group_follow = true, -- selected cards visually follow a vertical drag together
+    },
+    swipe_only = {
+        -- Global scale boost is disabled (1.0): changing TILESCALE mid-session
+        -- desynced every position computed before the change (shop layouts,
+        -- the boot splash, card area widths). The mode's value is the removed
+        -- buttons and the lower hand. Set below 1.0 at your own risk.
+        scale_mult = 1.0,
+        hand_base_offset = 2.3, -- bottom space when only the sort row remains
     },
     hand_preview = {
         enabled = true,
@@ -145,15 +154,32 @@ PORTRAIT_CONFIG = {
 
 function get_portrait_scale(w, h)
     local aspect = h / w
+    local s
     if aspect > 2.2 then
-        return 0.58
+        s = 0.58
     elseif aspect > 1.8 then
-        return 0.63
+        s = 0.63
     elseif aspect > 1.5 then
-        return 0.70
+        s = 0.70
     else
-        return 0.80
+        s = 0.80
     end
+    -- Swipe Only mode: no Play/Discard buttons, so scale the whole UI up to
+    -- fill the freed space (smaller divisor = bigger UI). Reads the session-
+    -- latched flag, never the live setting, so layout stays consistent.
+    if G and G.F_SWIPE_ONLY and PORTRAIT_CONFIG.swipe_only then
+        s = s * (PORTRAIT_CONFIG.swipe_only.scale_mult or 0.92)
+    end
+    return s
+end
+
+--Bottom space reserved under the hand: smaller in Swipe Only mode, where only
+--the compact sort row remains below the cards.
+function get_hand_base_offset()
+    if G and G.F_SWIPE_ONLY and PORTRAIT_CONFIG.swipe_only then
+        return PORTRAIT_CONFIG.swipe_only.hand_base_offset or PORTRAIT_CONFIG.hand_base_offset
+    end
+    return PORTRAIT_CONFIG.hand_base_offset
 end
 
 function apply_portrait_tooltip_fit(config)

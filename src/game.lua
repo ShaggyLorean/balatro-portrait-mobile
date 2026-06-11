@@ -39,6 +39,11 @@ function Game:start_up()
     self.SETTINGS.version = settings_ver or G.VERSION
     self.SETTINGS.paused = nil
 
+    --Latch Swipe Only mode for this session. The flag is read by layout code
+    --(portrait scale, hand offset, button row) and must never change while a
+    --stage is live — mid-session toggles re-latch in prep_stage instead.
+    self.F_SWIPE_ONLY = not not self.SETTINGS.swipe_only_mode
+
     local new_colour_proto = self.C["SO_"..(self.SETTINGS.colourblind_option and 2 or 1)]
     self.C.SUITS.Hearts = new_colour_proto.Hearts
     self.C.SUITS.Diamonds = new_colour_proto.Diamonds
@@ -1249,6 +1254,10 @@ function Game:prep_stage(new_stage, new_state, new_game_obj)
     self.STATE_COMPLETE = false
     self.SETTINGS.paused = false
 
+    --Stage transition is the safe moment to apply a Swipe Only toggle made
+    --mid-run: everything below (ROOM, resize, layouts) is rebuilt from scratch.
+    self.F_SWIPE_ONLY = not not self.SETTINGS.swipe_only_mode
+
     self.ROOM = Node{T={
         x = self.ROOM_PADDING_W,
         y = self.ROOM_PADDING_H,
@@ -1434,6 +1443,10 @@ function Game:splash_screen()
                 SC.states.drag.can = false
                 SC.states.hover.can = false
                 SC.no_ui = true
+                --Android fires several resizes during the first seconds of boot
+                --(fullscreen/nav-bar settling); the card's position is computed
+                --once, so love.resize re-centers it via this ref until it dissolves.
+                G.boot_loading_card = SC
                 G.VIBRATION = G.VIBRATION + 2
                 play_sound('whoosh1', 0.7, 0.2)
                 play_sound('introPad1', 0.704, 0.6)
@@ -3092,10 +3105,7 @@ function Game:update_selecting_hand(dt)
         }))
     end
     if not self.buttons and not self.deck_preview then
-        self.buttons = UIBox{
-            definition = create_UIBox_buttons(),
-            config = {align="bm", offset = {x=0,y=0.3},major = G.hand, bond = 'Weak'}
-        }
+        rebuild_buttons_uibox()
     end
     if self.buttons and not self.buttons.states.visible and not self.deck_preview then
         self.buttons.states.visible = true
@@ -3120,6 +3130,18 @@ end
 function Game:update_shop(dt)
     if not G.STATE_COMPLETE then
         stop_use()
+
+        --Shop entry is a safe boundary to apply a pending Swipe Only toggle:
+        --no cards are mid-animation and the shop UI hasn't been built yet, so
+        --everything below picks up the new scale/layout. The next hand then
+        --starts in the new mode without restarting the run.
+        if G.F_PORTRAIT and G.F_SWIPE_ONLY ~= (not not G.SETTINGS.swipe_only_mode) then
+            G.F_SWIPE_ONLY = not not G.SETTINGS.swipe_only_mode
+            pcall(function() love.resize(love.graphics.getDimensions()) end)
+            if G.HUD and G.ROOM then G.HUD.T.x = (G.ROOM.T.w - G.HUD.T.w)/2 end
+            rebuild_buttons_uibox()
+        end
+
         ease_background_colour_blind(G.STATES.SHOP)
         local shop_exists = not not G.shop
         G.shop = G.shop or UIBox{

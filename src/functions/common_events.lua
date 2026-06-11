@@ -7,15 +7,24 @@ function set_screen_positions()
             local pc = PORTRAIT_CONFIG
             local room_w = G.ROOM.T.w or 10
             local room_h = G.ROOM.T.h or 20
-            
+
             local hud_top_space = pc.hud_top_space
             local bottom_margin = pc.bottom_margin
+
+            -- Card area widths are fixed at run start; the room width in game
+            -- units shrinks when the UI is scaled up (Swipe Only mode), which
+            -- would push the shelves past the screen edges. Clamp them to the
+            -- room so everything stays centered at any scale.
+            local max_area_w = room_w * (pc.usable_w_factor or 0.96)
+            if G.jokers.T.w > max_area_w then G.jokers.T.w = max_area_w end
+            if G.hand.T.w > max_area_w then G.hand.T.w = max_area_w end
+            if G.play.T.w > max_area_w then G.play.T.w = max_area_w end
 
             G.jokers.T.x = (room_w - G.jokers.T.w) / 2
             G.jokers.T.y = pc.jokers_y
             
             G.hand.T.x = (room_w - G.hand.T.w) / 2
-            G.hand.T.y = room_h - G.hand.T.h - bottom_margin - pc.hand_base_offset
+            G.hand.T.y = room_h - G.hand.T.h - bottom_margin - get_hand_base_offset()
 
             -- Center the played-card "stage" in the gap between the joker shelf
             -- and the hand, instead of hugging the hand and leaving the middle

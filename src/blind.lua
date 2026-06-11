@@ -251,8 +251,9 @@ function Blind:alert_debuff(first)
                                     func = (function()
                                         self.block_play = nil
                                         if G.buttons then
+                                            -- Swipe Only mode has no play button UIE
                                             local _buttons = G.buttons:get_UIE_by_ID('play_button')
-                                            _buttons.disable_button = nil
+                                            if _buttons then _buttons.disable_button = nil end
                                         end
                                         return true
                                     end)

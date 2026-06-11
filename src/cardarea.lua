@@ -235,7 +235,7 @@ function CardArea:move(dt)
         local desired_y
         if G.F_PORTRAIT then
             local room_h = (G.ROOM and G.ROOM.T and G.ROOM.T.h) or G.TILE_H or 10
-            local base_offset = PORTRAIT_CONFIG.hand_base_offset
+            local base_offset = get_hand_base_offset()
             local slide_offset = 3*((not G.deck_preview and (G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.DRAW_TO_HAND)) and 1 or 0)
             desired_y = room_h - G.hand.T.h - base_offset - slide_offset
         else
@@ -252,6 +252,35 @@ function CardArea:move(dt)
     end
     Moveable.move(self, dt)
     self:align_cards()
+
+    -- Portrait gesture feedback: while a selected hand card is being touch-
+    -- dragged vertically, lift the rest of the selection with it so the whole
+    -- hand visibly moves together before the flick plays/discards it.
+    -- Horizontal drags are ignored, so drag-to-reorder is unaffected.
+    if self == G.hand and G.F_PORTRAIT and G.STATE == G.STATES.SELECTING_HAND
+        and PORTRAIT_CONFIG.gestures
+        and (PORTRAIT_CONFIG.gestures.enabled or G.F_SWIPE_ONLY)
+        and (PORTRAIT_CONFIG.gestures.group_follow ~= false) then
+        local drag = G.CONTROLLER.dragging.target
+        local gs = G.CONTROLLER.gesture_start
+        local tp = G.CONTROLLER.touch_position
+        if drag and gs and tp and tp.active and drag.area == self and drag.highlighted
+            and self.highlighted and #self.highlighted > 1 then
+            local unit = (G.TILESCALE or 1) * (G.TILESIZE or 20)
+            if unit > 0 then
+                local dy = (tp.y - gs.y) / unit
+                local dx = (tp.x - gs.x) / unit
+                if math.abs(dy) > 0.15 and math.abs(dy) > math.abs(dx) then
+                    dy = math.max(-4, math.min(dy, 2))
+                    for _, card in ipairs(self.highlighted) do
+                        if card ~= drag then
+                            card.T.y = card.T.y + dy
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 
 function CardArea:update(dt)

@@ -846,11 +846,7 @@ end
 G.FUNCS.change_play_discard_position = function(args)
   G.SETTINGS.play_button_pos = args.to_key
   if G.buttons then
-    G.buttons:remove()
-      G.buttons = UIBox{
-          definition = create_UIBox_buttons(),
-          config = {align="bm", offset = {x=0,y=0.3},major = G.hand, bond = 'Weak'}
-      }
+    rebuild_buttons_uibox()
   end
 end
 

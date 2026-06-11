@@ -936,6 +936,11 @@ end
     if G.F_PORTRAIT and G.STAGE == G.STAGES.RUN then
       args.scale = args.scale * (PORTRAIT_CONFIG.score_text_mult or 1)
     end
+    -- Portrait: never let a popup run wider than the screen (e.g. long boss
+    -- debuff alerts) — DynaText shrinks the text to fit maxw.
+    if G.F_PORTRAIT and G.ROOM and G.ROOM.T then
+      args.maxw = math.min(args.maxw or 100, G.ROOM.T.w - 1)
+    end
     args.colour = copy_table(args.colour or G.C.WHITE)
     args.hold = (args.hold or 0) + 0.1*(G.SPEEDFACTOR)
     args.pos = args.pos or {x = 0, y = 0}
@@ -1060,6 +1065,26 @@ function create_UIBox_buttons()
       {n=G.UIT.T, config={text = localize('b_discard'), scale = text_scale, maxw = button_width - 0.6, colour = G.C.UI.TEXT_LIGHT, focus_args = {button = 'y', orientation = 'bm'}, func = 'set_button_pip'}}
     }}
   }}
+
+  -- Swipe Only mode: no Play/Discard buttons (swipe up = play, swipe down =
+  -- discard) — just a compact horizontal sort strip under the hand.
+  if G.F_PORTRAIT and G.F_SWIPE_ONLY then
+    return {
+      n=G.UIT.ROOT, config = {align = "cm", minw = 1, minh = 0.3, padding = 0.15, r = 0.1, colour = G.C.CLEAR}, nodes={
+        {n=G.UIT.C, config={align = "cm", padding = 0.08, r = 0.1, colour =G.C.UI.TRANSPARENT_DARK, outline = 1.5, outline_colour = mix_colours(G.C.WHITE,G.C.JOKER_GREY, 0.7), line_emboss = 1}, nodes={
+          {n=G.UIT.C, config={align = "cm", padding = 0.05}, nodes={
+            {n=G.UIT.T, config={text = localize('b_sort_hand'), scale = text_scale*0.6, colour = G.C.UI.TEXT_LIGHT}}
+          }},
+          {n=G.UIT.C, config={align = "cm", minh = 0.62, minw = 0.9, padding = 0.08, r = 0.1, hover = true, colour =G.C.ORANGE, button = "sort_hand_value", shadow = true}, nodes={
+            {n=G.UIT.T, config={text = localize('k_rank'), scale = text_scale*0.55, colour = G.C.UI.TEXT_LIGHT}}
+          }},
+          {n=G.UIT.C, config={align = "cm", minh = 0.62, minw = 0.9, padding = 0.08, r = 0.1, hover = true, colour =G.C.ORANGE, button = "sort_hand_suit", shadow = true}, nodes={
+            {n=G.UIT.T, config={text = localize('k_suit'), scale = text_scale*0.55, colour = G.C.UI.TEXT_LIGHT}}
+          }}
+        }}
+      }
+    }
+  end
 
   if G.F_PORTRAIT then
     local t = {
@@ -2807,6 +2832,7 @@ function G.UIDEF.settings_tab(tab)
       G.F_PORTRAIT and create_option_cycle({w = 5, label = 'Left or Right Hand',scale = 0.8, options = ml_play_main_hand_opt, opt_callback = 'change_play_main_hand', current_option = (G.SETTINGS.play_main_hand)}),
       G.F_PORTRAIT and create_option_cycle({w = 5, label = 'Run Info/Options Button Position (Classic Only)',scale = 0.8, options = ml_runinfo_options_pos_opt, opt_callback = 'change_runinfo_options_position', current_option = (G.SETTINGS.runinfo_options_button_pos)}),
       G.F_RUMBLE and create_toggle({label = localize('b_set_rumble'), ref_table = G.SETTINGS, ref_value = 'rumble'}) or nil,
+      G.F_PORTRAIT and create_toggle({label = 'Swipe Only Mode (no Play/Discard buttons)', ref_table = G.SETTINGS, ref_value = 'swipe_only_mode', callback = on_swipe_only_setting_changed}) or nil,
       G.F_PORTRAIT and create_toggle({label = 'Haptic Feedback', ref_table = G.SETTINGS, ref_value = 'haptic_enabled', callback = on_haptic_setting_changed}) or nil,
       create_slider({label = localize('b_set_screenshake'),w = 4, h = 0.4, ref_table = G.SETTINGS, ref_value = 'screenshake', min = 0, max = 100}),
       create_toggle({label = localize('ph_display_stickers'), ref_table = G.SETTINGS, ref_value = 'run_stake_stickers'}),
