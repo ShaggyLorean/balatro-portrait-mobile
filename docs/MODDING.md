@@ -41,8 +41,7 @@ This builds the APK using [Lovely Mobile Maker](https://github.com/WilsontheWolf
 6. **Copy your mod folders** into `Mods/`
 7. **Restart Balatro**
 
-> Credit: this method comes from Lovely Mobile Maker's FAQ — thanks to
-> cpt_mustard for confirming it works with this project's builds.
+> This method comes from Lovely Mobile Maker's FAQ.
 
 ### Method 2 — Root (Magisk)
 

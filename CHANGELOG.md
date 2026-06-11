@@ -27,7 +27,7 @@ Swipe Only mode, a full gesture overhaul, experimental iOS support, building dir
 
 **New: build on your phone (Termux), mod without root:**
 
-- **Termux support in `build.py`.** The desktop JDK and the apktool jar's bundled aapt binaries are x86-64 only and can't run on ARM64 Android. The script now detects Termux and uses the native toolchain instead (`pkg install python openjdk-17 apktool`) — no PC needed to build the APK. Thanks to **cpt_mustard** (Reddit) for working this out and reporting back.
+- **Termux support in `build.py`.** The desktop JDK and the apktool jar's bundled aapt binaries are x86-64 only and can't run on ARM64 Android. The script now detects Termux and uses the native toolchain instead (`pkg install python openjdk-17 apktool`) — no PC needed to build the APK.
 - **Mods install without root.** Material Files → *Add storage…* → *External storage* → pick the Balatro app → *Use this folder* exposes `ASET/Mods/` on stock, unrooted devices (method from Lovely Mobile Maker's FAQ, confirmed against this project's builds). [docs/MODDING.md](docs/MODDING.md) now documents all three methods (SAF, root, ADB) with the no-root path as the recommended default.
 
 **Bug Fixes:**

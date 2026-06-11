@@ -186,7 +186,6 @@ In-game price increases are **base Balatro mechanics**, not a bug in this mod. C
 - **[WilsontheWolf](https://github.com/WilsontheWolf)** — Lovely Mobile Maker
 - **[bladeSk](https://github.com/bladeSk)** — Readabletro mod (fonts, shaders, textures)
 - **[blake502](https://github.com/blake502)** — Balatro APK Maker (APK patch tools)
-- **cpt_mustard** (Reddit) — Termux build pointers, rootless mod-install method
 
 ## Disclaimer
 
