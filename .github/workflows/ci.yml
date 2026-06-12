@@ -44,5 +44,5 @@ jobs:
           # No game files in CI (copyrighted) — packaging src/ alone is enough
           # to catch path bugs and patch-target drift in build.py.
           mkdir -p src/resources/fonts src/resources/shaders src/localization
-          python build.py --no-crt --no-readabletro --no-lovely --skip-setup --skip-apk --force
+          python build.py --no-crt --no-readabletro --no-ios --skip-setup --skip-apk --force
           test -f Game.love && unzip -l Game.love | tail -3

@@ -295,14 +295,14 @@ def setup_resources(balatro_path=None):
         src = os.path.join(game_files_dir, folder)
         dst = os.path.join(src_dir, folder)
         if not os.path.exists(src):
-            print(f"  ERROR: '{folder}' not found inside Balatro.exe — wrong file?")
+            print(f"  ERROR: '{folder}' not found inside Balatro.exe - wrong file?")
             sys.exit(1)
         print(f"  Copying {folder} ...")
         if os.path.exists(dst):
             shutil.rmtree(dst)
         shutil.copytree(src, dst)
 
-    print("  Done — resources ready.")
+    print("  Done - resources ready.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -349,7 +349,7 @@ def _apply_crt_patch(src_dir, apply):
         if CRT_PATCH_MODIFIED in content:
             return
         if CRT_PATCH_ORIGINAL not in content:
-            print("  Warning: CRT patch target not found in game.lua — skipping.")
+            print("  Warning: CRT patch target not found in game.lua - skipping.")
             return
         content = content.replace(CRT_PATCH_ORIGINAL, CRT_PATCH_MODIFIED)
         print("  CRT shader disabled for all portrait modes.")
@@ -467,7 +467,7 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
     changed, current_files = _sources_changed(src_dir, output_file)
 
     if not force and not changed:
-        print("  No source changes — skipping rebuild.")
+        print("  No source changes - skipping rebuild.")
         if apply_crt:
             _apply_crt_patch(src_dir, apply=False)
         if apply_readabletro:
@@ -615,7 +615,7 @@ def build_apk(profiler=None):
     """Download tools, package, and sign the always-Lovely Android APK."""
     game_love_src = os.path.abspath("Game.love")
     if not os.path.exists(game_love_src):
-        print("  ERROR: Game.love not found — run the build step first.")
+        print("  ERROR: Game.love not found - run the build step first.")
         sys.exit(1)
 
     os.makedirs(WORKDIR, exist_ok=True)
@@ -692,7 +692,7 @@ def build_apk(profiler=None):
 
     p.report()
     print(f"\n{'=' * 60}")
-    print("  Build complete — MODDED (Lovely)")
+    print("  Build complete - MODDED (Lovely)")
     print(f"  APK: balatro-mobile-maker/balatro-aligned-debugSigned.apk")
     print(f"{'=' * 60}")
 
@@ -718,7 +718,7 @@ def build_ipa(profiler=None):
     """
     game_love_src = os.path.abspath("Game.love")
     if not os.path.exists(game_love_src):
-        print("  ERROR: Game.love not found — run the build step first.")
+        print("  ERROR: Game.love not found - run the build step first.")
         sys.exit(1)
 
     os.makedirs(WORKDIR, exist_ok=True)
@@ -757,13 +757,13 @@ def build_ipa(profiler=None):
     p.report()
     size_mb = os.path.getsize(out_ipa) / 1_048_576
     print(f"\n{'=' * 60}")
-    print("  iOS build complete — EXPERIMENTAL (untested by maintainer)")
+    print("  iOS build complete - EXPERIMENTAL (untested by maintainer)")
     print(f"  IPA: {out_ipa}  ({size_mb:.2f} MB)")
     print(f"{'=' * 60}")
     print()
     print("  Sideload with Sideloadly or AltStore (signs with your Apple ID).")
     print("  Lovely mod support is Android-only; the IPA is always vanilla.")
-    print("  See docs/IOS.md for instructions — and please report results!")
+    print("  See docs/IOS.md for instructions - and please report results!")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -842,7 +842,7 @@ def main():
 
         if not config:
             print()
-            print("  ── Build options ──────────────────────────────────────")
+            print("  -- Build options --------------------------------------")
             print()
             print("  1. CRT Shader Patch")
             print("     On some devices the CRT shader causes visual artifacts in")
@@ -858,7 +858,7 @@ def main():
             print()
             print("  3. iOS Build (EXPERIMENTAL)")
             print("     Also produces balatro-portrait.ipa for sideloading with")
-            print("     Sideloadly or AltStore. Untested by the maintainer —")
+            print("     Sideloadly or AltStore. Untested by the maintainer -")
             print("     feedback welcome. Lovely is not available on iOS.")
             config["ios"] = _ask("     Build iOS .ipa?", default=DEFAULT_BUILD_CONFIG["ios"])
             print()
@@ -880,7 +880,7 @@ def main():
     if cli.get("skip_setup"):
         print(f"[1/{total}] Skipping resource setup (--skip-setup).")
     elif needs_setup:
-        print(f"[1/{total}] Game resources not found — extracting from Balatro.exe ...")
+        print(f"[1/{total}] Game resources not found - extracting from Balatro.exe ...")
         setup_resources(balatro_path)
     else:
         print(f"[1/{total}] Resources already present.")
