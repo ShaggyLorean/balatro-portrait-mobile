@@ -1,0 +1,5 @@
+/build/
+/deps/
+/dist/
+/src/assets_gen.h
+__pycache__/

@@ -645,6 +645,7 @@ function love.resize(w, h)
 	local os_name = love.system.getOS()
 	if (os_name == 'Android' or os_name == 'iOS') then
 		if w > h then
+			if not G.window_prev or not G.CANV_SCALE then return end
 			if G.CANVAS then G.CANVAS:release() end
 			G.CANVAS = love.graphics.newCanvas(w*G.CANV_SCALE, h*G.CANV_SCALE, {type = '2d', readable = true})
 			if G.CANVAS then G.CANVAS:setFilter('linear', 'linear') end

@@ -1,0 +1,25 @@
+diff --git a/shadowhook/src/main/cpp/sh_linker.c b/shadowhook/src/main/cpp/sh_linker.c
+--- a/shadowhook/src/main/cpp/sh_linker.c
++++ b/shadowhook/src/main/cpp/sh_linker.c
+@@ -56,6 +56,11 @@
+ #define SH_LINKER_SHADOWHOOK_BASE_NAME         "libshadowhook.so"
+ #define SH_LINKER_SHADOWHOOK_NOTHING_BASE_NAME "libshadowhook_nothing.so"
+ 
++// PATCH: allow loading libshadowhook_nothing.so from an explicit absolute path
++// (needed when the .so is not on the default linker search path, e.g. inside a
++// Zygisk module whose /system overlay is hidden from the target app by SuSFS).
++char sh_linker_nothing_override_path[512] = {0};
++
+ // for struct soinfo's memory scan
+ static size_t sh_linker_soinfo_offset_load_bias = SIZE_MAX;
+ static size_t sh_linker_soinfo_offset_name = SIZE_MAX;
+@@ -577,6 +582,8 @@ static int sh_linker_hook_call_ctors_dtors(sh_addr_info_t *call_ctors_addr_info,
+   // do memory scan for struct soinfo
+   __atomic_store_n(&sh_linker_soinfo_offset_scan_tid, gettid(), __ATOMIC_RELEASE);
+-  void *handle = dlopen(SH_LINKER_SHADOWHOOK_NOTHING_BASE_NAME, RTLD_NOW);
++  void *handle = dlopen(sh_linker_nothing_override_path[0] ? sh_linker_nothing_override_path
++                                                           : SH_LINKER_SHADOWHOOK_NOTHING_BASE_NAME,
++                        RTLD_NOW);
+   if (__predict_true(NULL != handle)) dlclose(handle);
+   __atomic_store_n(&sh_linker_soinfo_offset_scan_tid, 0, __ATOMIC_RELEASE);
+   if (__predict_false(NULL == handle)) {

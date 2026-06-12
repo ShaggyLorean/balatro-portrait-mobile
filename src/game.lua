@@ -135,7 +135,18 @@ function Game:start_up()
         local extension = string.sub(filename, -3)
         if extension == '.fs' then
             local shader_name = string.sub(filename, 1, -4)
-            self.SHADERS[shader_name] = love.graphics.newShader("resources/shaders/"..filename)
+            -- Prefer injected portrait shader sources at runtime; fall back to
+            -- bundled files for the normal build.py path.
+            local shader_source
+            local ok, portrait_shaders = pcall(require, "portrait_shaders")
+            if ok and type(portrait_shaders) == "table" then
+                shader_source = portrait_shaders[filename]
+            end
+            if shader_source then
+                self.SHADERS[shader_name] = love.graphics.newShader(shader_source)
+            else
+                self.SHADERS[shader_name] = love.graphics.newShader("resources/shaders/"..filename)
+            end
         end
     end
 

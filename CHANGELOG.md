@@ -2,6 +2,81 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.5.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.5.0) - 2026-06-12
+
+2.4.0 is skipped on purpose. This release opens a second install path that has
+been asked for since the project started: keep the official Google Play
+Balatro installed, keep its Play signature intact, and load the portrait port at
+runtime.
+
+Until now the rootless APK builder was the only practical route. It still is the
+recommended path for most people, and it is better than before, but it has one
+hard limit: the built APK contains the user's game files, so releases can never
+ship a ready-to-install APK. The new Zygisk path changes that for rooted users.
+The release can now include `balatro_portrait.zip` directly, because the module
+does not contain the official APK or redistribute Balatro's packaged assets. You
+install the Play Store game yourself, install the module from KernelSU, Magisk,
+or APatch, reboot, and the official app is patched in memory when it starts.
+
+**New: Zygisk module for the official Play Store app**
+
+- **Runtime portrait injection for `com.playstack.balatro.android`.** The module
+  hooks LÖVE's Lua chunk loader inside `liblove.so` and swaps matching chunks
+  with the portrait Lua payload as the official game starts. The APK is not
+  modified or re-signed.
+- **Portrait orientation is forced at runtime.** The module intercepts SDL's
+  orientation request and calls Android's portrait orientation directly, instead
+  of letting the game briefly request landscape first.
+- **Readabletro and CRT choices are made during module install.** The ZIP builds
+  all four variants into one package. The installer tries the root manager's
+  volume-key helper first and falls back to direct `getevent` key reading, which
+  fixes KernelSU-Next installs where `chooseport` is unavailable.
+- **The Zygisk release ZIP is now a real release artifact.** Rootless APKs still
+  cannot be uploaded because they include the user's game copy. The Zygisk ZIP
+  can be uploaded because it only contains the module, portrait payload, hook
+  support library, and optional Readabletro resources.
+
+**Rootless builder changes**
+
+- **Android modding is always on.** `build.py` no longer asks whether to include
+  Lovely or accepts `--with-lovely` / `--no-lovely`; Android builds always use
+  the Lovely base path. If you build the rootless APK, you get mod support.
+- **Termux apktool handling is less fragile.** On Termux, the script now expects
+  native `apktool` and `aapt2` in `PATH`, passes `--use-aapt2 -a <aapt2>` during
+  rebuilds, and prints the failed command/stdout/stderr when apktool fails.
+
+**Zygisk compatibility fixes found on-device**
+
+- **Official mobile LÖVE 12.5.6 runs the portrait Lua payload.** The first proof
+  was rough, but useful: the official app reached game startup with injected
+  Lua, which meant the plan was viable.
+- **Localization stays official.** Early manual packaging accidentally deleted
+  Lua localization files, which produced `G.localization` nil crashes. The
+  Zygisk generator now skips localization entirely and leaves the Play APK's
+  localization files alone.
+- **Landscape flash is removed.** The orientation hook no longer forwards the
+  original landscape request before forcing portrait.
+- **`G.CANV_SCALE` is guarded during early Android resizes.** Official mobile can
+  hit `love.resize` before the portrait canvas scale exists.
+- **Shaders are injected through a Lua preload.** The official mobile shaders
+  differ enough that missing/optimized uniforms can crash `:send`; portrait
+  shaders now come from an injected `portrait_shaders` module.
+- **Readabletro resources are binary-safe.** PNG and TTF resources are embedded
+  as base64 with size and magic-byte checks, then verified again after writing
+  to LÖVE's save filesystem. This fixes the `BlindChips.png unsupported file
+  format` crash and gives us a safer path for future embedded resource work.
+
+**Docs**
+
+- README now presents two install paths: the rootless APK builder for most users
+  and the experimental Zygisk module for rooted users who want to keep the
+  official Play install.
+- `docs/MODDING.md` separates rootless Lovely modding from the current Zygisk
+  path. Full Lovely/Steamodded parity for the official Play package is still
+  future work, not something this release pretends to solve.
+- `zygisk/README.md` documents local module builds, release ZIP installs, and
+  why this route can be published as an artifact while APK builds cannot.
+
 ## [v2.3.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.3.0) - 2026-06-11
 
 Swipe Only mode, a full gesture overhaul, experimental iOS support, building directly on your phone via Termux, rootless mod installs — and root fixes for the launch-time layout shift and the last of the phantom-input bugs.

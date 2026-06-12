@@ -4,7 +4,7 @@ Balatro Portrait Mobile - Unified Build Script
 
 Handles everything: resource extraction, Game.love creation, and APK packaging.
 Runs on Windows, macOS, Linux, and Termux on Android (no PC needed - install
-the native toolchain first: pkg install python openjdk-17 apktool).
+the native toolchain first: pkg install python openjdk-17, plus a Termux-compatible apktool).
 
 Usage:
     python build.py [options]
@@ -14,8 +14,6 @@ Options:
     --no-crt              Keep the source CRT shader path unchanged (default)
     --readabletro         Apply Readabletro font and high-res texture patch (default)
     --no-readabletro      Skip Readabletro patch
-    --with-lovely         Build with Lovely mod support embedded
-    --no-lovely           Build vanilla, no mod support (default)
     --ios                 Also build an iOS .ipa for sideloading (EXPERIMENTAL)
     --no-ios              Skip the iOS build (default)
     --balatro PATH        Path to Balatro game file (skips the interactive prompt)
@@ -43,14 +41,13 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-MOD_VERSION = "2.3.0"
+MOD_VERSION = "2.5.0"
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
 DEFAULT_BUILD_CONFIG = {
     "crt": False,
     "readabletro": True,
-    "lovely": False,
     "ios": False,
 }
 
@@ -60,8 +57,10 @@ JAVA_BIN = os.path.join(JDK_DIR, "bin", "java")  # resolved after JDK extraction
 
 # Termux (building directly on an Android phone): the downloaded desktop JDK
 # and the aapt binaries bundled inside the apktool jar are x86-64 only and
-# cannot run on ARM64 Android. Use the Termux-native packages instead:
-#   pkg install python openjdk-17 apktool
+# cannot run on ARM64 Android. Use Termux-native Java and an ARM64-compatible
+# apktool/aapt2 instead. Some Termux setups do not ship apktool in the official
+# repos; the build script validates the tools and prints actionable errors.
+#   pkg install python openjdk-17
 IS_TERMUX = bool(os.environ.get("TERMUX_VERSION")) or os.path.isdir("/data/data/com.termux/files/usr")
 
 if os.name == "nt":
@@ -81,7 +80,6 @@ else:
 APKTOOL_URL    = "https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"
 SIGNER_URL     = "https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar"
 PATCH_URL      = "https://github.com/blake502/balatro-apk-maker/releases/download/Additional-Tools-1.0/Balatro-APK-Patch.zip"
-LOVE_APK_URL   = "https://github.com/love2d/love-android/releases/download/11.5a/love-11.5-android-embed.apk"
 # The LMM base APK is rebuilt upstream without version-pinned URLs, so it cannot
 # be hash-pinned here. All version-pinned downloads above are SHA-256 verified.
 LOVELY_APK_URL = "https://lmm.shorty.systems/base.apk"
@@ -97,7 +95,6 @@ TOOL_SHA256 = {
     APKTOOL_URL:  "7956eb04194300ce0d0a84ad18771eebc94b89fb8d1ddcce8ea4c056818646f4",
     SIGNER_URL:   "e1299fd6fcf4da527dd53735b56127e8ea922a321128123b9c32d619bba1d835",
     PATCH_URL:    "efa47e113b15b2963a193ff6b988544f58e0dab26a75b439943d55dba0f5b489",
-    LOVE_APK_URL: "dcf71c1b54c5b5a09598ef1e6cf4852ced5e5e612de3d0f30cfdd39b5014e889",
     IOS_BASE_URL: "1b7a060dc06f7d3ea54fd24f04ff9fcedde7a0e3539c96bfee175499b723f661",
 }
 
@@ -122,12 +119,6 @@ READABLETRO_LUA_PATCHES = {
         (
             '{file = "resources/fonts/m6x11plus.ttf", render_scale = self.TILESIZE*10, TEXT_HEIGHT_SCALE = 0.9, TEXT_OFFSET = {x=10,y=15}, FONTSCALE = 0.1, squish = 1, DESCSCALE = 1}',
             '{file = "resources/fonts/TypoQuik-Bold.ttf", render_scale = self.TILESIZE*10, TEXT_HEIGHT_SCALE = 0.83, TEXT_OFFSET = {x=10,y=-20}, FONTSCALE = 0.1, squish = 1, DESCSCALE = 1}',
-        ),
-    ],
-    "main.lua": [
-        (
-            'local font = love.graphics.setNewFont("resources/fonts/m6x11plus.ttf", 20)',
-            'local font = love.graphics.setNewFont("resources/fonts/TypoQuik-Bold.ttf", 20)',
         ),
     ],
     "functions/misc_functions.lua": [
@@ -538,7 +529,7 @@ def _setup_jdk():
             print("  ERROR: Termux detected but 'java' was not found in PATH.")
             print("  The desktop JDK cannot run on ARM64 Android - install the")
             print("  native toolchain instead:")
-            print("    pkg install openjdk-17 apktool")
+            print("    pkg install openjdk-17")
             sys.exit(1)
         JAVA_BIN = java
         print(f"  Java (Termux native): {JAVA_BIN}")
@@ -587,24 +578,41 @@ def _java(jar, args):
 
 def _apktool(jar, args):
     """Run apktool. On Termux the jar's bundled aapt binaries are x86-64 only,
-    so the native 'apktool' package (patched aapt for Android) is used instead."""
+    so a Termux-compatible apktool/aapt2 pair is required."""
     if IS_TERMUX:
         tool = shutil.which("apktool")
         if not tool:
             print("  ERROR: Termux detected but 'apktool' was not found in PATH.")
-            print("    pkg install apktool")
+            print("  Install an ARM64-compatible Termux apktool, then re-run build.py.")
+            print("  Known working option: https://github.com/rendiix/termux-apktool")
             sys.exit(1)
-        result = subprocess.run([tool] + args, cwd=WORKDIR,
+
+        termux_args = list(args)
+        if termux_args and termux_args[0] == "b":
+            aapt2 = shutil.which("aapt2")
+            if not aapt2:
+                print("  ERROR: Termux apktool build needs 'aapt2' in PATH.")
+                print("  Install Android build tools or a Termux apktool package that ships aapt2.")
+                print("  Known working option: https://github.com/rendiix/termux-apktool")
+                sys.exit(1)
+            termux_args = ["b", "--use-aapt2", "-a", aapt2] + termux_args[1:]
+
+        result = subprocess.run([tool] + termux_args, cwd=WORKDIR,
                                 capture_output=True, text=True)
         if result.returncode != 0:
-            print(f"  ERROR:\n{result.stderr}")
+            print("  ERROR: apktool failed.")
+            print(f"    command: {tool} {' '.join(termux_args)}")
+            if result.stdout:
+                print(f"  STDOUT:\n{result.stdout}")
+            if result.stderr:
+                print(f"  STDERR:\n{result.stderr}")
             sys.exit(1)
         return
     _java(jar, args)
 
 
-def build_apk(use_lovely=False, profiler=None):
-    """Download tools, package, and sign the APK."""
+def build_apk(profiler=None):
+    """Download tools, package, and sign the always-Lovely Android APK."""
     game_love_src = os.path.abspath("Game.love")
     if not os.path.exists(game_love_src):
         print("  ERROR: Game.love not found — run the build step first.")
@@ -613,8 +621,8 @@ def build_apk(use_lovely=False, profiler=None):
     os.makedirs(WORKDIR, exist_ok=True)
     p = profiler or BuildProfiler()
 
-    apk_fn  = "lovely-base.apk" if use_lovely else "love-11.5-android-embed.apk"
-    apk_url = LOVELY_APK_URL    if use_lovely else LOVE_APK_URL
+    apk_fn  = "lovely-base.apk"
+    apk_url = LOVELY_APK_URL
 
     apktool   = os.path.join(WORKDIR, "apktool.jar")
     signer    = os.path.join(WORKDIR, "uber-apk-signer.jar")
@@ -647,34 +655,19 @@ def build_apk(use_lovely=False, profiler=None):
 
         manifest_path = os.path.join(apk_out, "AndroidManifest.xml")
 
-        if use_lovely:
-            with open(manifest_path) as f:
-                m = f.read()
-            m = m.replace("systems.shorty.lmm", "com.unofficial.balatro")
-            m = re.sub(r'android:label="[^"]+"',         'android:label="Balatro"',          m)
-            m = re.sub(r'android:versionCode="[^"]+"',   f'android:versionCode="{int(time.time())}"', m)
-            m = re.sub(r'android:versionName="[^"]+"',   f'android:versionName="{MOD_VERSION}-lovely"', m)
-            m = re.sub(r'\sandroid:debuggable="[^"]+"',  "",                                  m)
-            m = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="portrait"', m)
-            m = re.sub(r'android:configChanges="[^"]+"',
-                       'android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|keyboard|keyboardHidden|navigation"', m)
-            with open(manifest_path, "w") as f:
-                f.write(m)
-            print("  [Lovely] Manifest patched.")
-        else:
-            shutil.copy(os.path.join(WORKDIR, "AndroidManifest.xml"), manifest_path)
-            with open(manifest_path) as f:
-                m = f.read()
-            m = re.sub(r'android:versionCode="[^"]+"', f'android:versionCode="{int(time.time())}"', m)
-            m = re.sub(r'android:versionName="[^"]+"', f'android:versionName="{MOD_VERSION}"',      m)
-            for orient in ["landscape","sensorLandscape","userLandscape","reverseLandscape",
-                           "fullSensor","sensor","nosensor","unspecified"]:
-                m = m.replace(f'screenOrientation="{orient}"', 'screenOrientation="portrait"')
-            m = re.sub(r'android:configChanges="[^"]+"',
-                       'android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|keyboard|keyboardHidden|navigation"', m)
-            with open(manifest_path, "w") as f:
-                f.write(m)
-            print("  [Vanilla] Manifest patched — portrait locked.")
+        with open(manifest_path) as f:
+            m = f.read()
+        m = m.replace("systems.shorty.lmm", "com.unofficial.balatro")
+        m = re.sub(r'android:label="[^"]+"',         'android:label="Balatro"',          m)
+        m = re.sub(r'android:versionCode="[^"]+"',   f'android:versionCode="{int(time.time())}"', m)
+        m = re.sub(r'android:versionName="[^"]+"',   f'android:versionName="{MOD_VERSION}-lovely"', m)
+        m = re.sub(r'\sandroid:debuggable="[^"]+"',  "",                                  m)
+        m = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="portrait"', m)
+        m = re.sub(r'android:configChanges="[^"]+"',
+                   'android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|keyboard|keyboardHidden|navigation"', m)
+        with open(manifest_path, "w") as f:
+            f.write(m)
+        print("  [Lovely] Manifest patched.")
 
         # Icons
         for density in ["hdpi","mdpi","xhdpi","xxhdpi","xxxhdpi"]:
@@ -689,18 +682,6 @@ def build_apk(use_lovely=False, profiler=None):
         os.makedirs(os.path.dirname(game_dst), exist_ok=True)
         shutil.copy(game_love_src, game_dst)
 
-        # Smali patches (vanilla only — lovely has its own init)
-        smali_src = os.path.join(os.getcwd(), "src", "smali")
-        if not use_lovely and os.path.exists(smali_src):
-            smali_dst = os.path.join(apk_out, "smali")
-            for root, _, files in os.walk(smali_src):
-                for fn in files:
-                    if fn.endswith(".smali"):
-                        src_f = os.path.join(root, fn)
-                        dst_f = os.path.join(smali_dst, os.path.relpath(src_f, smali_src))
-                        os.makedirs(os.path.dirname(dst_f), exist_ok=True)
-                        shutil.copy(src_f, dst_f)
-
     with p.step("Repack APK"):
         print("  Repacking APK ...")
         _apktool(apktool, ["b", "-o", "balatro.apk", "balatro-apk"])
@@ -710,20 +691,17 @@ def build_apk(use_lovely=False, profiler=None):
         _java(signer, ["-a", "balatro.apk"])
 
     p.report()
-    label = "MODDED (Lovely)" if use_lovely else "VANILLA"
     print(f"\n{'=' * 60}")
-    print(f"  Build complete — {label}")
+    print("  Build complete — MODDED (Lovely)")
     print(f"  APK: balatro-mobile-maker/balatro-aligned-debugSigned.apk")
     print(f"{'=' * 60}")
 
-    if use_lovely:
-        print()
-        print("  Mod installation (requires root / Magisk):")
-        print("  1. Install Material Files from Play Store")
-        print("  2. Navigate to:")
-        print("       /data/user/0/com.unofficial.balatro/files/save/ASET/Mods/")
-        print("  3. Place mod folders there and restart the game")
-        print("  See docs/MODDING.md for details.")
+    print()
+    print("  Mod installation:")
+    print("  1. Launch the game once")
+    print("  2. Put mod folders in ASET/Mods/")
+    print("  3. Restart the game")
+    print("  See docs/MODDING.md for no-root, root, and ADB paths.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -810,12 +788,6 @@ def _parse_args():
     rdb.add_argument("--no-readabletro", dest="readabletro", action="store_false",
                      help="skip Readabletro patch")
 
-    lov = parser.add_mutually_exclusive_group()
-    lov.add_argument("--with-lovely", dest="lovely", action="store_true", default=None,
-                     help="build with Lovely mod support embedded")
-    lov.add_argument("--no-lovely",   dest="lovely", action="store_false",
-                     help="build vanilla, no mod support (default)")
-
     ios = parser.add_mutually_exclusive_group()
     ios.add_argument("--ios",    dest="ios", action="store_true", default=None,
                      help="also build an iOS .ipa for sideloading (EXPERIMENTAL)")
@@ -847,7 +819,7 @@ def main():
     print("=" * 60)
 
     cli = _parse_args()
-    all_cli_set = all(k in cli for k in ("crt", "readabletro", "lovely"))
+    all_cli_set = all(k in cli for k in ("crt", "readabletro", "ios"))
 
     # ── Load or collect config ──────────────────────────────────────────────
     config = {}
@@ -860,7 +832,7 @@ def main():
                 print("  Saved settings:")
                 print(f"    CRT patch (desktop portrait):  {'yes' if config.get('crt') else 'no'}")
                 print(f"    Readabletro:                   {'yes' if config.get('readabletro') else 'no'}")
-                print(f"    Lovely mod support:            {'yes' if config.get('lovely') else 'no'}")
+                print("    Lovely mod support:            yes (always on for Android)")
                 print(f"    iOS .ipa (experimental):       {'yes' if config.get('ios') else 'no'}")
                 print()
                 if not _ask("  Use these settings?", default=True):
@@ -884,12 +856,7 @@ def main():
             print("     high-resolution card and UI textures.")
             config["readabletro"] = _ask("     Apply Readabletro?", default=DEFAULT_BUILD_CONFIG["readabletro"])
             print()
-            print("  3. Lovely Mod Support")
-            print("     Embeds the Lovely runtime so mods (e.g. Steamodded)")
-            print("     can be loaded. Requires a rooted device to install mods.")
-            config["lovely"] = _ask("     Enable Lovely?", default=DEFAULT_BUILD_CONFIG["lovely"])
-            print()
-            print("  4. iOS Build (EXPERIMENTAL)")
+            print("  3. iOS Build (EXPERIMENTAL)")
             print("     Also produces balatro-portrait.ipa for sideloading with")
             print("     Sideloadly or AltStore. Untested by the maintainer —")
             print("     feedback welcome. Lovely is not available on iOS.")
@@ -901,7 +868,6 @@ def main():
 
     apply_crt         = cli.get("crt",          config.get("crt",         DEFAULT_BUILD_CONFIG["crt"]))
     apply_readabletro = cli.get("readabletro",   config.get("readabletro", DEFAULT_BUILD_CONFIG["readabletro"]))
-    use_lovely        = cli.get("lovely",        config.get("lovely",      DEFAULT_BUILD_CONFIG["lovely"]))
     build_ios         = cli.get("ios",           config.get("ios",         DEFAULT_BUILD_CONFIG["ios"]))
     balatro_path      = cli.get("balatro_path",  None)
     force             = cli.get("force",         False)
@@ -931,7 +897,7 @@ def main():
     else:
         print()
         print(f"[3/{total}] Building APK ...")
-        build_apk(use_lovely=use_lovely, profiler=BuildProfiler())
+        build_apk(profiler=BuildProfiler())
 
         print()
         print("  Install on device:")

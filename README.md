@@ -35,7 +35,8 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 - **Redesigned HUD** — Score, buttons, and panels repositioned for portrait, with thumb-sized touch targets
 - **High Refresh Rate** — Matches your display (90/120 Hz) automatically
 - **Full Game Support** — All Balatro features work in portrait mode
-- **Mod Support** — Optional [Lovely](https://github.com/ethangreen-dev/lovely-injector) integration for loading mods on Android
+- **Mod Support** — Android builds include [Lovely](https://github.com/ethangreen-dev/lovely-injector) for loading mods
+- **Zygisk Module (experimental)** — Root-only runtime option for the official Google Play install
 - **iOS (experimental)** — Build a sideloadable `.ipa` with `--ios` ([guide](docs/IOS.md))
 
 ## Requirements
@@ -71,13 +72,15 @@ The script handles everything — on first run it will ask for your Balatro game
 |--------|---------|-------------|
 | CRT patch | off | Applies the CRT-disabling portrait patch. The default 2.0 build keeps this off. |
 | Readabletro | on | Applies the [Readabletro](https://github.com/bladeSk/readabletro) mod: TypoQuik-Bold font, high-res card and UI textures. |
-| Lovely mod support | off | Embeds the [Lovely](https://github.com/ethangreen-dev/lovely-injector) runtime so mods can be loaded. Requires a rooted device. Android only. |
 | iOS build | off | **Experimental.** Also produces `balatro-portrait.ipa` for sideloading with Sideloadly/AltStore. See [docs/IOS.md](docs/IOS.md). |
+
+Android APK builds always include Lovely now, so mod support is not a separate
+question.
 
 You can also pass flags to skip the prompts:
 
 ```
-python build.py --no-crt --readabletro --no-lovely
+python build.py --no-crt --readabletro
 python build.py --balatro "D:\Steam\steamapps\common\Balatro\Balatro.exe" --force
 python build.py --balatro "~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app" --force
 ```
@@ -99,15 +102,20 @@ Full guide: [docs/IOS.md](docs/IOS.md). Untested by the maintainer — testers w
 ### Building on Android itself (Termux, no PC)
 
 You can build the APK directly on your phone with [Termux](https://termux.dev).
-The desktop JDK and apktool jar don't run on ARM64 Android, so install the
-Termux-native toolchain — the build script detects Termux and uses it
-automatically:
+The desktop JDK and the official apktool jar's bundled `aapt` binaries do not
+run on ARM64 Android, so install native tools:
 
 ```
-pkg install python openjdk-17 apktool
+pkg install python openjdk-17
 # copy your Balatro.exe (or Game.love) into the Termux home folder, then:
 python build.py --balatro ~/Balatro.exe
 ```
+
+You also need an ARM64-compatible `apktool` with `aapt2` available in `PATH`.
+Some Termux setups do not provide apktool in the official repos. A community
+package reported to work is [rendiix/termux-apktool](https://github.com/rendiix/termux-apktool).
+The build script checks for `apktool` and `aapt2` and passes `--use-aapt2`
+automatically on Termux.
 
 Install the produced APK with your file manager (enable "install unknown apps").
 
@@ -126,15 +134,52 @@ balatro-portrait-mobile/
 ├── docs/
 │   ├── MODDING.md              # Mod installation guide (Android, Lovely)
 │   └── IOS.md                  # Experimental iOS build & sideloading guide
+├── zygisk/                     # Experimental root-only Zygisk module source
 └── build.py                    # Unified build script (setup + Game.love + APK/IPA)
 ```
 
 > `src/resources/`, `src/localization/`, and `game_original_files/` are generated
 > locally from your Balatro copy and are not included in this repository.
 
+## Install Paths
+
+### Option A — Rootless APK Builder
+
+This is the recommended path for most users. It builds a separate
+`com.unofficial.balatro` APK with portrait mode and Lovely mod support already
+included.
+
+```bash
+python build.py
+```
+
+### Option B — Experimental Zygisk Module
+
+This is a root-only power-user path for people who want to keep the official
+Google Play package (`com.playstack.balatro.android`) installed and inject
+portrait mode at runtime. It requires root + Zygisk and is currently arm64-only.
+
+Download `balatro_portrait.zip` from the GitHub Releases page, install it from
+KernelSU, Magisk, or APatch, choose Readabletro/CRT options during install,
+reboot, and launch the official Play Store Balatro.
+
+To build the module locally instead:
+
+```powershell
+cd zygisk
+$env:ANDROID_NDK_HOME = "C:\path\to\android-ndk-r27c"
+.\build_pkg.ps1
+```
+
+The local build writes `zygisk/dist/balatro_portrait.zip`. See
+[zygisk/README.md](zygisk/README.md).
+
+The Zygisk path is experimental by design: it does not patch or re-sign the APK,
+but official game updates can still break native symbol hooks.
+
 ## Mod Support (Lovely)
 
-Build with Lovely enabled to embed the mod runtime. After installation:
+Android APK builds include Lovely automatically. After installation:
 
 1. Launch the game once to create the folder structure
 2. Install [Material Files](https://play.google.com/store/apps/details?id=me.zhanghai.android.files)
@@ -143,8 +188,8 @@ Build with Lovely enabled to embed the mod runtime. After installation:
    storage appears in the sidebar — put your mod folders in `ASET/Mods/`
 4. Restart the game
 
-Root (Magisk) or ADB also work as alternatives — see
-[docs/MODDING.md](docs/MODDING.md) for all three methods and troubleshooting.
+Root or ADB also work as alternatives — see [docs/MODDING.md](docs/MODDING.md)
+for rootless APK paths, official Play/Zygisk paths, and troubleshooting.
 
 ## Troubleshooting
 
@@ -158,6 +203,8 @@ Make sure the first-run resource extraction completed successfully.
 - Check Python version: `python --version` (3.6+ required)
 - JDK is downloaded automatically — no manual install needed
 - Internet connection required for first build (downloads ~250 MB of tools)
+- On Termux, use native `java`, `apktool`, and `aapt2`; desktop jars/binaries
+  are not enough on ARM64 Android
 
 ### Black ellipse or colored sliver at the bottom of the screen
 
