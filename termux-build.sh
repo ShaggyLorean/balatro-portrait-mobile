@@ -15,4 +15,29 @@ if [ "${#missing[@]}" -gt 0 ]; then
   pkg install -y "${missing[@]}"
 fi
 
-exec python build.py --no-crt --readabletro --no-ios "$@"
+python build.py --no-crt --readabletro --no-ios "$@"
+
+apk="balatro-mobile-maker/balatro-aligned-debugSigned.apk"
+download_apk="/sdcard/Download/balatro-portrait-mobile.apk"
+
+if [ ! -f "$apk" ]; then
+  echo "ERROR: build finished, but APK was not found at $apk" >&2
+  exit 1
+fi
+
+echo
+echo "APK built:"
+echo "  $(pwd)/$apk"
+
+if [ -d /sdcard/Download ] && cp "$apk" "$download_apk" 2>/dev/null; then
+  echo
+  echo "Copied to:"
+  echo "  $download_apk"
+  echo
+  echo "Open it from your file manager and install it."
+else
+  echo
+  echo "Could not copy the APK to Downloads."
+  echo "Run this once, tap Allow, then rerun the build:"
+  echo "  termux-setup-storage"
+fi

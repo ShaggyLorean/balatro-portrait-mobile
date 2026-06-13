@@ -111,6 +111,8 @@ installed app as the resource source. No PC copy of `Balatro.exe` or `Game.love`
 is needed.
 
 ```
+termux-setup-storage
+pkg update
 pkg install git
 git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git
 cd balatro-portrait-mobile
@@ -121,6 +123,14 @@ bash termux-build.sh --force
 builder. During resource setup, `build.py` calls Android's system package manager
 directly (`/system/bin/pm`) and reads the official app's `base.apk`; this does
 not require root.
+
+The finished APK is copied to:
+
+```text
+/sdcard/Download/balatro-portrait-mobile.apk
+```
+
+Full phone-only guide: [docs/TERMUX.md](docs/TERMUX.md).
 
 If you want to build from a PC/Steam copy instead, that still works:
 
@@ -152,7 +162,8 @@ balatro-portrait-mobile/
 │   └── readabletro/            # Optional Readabletro font and texture patch
 ├── docs/
 │   ├── MODDING.md              # Mod installation guide (Android, Lovely)
-│   └── IOS.md                  # Experimental iOS build & sideloading guide
+│   ├── IOS.md                  # Experimental iOS build & sideloading guide
+│   └── TERMUX.md               # Phone-only Android build guide
 ├── zygisk/                     # Experimental root-only Zygisk module source
 ├── termux-build.sh             # Android/Termux helper for PC-free builds
 └── build.py                    # Unified build script (setup + Game.love + APK/IPA)

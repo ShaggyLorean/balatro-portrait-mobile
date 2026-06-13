@@ -35,6 +35,9 @@ run the helper, and the builder can make the portrait APK on-device.
 - **The existing ReVanced ARM `aapt2` path is now tested in the real flow.** The
   builder still uses the downloaded iBotPeaches apktool jar unless a native
   apktool is already present, and passes ReVanced's ARM `aapt2` during rebuilds.
+- **`docs/TERMUX.md` documents the actual phone flow.** The quick path is:
+  install official Balatro, open Termux, clone the repo, run `bash
+  termux-build.sh --force`, then install the APK copied to Downloads.
 
 **Android compatibility fixes found while testing the phone-only path**
 
@@ -53,6 +56,8 @@ run the helper, and the builder can make the portrait APK on-device.
 - Termux built the APK from the installed official Play Store Balatro.
 - The resulting `com.unofficial.balatro` APK installed and reached portrait
   in-game play.
+- The release still includes `balatro_portrait.zip` for rooted Zygisk users. The
+  rootless APK is not uploaded because it contains the user's own game files.
 
 ## [v2.5.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.5.0) - 2026-06-12
 
