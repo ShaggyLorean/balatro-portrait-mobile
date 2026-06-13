@@ -4,9 +4,9 @@
 [![CI](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20mod-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/loreanxavier)
 
-A portrait mode mod for Balatro on Android — optimized for mobile gaming.
+A portrait-mode mod for Balatro on Android, built for one-handed mobile play.
 
-> ☕ Enjoying the mod? [**Support it on Ko-fi**](https://ko-fi.com/loreanxavier) — it genuinely helps me keep maintaining it.
+> ☕ Enjoying the mod? You can [**support it on Ko-fi**](https://ko-fi.com/loreanxavier). It really helps me keep this going.
 
 ## Demo
 
@@ -31,16 +31,16 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 
 ## Features
 
-- **Portrait Mode** — Fully optimized vertical layout for mobile
-- **Touch Controls** — Responsive touchscreen support with anti-jitter
-- **Swipe Gestures** — Flick selected cards up to play, down to discard
-- **Hand Preview** — Floating chip above your cards shows the selected poker hand (name, level, chips × mult)
-- **Redesigned HUD** — Score, buttons, and panels repositioned for portrait, with thumb-sized touch targets
-- **High Refresh Rate** — Matches your display (90/120 Hz) automatically
-- **Full Game Support** — All Balatro features work in portrait mode
-- **Mod Support** — Android builds include [Lovely](https://github.com/ethangreen-dev/lovely-injector) for loading mods
-- **Zygisk Module (experimental)** — Root-only runtime option for the official Google Play install
-- **iOS (experimental)** — Build a sideloadable `.ipa` with `--ios` ([guide](docs/IOS.md))
+- **Portrait mode** with a vertical layout rebuilt for one-handed play
+- **Touch controls** with anti-jitter, so a shaky tap doesn't turn into a drag
+- **Swipe gestures**: flick a selected card up to play it, down to discard
+- **Hand preview** — a floating chip above your cards shows the current poker hand (name, level, chips × mult)
+- **Redesigned HUD**: score, buttons and panels moved around for portrait, with thumb-sized targets
+- **High refresh rate**, matched to your display (90/120 Hz) automatically
+- Everything else in Balatro works the way it normally does
+- **Mod support** through [Lovely](https://github.com/ethangreen-dev/lovely-injector) (bundled in Android builds)
+- **Zygisk module** (experimental): a root-only runtime path for the official Google Play install
+- **iOS** (experimental): build a sideloadable `.ipa` with `--ios` (see the [guide](docs/IOS.md))
 
 ## Requirements
 
@@ -49,7 +49,7 @@ A portrait mode mod for Balatro on Android — optimized for mobile gaming.
 - **Android device** — Android 5.0+ recommended
 - **iOS device** — Experimental; sideload via Sideloadly/AltStore, see [docs/IOS.md](docs/IOS.md)
 
-> **Cross-platform:** Builds on Windows, macOS, Linux — and directly on your
+> **Cross-platform:** Builds on Windows, macOS, Linux, and even directly on your
 > Android phone via [Termux](https://termux.dev) (no PC needed, see below).
 
 ## Quick Start
@@ -67,7 +67,7 @@ cd balatro-portrait-mobile
 python build.py
 ```
 
-The script handles everything — on first run it will ask for your Balatro game file path and extract the necessary game files automatically.
+The script handles everything. On first run it asks for your Balatro game file path and extracts the needed files automatically.
 
 **Build options (asked once, saved for future runs):**
 
@@ -204,7 +204,7 @@ Make sure the first-run resource extraction completed successfully.
 ### Build fails
 
 - Check Python version: `python --version` (3.6+ required)
-- JDK is downloaded automatically — no manual install needed
+- JDK is downloaded automatically, so no manual install is needed
 - Internet connection required for first build (downloads ~250 MB of tools)
 - On Termux, use native `java`, `apktool`, and `aapt2`; desktop jars/binaries
   are not enough on ARM64 Android
@@ -229,8 +229,8 @@ In-game price increases are **base Balatro mechanics**, not a bug in this mod. C
 
 ## Support
 
-If this mod made mobile Balatro better for you, you can buy me a coffee — it
-genuinely helps me keep maintaining it.
+If this mod made mobile Balatro better for you, you can buy me a coffee. It
+genuinely helps me keep this maintained.
 
 <p align="center">
   <a href="https://ko-fi.com/loreanxavier">
