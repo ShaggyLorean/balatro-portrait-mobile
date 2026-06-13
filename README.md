@@ -105,8 +105,7 @@ Full guide: [docs/IOS.md](docs/IOS.md). Untested by the maintainer — testers w
 ### Building on Android itself (Termux, no PC)
 
 You can build the APK directly on your phone with [Termux](https://termux.dev).
-The desktop JDK and the official apktool jar's bundled `aapt` binaries do not
-run on ARM64 Android, so install native tools:
+The only prerequisites are Python and a native JDK:
 
 ```
 pkg install python openjdk-17
@@ -114,11 +113,12 @@ pkg install python openjdk-17
 python build.py --balatro ~/Balatro.exe
 ```
 
-You also need an ARM64-compatible `apktool` with `aapt2` available in `PATH`.
-Some Termux setups do not provide apktool in the official repos. A community
-package reported to work is [rendiix/termux-apktool](https://github.com/rendiix/termux-apktool).
-The build script checks for `apktool` and `aapt2` and passes `--use-aapt2`
-automatically on Termux.
+The apktool jar bundles an x86-64 `aapt2` that can't run on Android. On Termux
+the script handles this for you: it downloads a native ARM `aapt2` from
+[ReVanced/aapt2](https://github.com/ReVanced/aapt2) and points apktool at it, so
+no manual apktool install is needed. If you'd rather use a native apktool that's
+already in your `PATH` (for example [rendiix/termux-apktool](https://github.com/rendiix/termux-apktool)),
+the script detects it and uses it as-is.
 
 Install the produced APK with your file manager (enable "install unknown apps").
 

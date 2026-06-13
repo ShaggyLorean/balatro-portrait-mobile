@@ -3,8 +3,9 @@
 Balatro Portrait Mobile - Unified Build Script
 
 Handles everything: resource extraction, Game.love creation, and APK packaging.
-Runs on Windows, macOS, Linux, and Termux on Android (no PC needed - install
-the native toolchain first: pkg install python openjdk-17, plus a Termux-compatible apktool).
+Runs on Windows, macOS, Linux, and Termux on Android (no PC needed - on Termux
+just `pkg install python openjdk-17`; an ARM aapt2 is downloaded automatically,
+or a native apktool already in PATH is used as-is).
 
 Usage:
     python build.py [options]
@@ -83,6 +84,11 @@ PATCH_URL      = "https://github.com/blake502/balatro-apk-maker/releases/downloa
 # The LMM base APK is rebuilt upstream without version-pinned URLs, so it cannot
 # be hash-pinned here. All version-pinned downloads above are SHA-256 verified.
 LOVELY_APK_URL = "https://lmm.shorty.systems/base.apk"
+
+# ReVanced's prebuilt native aapt2 binaries. The apktool jar only ships an
+# x86-64 aapt2, which cannot run on ARM Android, so when building on Termux we
+# point apktool at one of these via --use-aapt2. https://github.com/ReVanced/aapt2
+REVANCED_AAPT2_BASE = "https://github.com/ReVanced/aapt2/releases/download/v1.1.0/"
 
 # iOS (experimental): prebuilt unsigned LOVE iOS app shell from balatro-apk-maker.
 # Game.love is inserted into the .app, Info.plist is locked to portrait, and the
@@ -576,37 +582,53 @@ def _java(jar, args):
         sys.exit(1)
 
 
+def _setup_termux_aapt2():
+    """Download ReVanced's native ARM aapt2 and return its path. The apktool jar
+    only ships an x86-64 aapt2, which can't run on Android, so on Termux we hand
+    apktool a native aapt2 via --use-aapt2 -a. Only the build (`b`) step needs it."""
+    machine = platform.machine().lower()
+    asset = "aapt2-arm64-v8a" if machine in ("aarch64", "arm64") else "aapt2-armeabi-v7a"
+    dest = os.path.join(WORKDIR, asset)
+    _download(REVANCED_AAPT2_BASE + asset, dest)
+    try:
+        os.chmod(dest, 0o755)
+    except OSError:
+        pass
+    return dest
+
+
 def _apktool(jar, args):
-    """Run apktool. On Termux the jar's bundled aapt binaries are x86-64 only,
-    so a Termux-compatible apktool/aapt2 pair is required."""
+    """Run apktool. The apktool jar's bundled aapt binaries are x86-64 only, so
+    on Termux/Android one of two known-good setups is used:
+
+      A) a Termux-native apktool already in PATH (e.g. rendiix/termux-apktool),
+         which ships its own ARM aapt — run as-is, no --use-aapt2 needed;
+      B) otherwise the bundled ibotpeaches apktool jar driven by Termux's native
+         Java, with ReVanced's ARM aapt2 (downloaded automatically) passed via
+         --use-aapt2 -a. This needs no manual apktool install at all.
+    """
     if IS_TERMUX:
         tool = shutil.which("apktool")
-        if not tool:
-            print("  ERROR: Termux detected but 'apktool' was not found in PATH.")
-            print("  Install an ARM64-compatible Termux apktool, then re-run build.py.")
-            print("  Known working option: https://github.com/rendiix/termux-apktool")
-            sys.exit(1)
+        if tool:
+            # Setup A: native apktool brings its own ARM aapt; don't override it.
+            result = subprocess.run([tool] + list(args), cwd=WORKDIR,
+                                    capture_output=True, text=True)
+            if result.returncode != 0:
+                print("  ERROR: apktool failed.")
+                print(f"    command: {tool} {' '.join(args)}")
+                if result.stdout:
+                    print(f"  STDOUT:\n{result.stdout}")
+                if result.stderr:
+                    print(f"  STDERR:\n{result.stderr}")
+                sys.exit(1)
+            return
 
+        # Setup B: bundled apktool jar + downloaded ARM aapt2 (build step only).
         termux_args = list(args)
         if termux_args and termux_args[0] == "b":
-            aapt2 = shutil.which("aapt2")
-            if not aapt2:
-                print("  ERROR: Termux apktool build needs 'aapt2' in PATH.")
-                print("  Install Android build tools or a Termux apktool package that ships aapt2.")
-                print("  Known working option: https://github.com/rendiix/termux-apktool")
-                sys.exit(1)
+            aapt2 = _setup_termux_aapt2()
             termux_args = ["b", "--use-aapt2", "-a", aapt2] + termux_args[1:]
-
-        result = subprocess.run([tool] + termux_args, cwd=WORKDIR,
-                                capture_output=True, text=True)
-        if result.returncode != 0:
-            print("  ERROR: apktool failed.")
-            print(f"    command: {tool} {' '.join(termux_args)}")
-            if result.stdout:
-                print(f"  STDOUT:\n{result.stdout}")
-            if result.stderr:
-                print(f"  STDERR:\n{result.stderr}")
-            sys.exit(1)
+        _java(jar, termux_args)
         return
     _java(jar, args)
 
@@ -633,9 +655,11 @@ def build_apk(profiler=None):
         _setup_jdk()
 
     with p.step("Download tools"):
-        downloads = [(SIGNER_URL, signer), (PATCH_URL, patch_zip), (apk_url, base_apk)]
-        if not IS_TERMUX:  # Termux uses the native apktool package
-            downloads.insert(0, (APKTOOL_URL, apktool))
+        # apktool.jar is always fetched: on Termux it's the "setup B" fallback
+        # (bundled jar + ReVanced aapt2) when no native apktool is in PATH, and
+        # it's harmless if an in-PATH apktool ends up being used instead.
+        downloads = [(APKTOOL_URL, apktool), (SIGNER_URL, signer),
+                     (PATCH_URL, patch_zip), (apk_url, base_apk)]
         for url, dest in downloads:
             _download(url, dest)
 
