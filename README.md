@@ -39,6 +39,7 @@ A portrait-mode mod for Balatro on Android, built for one-handed mobile play.
 - **High refresh rate**, matched to your display (90/120 Hz) automatically
 - Everything else in Balatro works the way it normally does
 - **Mod support** through [Lovely](https://github.com/ethangreen-dev/lovely-injector) (bundled in Android builds)
+- **PC-free Termux builds** can use the installed official Play Store app as the resource source
 - **Zygisk module** (experimental): a root-only runtime path for the official Google Play install
 - **iOS** (experimental): build a sideloadable `.ipa` with `--ios` (see the [guide](docs/IOS.md))
 
@@ -105,11 +106,25 @@ Full guide: [docs/IOS.md](docs/IOS.md). Untested by the maintainer — testers w
 ### Building on Android itself (Termux, no PC)
 
 You can build the APK directly on your phone with [Termux](https://termux.dev).
-The only prerequisites are Python and a native JDK:
+If the official Play Store Balatro is installed, the build script can use that
+installed app as the resource source. No PC copy of `Balatro.exe` or `Game.love`
+is needed.
 
 ```
-pkg install python openjdk-17
-# copy your Balatro.exe (or Game.love) into the Termux home folder, then:
+pkg install git
+git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git
+cd balatro-portrait-mobile
+bash termux-build.sh --force
+```
+
+`termux-build.sh` installs Python/Java if they are missing, then runs the normal
+builder. During resource setup, `build.py` calls Android's system package manager
+directly (`/system/bin/pm`) and reads the official app's `base.apk`; this does
+not require root.
+
+If you want to build from a PC/Steam copy instead, that still works:
+
+```
 python build.py --balatro ~/Balatro.exe
 ```
 
@@ -120,7 +135,8 @@ no manual apktool install is needed. If you'd rather use a native apktool that's
 already in your `PATH` (for example [rendiix/termux-apktool](https://github.com/rendiix/termux-apktool)),
 the script detects it and uses it as-is.
 
-Install the produced APK with your file manager (enable "install unknown apps").
+Termux also signs the APK with Android's native `apksigner`. Install the produced
+APK with your file manager (enable "install unknown apps").
 
 ## Project Structure
 
@@ -138,6 +154,7 @@ balatro-portrait-mobile/
 │   ├── MODDING.md              # Mod installation guide (Android, Lovely)
 │   └── IOS.md                  # Experimental iOS build & sideloading guide
 ├── zygisk/                     # Experimental root-only Zygisk module source
+├── termux-build.sh             # Android/Termux helper for PC-free builds
 └── build.py                    # Unified build script (setup + Game.love + APK/IPA)
 ```
 

@@ -2,6 +2,58 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.6.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.0) - 2026-06-13
+
+This release finishes the other half of the Android story. v2.5.0 gave rooted
+users a Zygisk route that keeps the official Play Store app installed. v2.6.0
+brings the rootless builder closer to the same idea for people with no PC: build
+the separate portrait APK directly on the phone, using the already-installed
+official Play Store Balatro as the resource source.
+
+The important part is what is no longer required. You do not need to copy
+`Balatro.exe` from a computer, hunt for a working Termux apktool fork, or manually
+wire up an ARM `aapt2`. Install the official game, install Termux, clone the repo,
+run the helper, and the builder can make the portrait APK on-device.
+
+**New: PC-free Termux build from the installed Play Store app**
+
+- **`build.py` can find the official Android app automatically.** On Termux, when
+  no `--balatro` path is provided, it calls `/system/bin/pm path
+  com.playstack.balatro.android`, finds the installed `base.apk`, and uses that
+  as the resource source. This avoids Termux's own `pm` wrapper, which can fail
+  on package-manager calls.
+- **Official Android APK resources are understood directly.** The extractor now
+  accepts both the desktop/LÖVE layout (`resources/`, `localization/`) and the
+  Play Store APK layout (`assets/resources/`, `assets/localization/`).
+- **`termux-build.sh` is a one-command phone build helper.** It installs missing
+  Python/Java packages through Termux, then runs the normal builder with the
+  recommended rootless options.
+- **Termux signing no longer depends on desktop signing tools.** On Android, the
+  build uses native `apksigner` with a local debug keystore. If `zipalign` is not
+  available in the Termux repo, the build signs without it instead of failing at
+  the last step.
+- **The existing ReVanced ARM `aapt2` path is now tested in the real flow.** The
+  builder still uses the downloaded iBotPeaches apktool jar unless a native
+  apktool is already present, and passes ReVanced's ARM `aapt2` during rebuilds.
+
+**Android compatibility fixes found while testing the phone-only path**
+
+- **Official Android CRT shaders are patched during build.** The Play Store APK's
+  `CRT.fs` comments out `noise_fac`, but portrait `game.lua` still sends that
+  uniform. The builder now restores the noise uniform and its use after extracting
+  the user's own shader, fixing the `Shader uniform 'noise_fac' does not exist`
+  crash.
+- **Generated resource folders are refreshed cleanly.** `game_original_files/` is
+  cleared before extraction, which avoids stale desktop/Android resource layouts
+  getting mixed together between builds.
+
+**Verified on-device**
+
+- Tested on Android with shell superuser disabled.
+- Termux built the APK from the installed official Play Store Balatro.
+- The resulting `com.unofficial.balatro` APK installed and reached portrait
+  in-game play.
+
 ## [v2.5.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.5.0) - 2026-06-12
 
 2.4.0 is skipped on purpose. This release opens a second install path that has

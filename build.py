@@ -3,9 +3,10 @@
 Balatro Portrait Mobile - Unified Build Script
 
 Handles everything: resource extraction, Game.love creation, and APK packaging.
-Runs on Windows, macOS, Linux, and Termux on Android (no PC needed - on Termux
-just `pkg install python openjdk-17`; an ARM aapt2 is downloaded automatically,
-or a native apktool already in PATH is used as-is).
+Runs on Windows, macOS, Linux, and Termux on Android. On Termux, use
+`bash termux-build.sh` for a PC-free build from the installed Play Store app;
+an ARM aapt2 is downloaded automatically, or a native apktool already in PATH
+is used as-is.
 
 Usage:
     python build.py [options]
@@ -42,10 +43,11 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-MOD_VERSION = "2.5.0"
+MOD_VERSION = "2.6.0"
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
+OFFICIAL_ANDROID_PACKAGE = "com.playstack.balatro.android"
 DEFAULT_BUILD_CONFIG = {
     "crt": False,
     "readabletro": True,
@@ -113,6 +115,17 @@ CRT_MASK_ORIGINAL = '''    //smoothly transition the edge to black
                 * (1.0 - smoothstep(1.0-feather_fac,1.0,abs(tc.y) - BUFF));'''
 CRT_MASK_MODIFIED = CRT_MASK_ORIGINAL + '''
     mask = 1.0 - (1.0 - mask) * clamp(crt_intensity/(0.16*0.3), 0.0, 1.0);'''
+CRT_NOISE_COMMENTED_LINES = (
+    ("//extern MY_HIGHP_OR_MEDIUMP number noise_fac;", "extern MY_HIGHP_OR_MEDIUMP number noise_fac;"),
+    ("    //MY_HIGHP_OR_MEDIUMP number x = (tc.x - mod(tc.x, 0.002)) * (tc.y - mod(tc.y, 0.0013)) * time * 1000.0;",
+     "    MY_HIGHP_OR_MEDIUMP number x = (tc.x - mod(tc.x, 0.002)) * (tc.y - mod(tc.y, 0.0013)) * time * 1000.0;"),
+    ("\t//x = mod( x, 13.0 ) * mod( x, 123.0 );",
+     "\tx = mod( x, 13.0 ) * mod( x, 123.0 );"),
+    ("\t//MY_HIGHP_OR_MEDIUMP number dx = mod( x, 0.11 )/0.11;",
+     "\tMY_HIGHP_OR_MEDIUMP number dx = mod( x, 0.11 )/0.11;"),
+    ("\t//rgb_result = (1.0-clamp( noise_fac*artifact_amplifier, 0.0,1.0 ))*rgb_result + dx * clamp( noise_fac*artifact_amplifier, 0.0,1.0 ) * vec3(1.0,1.0,1.0);",
+     "\trgb_result = (1.0-clamp( noise_fac*artifact_amplifier, 0.0,1.0 ))*rgb_result + dx * clamp( noise_fac*artifact_amplifier, 0.0,1.0 ) * vec3(1.0,1.0,1.0);"),
+)
 
 GAME_LOVE_EXCLUDE = {"smali", ".pyc", "__pycache__", ".git", ".gitignore", ".bak", ".build_cache.json"}
 
@@ -258,11 +271,55 @@ def _download(url, dest):
 # Step 1 — Resource extraction
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _find_installed_android_balatro_apk():
+    """Return the installed official Android base APK path when Termux can see it."""
+    if not IS_TERMUX:
+        return None
+
+    pm = "/system/bin/pm"
+    if not os.path.exists(pm):
+        return None
+
+    result = subprocess.run(
+        [pm, "path", OFFICIAL_ANDROID_PACKAGE],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+
+    for line in result.stdout.splitlines():
+        if line.startswith("package:") and line.endswith("/base.apk"):
+            path = line[len("package:"):].strip()
+            if os.path.exists(path):
+                return path
+    return None
+
+
+def _find_extracted_source_folder(game_files_dir, folder):
+    """Find a desktop/LÖVE or official Android APK resource folder."""
+    source_options = (
+        os.path.join(game_files_dir, folder),
+        os.path.join(game_files_dir, "assets", folder),
+    )
+    for source in source_options:
+        if os.path.exists(source):
+            return source
+    return None
+
+
 def setup_resources(balatro_path=None):
     """Extract resources and localization from the Balatro game file into src/."""
     script_dir      = os.path.dirname(os.path.abspath(__file__))
     game_files_dir  = os.path.join(script_dir, "game_original_files")
     src_dir         = os.path.join(script_dir, "src")
+
+    if not balatro_path:
+        balatro_path = _find_installed_android_balatro_apk()
+        if balatro_path:
+            print()
+            print("  Detected installed official Android Balatro - using its base APK.")
 
     if not balatro_path:
         print()
@@ -271,6 +328,7 @@ def setup_resources(balatro_path=None):
         print("    Linux    ~/.steam/steam/steamapps/common/Balatro/Balatro.exe")
         print("    macOS    ~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app/Contents/Resources/Balatro.love")
         print("             (you can also pass the .app bundle path - it will be found automatically)")
+        print("    Android  official Balatro base.apk copied from the Play install")
         balatro_path = input("  > ").strip().strip('"').strip("'")
 
     balatro_path = os.path.expanduser(balatro_path)
@@ -286,6 +344,8 @@ def setup_resources(balatro_path=None):
         sys.exit(1)
 
     print(f"  Extracting {os.path.basename(balatro_path)} ...")
+    if os.path.exists(game_files_dir):
+        shutil.rmtree(game_files_dir)
     os.makedirs(game_files_dir, exist_ok=True)
     try:
         with zipfile.ZipFile(balatro_path, "r") as z:
@@ -298,10 +358,10 @@ def setup_resources(balatro_path=None):
         sys.exit(1)
 
     for folder in ("resources", "localization"):
-        src = os.path.join(game_files_dir, folder)
+        src = _find_extracted_source_folder(game_files_dir, folder)
         dst = os.path.join(src_dir, folder)
-        if not os.path.exists(src):
-            print(f"  ERROR: '{folder}' not found inside Balatro.exe - wrong file?")
+        if not src:
+            print(f"  ERROR: '{folder}' not found inside Balatro game file - wrong file?")
             sys.exit(1)
         print(f"  Copying {folder} ...")
         if os.path.exists(dst):
@@ -373,15 +433,33 @@ def _apply_crt_slider_mask_patch(src_dir):
         return
     with open(crt_shader, "r", encoding="utf-8") as f:
         content = f.read()
-    if CRT_MASK_MODIFIED in content:
+    changed = False
+    if CRT_MASK_MODIFIED not in content:
+        if CRT_MASK_ORIGINAL not in content:
+            print("  Warning: CRT slider mask patch target not found in CRT.fs - skipping.")
+        else:
+            content = content.replace(CRT_MASK_ORIGINAL, CRT_MASK_MODIFIED)
+            changed = True
+            print("  CRT edge mask now follows the CRT slider.")
+
+    restored_noise = 0
+    for original, replacement in CRT_NOISE_COMMENTED_LINES:
+        if original in content:
+            content = content.replace(original, replacement)
+            restored_noise += 1
+
+    if restored_noise:
+        changed = True
+        print("  Android CRT shader noise uniform restored.")
+
+    if not changed:
         return
-    if CRT_MASK_ORIGINAL not in content:
-        print("  Warning: CRT slider mask patch target not found in CRT.fs - skipping.")
-        return
-    content = content.replace(CRT_MASK_ORIGINAL, CRT_MASK_MODIFIED)
+
+    if restored_noise and restored_noise != len(CRT_NOISE_COMMENTED_LINES):
+        print("  Warning: Android CRT shader noise patch only partially applied.")
+
     with open(crt_shader, "w", encoding="utf-8") as f:
         f.write(content)
-    print("  CRT edge mask now follows the CRT slider.")
 
 
 def _apply_readabletro(src_dir, apply):
@@ -532,11 +610,12 @@ def _setup_jdk():
     if IS_TERMUX:
         java = shutil.which("java")
         if not java:
-            print("  ERROR: Termux detected but 'java' was not found in PATH.")
-            print("  The desktop JDK cannot run on ARM64 Android - install the")
-            print("  native toolchain instead:")
-            print("    pkg install openjdk-17")
-            sys.exit(1)
+            print("  Java not found - installing Termux native OpenJDK 17 ...")
+            _termux_install_packages(["openjdk-17"])
+            java = shutil.which("java")
+            if not java:
+                print("  ERROR: openjdk-17 installed, but 'java' is still not in PATH.")
+                sys.exit(1)
         JAVA_BIN = java
         print(f"  Java (Termux native): {JAVA_BIN}")
         return
@@ -574,6 +653,45 @@ def _setup_jdk():
     print(f"  Java: {JAVA_BIN}")
 
 
+def _termux_install_packages(packages):
+    pkg = shutil.which("pkg")
+    if not pkg:
+        print("  ERROR: Termux package manager 'pkg' was not found.")
+        print("  Install these packages manually, then rerun build.py:")
+        print(f"    pkg install {' '.join(packages)}")
+        sys.exit(1)
+    print(f"  Installing Termux packages: {' '.join(packages)}")
+    result = subprocess.run([pkg, "install", "-y"] + packages)
+    if result.returncode != 0:
+        print("  ERROR: Termux package install failed.")
+        print(f"    command: {pkg} install -y {' '.join(packages)}")
+        sys.exit(1)
+
+
+def _ensure_termux_command(command, package):
+    tool = shutil.which(command)
+    if tool:
+        return tool
+    _termux_install_packages([package])
+    tool = shutil.which(command)
+    if not tool:
+        print(f"  ERROR: '{command}' was not found after installing '{package}'.")
+        sys.exit(1)
+    return tool
+
+
+def _run_checked(command, cwd, label):
+    result = subprocess.run(command, cwd=cwd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"  ERROR: {label} failed.")
+        print(f"    command: {' '.join(command)}")
+        if result.stdout:
+            print(f"  STDOUT:\n{result.stdout}")
+        if result.stderr:
+            print(f"  STDERR:\n{result.stderr}")
+        sys.exit(1)
+
+
 def _java(jar, args):
     result = subprocess.run([JAVA_BIN, "-jar", jar] + args, cwd=WORKDIR,
                             capture_output=True, text=True)
@@ -595,6 +713,70 @@ def _setup_termux_aapt2():
     except OSError:
         pass
     return dest
+
+
+def _ensure_debug_keystore():
+    keystore = os.path.join(WORKDIR, "debug.keystore")
+    if os.path.exists(keystore):
+        return keystore
+    keytool = shutil.which("keytool")
+    if not keytool:
+        print("  ERROR: keytool not found after Java setup.")
+        sys.exit(1)
+    _run_checked([
+        keytool,
+        "-genkeypair",
+        "-keystore", "debug.keystore",
+        "-storepass", "android",
+        "-keypass", "android",
+        "-alias", "androiddebugkey",
+        "-keyalg", "RSA",
+        "-keysize", "2048",
+        "-validity", "10000",
+        "-dname", "CN=Android Debug,O=Android,C=US",
+        "-noprompt",
+    ], WORKDIR, "debug keystore creation")
+    return keystore
+
+
+def _sign_apk(signer):
+    if not IS_TERMUX:
+        _java(signer, ["-a", "balatro.apk"])
+        return
+
+    apksigner = _ensure_termux_command("apksigner", "apksigner")
+    _ensure_debug_keystore()
+
+    aligned = os.path.join(WORKDIR, "balatro-aligned.apk")
+    signed = os.path.join(WORKDIR, "balatro-aligned-debugSigned.apk")
+    for path in (aligned, signed):
+        if os.path.exists(path):
+            os.remove(path)
+
+    sign_input = "balatro.apk"
+    zipalign = shutil.which("zipalign")
+    if zipalign:
+        _run_checked([
+            zipalign,
+            "-p",
+            "-f",
+            "4",
+            "balatro.apk",
+            "balatro-aligned.apk",
+        ], WORKDIR, "zipalign")
+        sign_input = "balatro-aligned.apk"
+    else:
+        print("  zipalign not found in Termux - signing APK without zipalign.")
+
+    _run_checked([
+        apksigner,
+        "sign",
+        "--ks", "debug.keystore",
+        "--ks-pass", "pass:android",
+        "--key-pass", "pass:android",
+        "--out", "balatro-aligned-debugSigned.apk",
+        sign_input,
+    ], WORKDIR, "apksigner")
 
 
 def _apktool(jar, args):
@@ -712,7 +894,7 @@ def build_apk(profiler=None):
 
     with p.step("Sign APK"):
         print("  Signing APK ...")
-        _java(signer, ["-a", "balatro.apk"])
+        _sign_apk(signer)
 
     p.report()
     print(f"\n{'=' * 60}")
