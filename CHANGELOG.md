@@ -35,9 +35,9 @@ run the helper, and the builder can make the portrait APK on-device.
 - **The existing ReVanced ARM `aapt2` path is now tested in the real flow.** The
   builder still uses the downloaded iBotPeaches apktool jar unless a native
   apktool is already present, and passes ReVanced's ARM `aapt2` during rebuilds.
-- **`docs/TERMUX.md` documents the actual phone flow.** The quick path is:
-  install official Balatro, open Termux, clone the repo, run `bash
-  termux-build.sh --force`, then install the APK copied to Downloads.
+- **`docs/TERMUX.md` documents the actual phone flow.** Storage permission is a
+  separate Android dialog step; after that, the build command can be pasted as a
+  single `pkg update -y && pkg install -y git && ...` chain.
 
 **Android compatibility fixes found while testing the phone-only path**
 

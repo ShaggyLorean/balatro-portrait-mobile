@@ -30,14 +30,10 @@ termux-setup-storage
 
 Tap **Allow** when Android asks for storage access.
 
-5. Run the build:
+5. Paste this build command:
 
 ```sh
-pkg update
-pkg install git
-git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git
-cd balatro-portrait-mobile
-bash termux-build.sh --force
+pkg update -y && pkg install -y git && rm -rf balatro-portrait-mobile && git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git && cd balatro-portrait-mobile && bash termux-build.sh --force
 ```
 
 The helper installs missing Python/Java packages, runs `build.py`, downloads the

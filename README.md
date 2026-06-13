@@ -110,13 +110,16 @@ If the official Play Store Balatro is installed, the build script can use that
 installed app as the resource source. No PC copy of `Balatro.exe` or `Game.love`
 is needed.
 
-```
+First give Termux storage access:
+
+```sh
 termux-setup-storage
-pkg update
-pkg install git
-git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git
-cd balatro-portrait-mobile
-bash termux-build.sh --force
+```
+
+Tap **Allow** when Android asks. Then paste this:
+
+```sh
+pkg update -y && pkg install -y git && rm -rf balatro-portrait-mobile && git clone https://github.com/ShaggyLorean/balatro-portrait-mobile.git && cd balatro-portrait-mobile && bash termux-build.sh --force
 ```
 
 `termux-build.sh` installs Python/Java if they are missing, then runs the normal
