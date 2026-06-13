@@ -2,8 +2,11 @@
 # Balatro Portrait Mobile
 
 [![CI](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/ShaggyLorean/balatro-portrait-mobile/actions/workflows/ci.yml)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20mod-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/loreanxavier)
 
 A portrait mode mod for Balatro on Android — optimized for mobile gaming.
+
+> ☕ Enjoying the mod? [**Support it on Ko-fi**](https://ko-fi.com/loreanxavier) — it genuinely helps me keep maintaining it.
 
 ## Demo
 
@@ -223,6 +226,17 @@ Or answer **yes** to "Apply CRT patch?" during the interactive build.
 In-game price increases are **base Balatro mechanics**, not a bug in this mod. Common causes:
 - **Overpriced voucher** — multiplies Tarot/Planet pack prices by 1.5×
 - **Inflation joker** — adds $1 to all item prices each round
+
+## Support
+
+If this mod made mobile Balatro better for you, you can buy me a coffee — it
+genuinely helps me keep maintaining it.
+
+<p align="center">
+  <a href="https://ko-fi.com/loreanxavier">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi"/>
+  </a>
+</p>
 
 ## Credits
 
