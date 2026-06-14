@@ -525,8 +525,10 @@ function Tag:generate_UI(_size)
                 _self.config.h_popup =  G.UIDEF.card_h_popup(_self)
                 
                 -- Sets dynamic popup alignment based on screen orientation and hand setting
-                if G.F_PORTRAIT then
-                    _self.config.h_popup_config = {align = 'tm', offset = {x = 0, y = -0.2}, parent = _self}
+                if G.F_PORTRAIT and get_portrait_top_popup_config then
+                    -- Edge-aware: pulls the tooltip back on-screen when the tag
+                    -- sits near the left/right edge instead of overflowing.
+                    _self.config.h_popup_config = get_portrait_top_popup_config(_self)
                 else
                     -- Original landscape configuration
                     _self.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = _self}
@@ -586,10 +588,20 @@ function Tag:remove()
     if HUD_tag_key then 
         if G.HUD_tags and G.HUD_tags[HUD_tag_key+1] then
             if HUD_tag_key == 1 then
-                G.HUD_tags[HUD_tag_key+1]:set_alignment({type = 'bri',
-                offset = {x=0.7,y=0},
-                xy_bond = 'Weak',
-                major = G.ROOM_ATTACH})
+                if G.F_PORTRAIT then
+                    local pc = PORTRAIT_CONFIG.tag_align
+                    local first_tag_align = (G.SETTINGS.play_main_hand == 1) and 'bl' or 'br'
+                    local first_tag_x = (G.SETTINGS.play_main_hand == 1) and pc.first_x_left or pc.first_x_right
+                    G.HUD_tags[HUD_tag_key+1]:set_alignment({type = first_tag_align,
+                    offset = {x=first_tag_x,y=0},
+                    xy_bond = 'Weak',
+                    major = G.jokers})
+                else
+                    G.HUD_tags[HUD_tag_key+1]:set_alignment({type = 'bri',
+                    offset = {x=0.7,y=0},
+                    xy_bond = 'Weak',
+                    major = G.ROOM_ATTACH})
+                end
             else
                 G.HUD_tags[HUD_tag_key+1]:set_role({
                 xy_bond = 'Weak',

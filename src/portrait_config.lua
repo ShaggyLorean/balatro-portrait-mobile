@@ -306,3 +306,51 @@ function get_portrait_side_tooltip_config(parent)
     end
     return align, offset
 end
+
+-- Edge-aware popup config for sprites that anchor their tooltip above/below
+-- themselves (HUD tags, blind tags, etc.). Unlike fit_to_room, the horizontal
+-- offset is derived deterministically from the sprite's own screen position, so
+-- a static sprite near the right/left edge gets pulled back on-screen on the
+-- first frame instead of relying on the popup's width being measured. fit_to_room
+-- stays enabled as a backstop. `opts.half_w` is the assumed popup half-width in
+-- tiles; `opts.margin` is the gap kept from the screen edge.
+function get_portrait_top_popup_config(sprite, opts)
+    opts = opts or {}
+    local parent = opts.parent or sprite
+
+    if not (G and G.F_PORTRAIT and G.ROOM and G.ROOM.T and sprite and sprite.T) then
+        -- Landscape / fallback: original side placement
+        return {align = 'cl', offset = {x = -0.1, y = 0}, parent = parent}
+    end
+
+    local room_w = G.ROOM.T.w or 20
+    local room_h = G.ROOM.T.h or 20
+    local half_w = opts.half_w or 2.4
+    local margin = opts.margin or 0.2
+
+    local sprite_cx = sprite.T.x + sprite.T.w/2
+    local sprite_cy = sprite.T.y + sprite.T.h/2
+
+    -- Drop the popup toward screen center: below when the sprite sits in the top
+    -- half, above when it sits in the bottom half, so it never runs off the top.
+    local dir = (sprite_cy > room_h*0.5) and 'tm' or 'bm'
+    local off_y = (dir == 'tm') and (opts.offset_y_tm or -0.2) or (opts.offset_y_bm or 0.1)
+
+    -- Push the centered popup back inside the screen when the sprite is near an edge.
+    local offset_x = 0
+    if sprite_cx - half_w < margin then
+        offset_x = (margin + half_w) - sprite_cx
+    elseif sprite_cx + half_w > room_w - margin then
+        offset_x = (room_w - margin - half_w) - sprite_cx
+    end
+
+    return {
+        major = parent,
+        parent = parent,
+        type = dir,
+        offset = {x = offset_x, y = off_y},
+        fit_to_room = true,
+        snap_to_fit = true,
+        can_drag = false,
+    }
+end

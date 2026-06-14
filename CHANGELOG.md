@@ -2,6 +2,35 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.6.1](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.1) - 2026-06-14
+
+A small portrait-mode bugfix release covering the in-game tag HUD. Both fixes are
+portrait-only and do not change the rootless or Termux build flow.
+
+**Fixes**
+
+- **Skip tags no longer push the tag row off-screen.** When you already had two or
+  more tags and then took a Skip Blind tag, removing a tag re-aligned the
+  remaining tags using the landscape anchor, which slid the whole row out of the
+  visible area in portrait. The removal path in `tag.lua` now reuses the same
+  portrait alignment that new tags are created with (left or right anchor based on
+  the play-hand side, attached to the joker row), so the row stays in place.
+  Thanks to Cpt-mustard for the detailed report and patch in #28.
+- **Tag tooltips stay inside the screen near the edges.** Hovering a tag close to
+  the left or right edge in portrait could let its info popup run off-screen,
+  because the tooltip relied on a width measurement that is not settled for a
+  static HUD element. Tag popups now compute their horizontal position directly
+  from the tag's on-screen location and pull the popup back inside the screen,
+  with the existing room-fit clamp kept as a fallback. The new
+  `get_portrait_top_popup_config` helper in `portrait_config.lua` centralizes this
+  so other top-anchored sprites can reuse it.
+
+**Zygisk**
+
+- The release `balatro_portrait.zip` is rebuilt so rooted Zygisk users get both
+  fixes. The rootless APK is still not uploaded because it contains the user's own
+  game files.
+
 ## [v2.6.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.0) - 2026-06-13
 
 This release finishes the other half of the Android story. v2.5.0 gave rooted
