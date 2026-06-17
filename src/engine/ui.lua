@@ -738,6 +738,8 @@ function UIElement:draw_self()
             self.ARGS.text_parallax = self.ARGS.text_parallax or {}
             self.ARGS.text_parallax.sx = -self.shadow_parrallax.x*0.5/(self.config.scale*self.config.lang.font.FONTSCALE)
             self.ARGS.text_parallax.sy = -self.shadow_parrallax.y*0.5/(self.config.scale*self.config.lang.font.FONTSCALE)
+            local text_offset_x = self.config.text_offset_x or 0
+            local text_offset_y = self.config.text_offset_y or 0
 
             if (self.config.button_UIE and button_active) or (not self.config.button_UIE and self.config.shadow and G.SETTINGS.GRAPHICS.shadows == 'On') then
                 prep_draw(self, 0.97)
@@ -746,8 +748,8 @@ function UIElement:draw_self()
                     love.graphics.setColor(0, 0, 0, 0.3*self.config.colour[4])
                     love.graphics.draw(
                         self.config.text_drawable,
-                        (self.config.lang.font.TEXT_OFFSET.x + (self.config.vert and -self.ARGS.text_parallax.sy or self.ARGS.text_parallax.sx))*(self.config.scale or 1)*self.config.lang.font.FONTSCALE/G.TILESIZE,
-                        (self.config.lang.font.TEXT_OFFSET.y + (self.config.vert and self.ARGS.text_parallax.sx or self.ARGS.text_parallax.sy))*(self.config.scale or 1)*self.config.lang.font.FONTSCALE/G.TILESIZE,
+                        (self.config.lang.font.TEXT_OFFSET.x + (self.config.vert and -self.ARGS.text_parallax.sy or self.ARGS.text_parallax.sx))*(self.config.scale or 1)*self.config.lang.font.FONTSCALE/G.TILESIZE + text_offset_x,
+                        (self.config.lang.font.TEXT_OFFSET.y + (self.config.vert and self.ARGS.text_parallax.sx or self.ARGS.text_parallax.sy))*(self.config.scale or 1)*self.config.lang.font.FONTSCALE/G.TILESIZE + text_offset_y,
                         0,
                         (self.config.scale)*self.config.lang.font.squish*self.config.lang.font.FONTSCALE/G.TILESIZE,
                         (self.config.scale)*self.config.lang.font.FONTSCALE/G.TILESIZE
@@ -765,8 +767,8 @@ function UIElement:draw_self()
             end
             love.graphics.draw(
                 self.config.text_drawable,
-                self.config.lang.font.TEXT_OFFSET.x*(self.config.scale)*self.config.lang.font.FONTSCALE/G.TILESIZE,
-                self.config.lang.font.TEXT_OFFSET.y*(self.config.scale)*self.config.lang.font.FONTSCALE/G.TILESIZE,
+                self.config.lang.font.TEXT_OFFSET.x*(self.config.scale)*self.config.lang.font.FONTSCALE/G.TILESIZE + text_offset_x,
+                self.config.lang.font.TEXT_OFFSET.y*(self.config.scale)*self.config.lang.font.FONTSCALE/G.TILESIZE + text_offset_y,
                 0,
                 (self.config.scale)*self.config.lang.font.squish*self.config.lang.font.FONTSCALE/G.TILESIZE,
                 (self.config.scale)*self.config.lang.font.FONTSCALE/G.TILESIZE

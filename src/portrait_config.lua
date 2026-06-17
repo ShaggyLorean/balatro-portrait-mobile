@@ -55,10 +55,21 @@ PORTRAIT_CONFIG = {
     joker_slots = {
         enabled = true,
         alpha = 0.16, -- outline opacity for empty joker/consumable slots
+        slot_scale = 0.94, -- slot size vs card size; shared by the outline AND the
+                           -- card placement so held cards center exactly on slots
     },
     safe_area_y = 0.85,
     tooltip_screen_padding = 0.12,
     tooltip_touch_gap = 1.6,
+    -- How far a selected booster-pack card lifts (fraction of card height) so its
+    -- USE button has clear room to appear beneath it instead of overlapping art.
+    pack_highlight_lift = 0.4,
+    -- How far the hand row sits above its anchor during a booster (card heights).
+    -- Raised above the 1.8 desktop default so a lifted pack card clears the hand.
+    pack_hand_lift = 2.2,
+    -- How far a focused shop card lifts (fraction of card height) so its Buy/Open
+    -- button is revealed above the shop panel instead of tucking under it.
+    shop_highlight_lift = 0.45,
     main_menu = {
         x_offset_base = 0.1,
         x_offset_plus = 0.2,

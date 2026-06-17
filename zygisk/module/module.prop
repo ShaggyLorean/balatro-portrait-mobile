@@ -1,6 +1,6 @@
 id=balatro_portrait
 name=Balatro Portrait (Zygisk)
-version=2.5.0
-versionCode=250
+version=2.6.2
+versionCode=262
 author=ShaggyLorean
 description=Experimental runtime portrait module for the official Google Play Balatro. Requires root + Zygisk. No game assets are redistributed.

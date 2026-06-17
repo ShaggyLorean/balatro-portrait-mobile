@@ -2,6 +2,56 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.6.2](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.2) - 2026-06-17
+
+This is a small but important polish release for the portrait HUD and shop flow.
+The focus is not a new install path this time; it is making the existing Android
+paths feel less patched-together in real play.
+
+**Portrait gameplay fixes**
+
+- **Consumable Sell/Use buttons no longer fight the right edge of the screen.**
+  The tray button column is now drawn after the selected card and nudged inward
+  only when it would overflow. This keeps the button visible without moving the
+  card row or breaking the empty-slot outlines.
+- **Booster-pack USE buttons reveal below the selected card instead of covering
+  the card art.** Booster cards lift a little higher in portrait, the hand row
+  sits clear of the selected pack card, and the USE button is anchored in the
+  revealed space below it.
+- **Shop Open/Redeem/Buy labels sit better inside the larger portrait buttons.**
+  The button boxes stay anchored to the card, but text nodes now support a local
+  draw offset, so the labels can be optically centered without changing the
+  global font metrics or Readabletro's font patch.
+- **Partial joker and consumable rows stay lined up with their outlines.** When
+  you have fewer cards than the row limit, held cards now stay centered in their
+  fixed portrait slots instead of spreading away from the faint empty outlines.
+- **Tag hover popups keep fitting after layout settles.** Tag tooltips are
+  re-fitted while they exist, so measured-width changes no longer leave a popup
+  hanging off the side of the screen.
+
+**Build and install flow**
+
+- **Termux builds now ask the same user-facing questions as PC builds.**
+  `termux-build.sh` prompts for Readabletro and CRT-disable choices, while still
+  accepting `--readabletro`, `--no-readabletro`, `--crt`, and `--no-crt` for
+  scripted runs.
+- **The Zygisk module metadata is bumped to 2.6.2.** The release ZIP is rebuilt
+  from the same portrait sources as the rootless builder.
+
+**Docs**
+
+- The README has been simplified around the real user choice: rootless APK
+  builder, no-PC Termux build, experimental Zygisk module, or experimental iOS.
+  The long Termux and Zygisk details now live in their own docs pages instead of
+  crowding the first install path.
+
+**Release artifact**
+
+- `balatro_portrait.zip` is the Zygisk module for rooted users who want to keep
+  the official Play Store app installed.
+- Rootless APK builds are still built locally and are not uploaded because they
+  contain the user's own game files.
+
 ## [v2.6.1](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.1) - 2026-06-14
 
 A small portrait-mode bugfix release covering the in-game tag HUD. Both fixes are

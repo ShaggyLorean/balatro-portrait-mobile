@@ -15,7 +15,62 @@ if [ "${#missing[@]}" -gt 0 ]; then
   pkg install -y "${missing[@]}"
 fi
 
-python build.py --no-crt --readabletro --no-ios "$@"
+# Build options. Termux runs in a real terminal, so ask through /dev/tty instead
+# of stdin; that still works when this helper is launched from a pasted command
+# chain. Explicit flags keep working for scripted builds.
+opts=()
+has_readabletro_flag=0
+has_crt_flag=0
+for arg in "$@"; do
+  case "$arg" in
+    --readabletro|--no-readabletro) has_readabletro_flag=1 ;;
+    --crt|--no-crt) has_crt_flag=1 ;;
+  esac
+done
+
+ask_yes_no() {
+  local prompt="$1"
+  local default="$2"
+  local ans=""
+  local hint="[y/N]"
+  [ "$default" = "yes" ] && hint="[Y/n]"
+
+  if [ -r /dev/tty ]; then
+    while true; do
+      printf '%s %s ' "$prompt" "$hint" > /dev/tty
+      read -r ans < /dev/tty || ans=""
+      case "$ans" in
+        "") [ "$default" = "yes" ] && return 0 || return 1 ;;
+        [Yy]|[Yy][Ee][Ss]) return 0 ;;
+        [Nn]|[Nn][Oo]) return 1 ;;
+        *) echo "Please answer y or n." > /dev/tty ;;
+      esac
+    done
+  fi
+
+  [ "$default" = "yes" ]
+}
+
+echo
+echo "Balatro Portrait build options"
+if [ "$has_readabletro_flag" -eq 0 ]; then
+  if ask_yes_no "Apply Readabletro font and high-res textures?" "yes"; then
+    opts+=("--readabletro")
+  else
+    opts+=("--no-readabletro")
+  fi
+fi
+
+if [ "$has_crt_flag" -eq 0 ]; then
+  if ask_yes_no "Disable CRT in portrait mode?" "no"; then
+    opts+=("--crt")
+  else
+    opts+=("--no-crt")
+  fi
+fi
+echo
+
+python build.py --no-ios "${opts[@]}" "$@"
 
 apk="balatro-mobile-maker/balatro-aligned-debugSigned.apk"
 download_apk="/sdcard/Download/balatro-portrait-mobile.apk"

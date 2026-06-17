@@ -4450,7 +4450,12 @@ function Card:draw(layer)
                 self.children.buy_button.states.visible = false
             end
         end
-        if self.children.use_button and self.highlighted then self.children.use_button:draw() end
+        local portrait_tray_use = G.F_PORTRAIT and ((self.area == G.jokers) or (self.area == G.consumeables))
+        if self.children.use_button and self.highlighted
+            and not (G.F_PORTRAIT and self.ability.consumeable and self.area == G.pack_cards)
+            and not portrait_tray_use then
+            self.children.use_button:draw()
+        end
 
         if self.vortex then
             if self.facing == 'back' then 
@@ -4616,8 +4621,16 @@ function Card:draw(layer)
             if k ~= 'focused_ui' and k ~= "front" and k ~= "back" and k ~= "soul_parts" and k ~= "center" and k ~= 'floating_sprite' and k~= "shadow" and k~= "use_button" and k ~= 'buy_button' and k ~= 'buy_and_use_button' and k~= "debuff" and k ~= 'price' and k~= 'particles' and k ~= 'h_popup' then v:draw() end
         end
 
-        if (layer == 'card' or layer == 'both') and self.area == G.hand then 
+        if (layer == 'card' or layer == 'both') and self.area == G.hand then
             if self.children.focused_ui then self.children.focused_ui:draw() end
+        end
+
+        -- Portrait pack/tray buttons can overlap the selected card, so draw them
+        -- after the front sprite instead of letting the card cover the button.
+        if self.children.use_button and self.highlighted
+            and (G.F_PORTRAIT and self.ability.consumeable and self.area == G.pack_cards
+                or portrait_tray_use) then
+            self.children.use_button:draw()
         end
 
         add_to_drawhash(self)
@@ -4636,13 +4649,31 @@ function Card:highlight(is_higlighted)
     if self.ability.consumeable or self.ability.set == 'Joker' or (self.area and self.area == G.pack_cards) then
         if self.highlighted and self.area and self.area.config.type ~= 'shop' then
             local x_off = (self.ability.consumeable and -0.1 or 0)
+            -- A consumable USE button inside a booster pack appears in the gap
+            -- revealed beneath the card when it lifts on highlight (see the
+            -- pack_highlight_lift in CardArea:align_cards). Placed 'bm' (below)
+            -- so it never covers the art or collides with the pack panel.
+            local pack_use = G.F_PORTRAIT and self.ability.consumeable and self.area == G.pack_cards
+            local is_tray = (self.area == G.jokers) or (self.area == G.consumeables)
+            local tray_off = {x = x_off - 0.4, y = 0}
+            if is_tray and G.F_PORTRAIT and G.ROOM and G.ROOM.T and self.T then
+                local button_mult = (PORTRAIT_CONFIG.mobile_ui and PORTRAIT_CONFIG.mobile_ui.card_button_mult) or 1.4
+                local tray_w = 1.25*(button_mult*0.78) + 0.3
+                local room_right = G.ROOM.T.w - 0.12
+                local fit_x = room_right - (self.T.x + self.T.w) - tray_w
+                if fit_x < tray_off.x then
+                    tray_off.x = math.max(fit_x, x_off - 1.05)
+                end
+            end
             self.children.use_button = UIBox{
-                definition = G.UIDEF.use_and_sell_buttons(self), 
+                definition = G.UIDEF.use_and_sell_buttons(self),
                 config = {align=
-                        ((self.area == G.jokers) or (self.area == G.consumeables)) and "cr" or
+                        is_tray and "cr" or
+                        pack_use and "bm" or
                         "bmi"
-                    , offset = 
-                        ((self.area == G.jokers) or (self.area == G.consumeables)) and {x=x_off - 0.4,y=0} or
+                    , offset =
+                        is_tray and tray_off or
+                        pack_use and {x=0,y=0.12} or
                         {x=0,y=0.65},
                     parent =self}
             }

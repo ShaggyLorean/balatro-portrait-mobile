@@ -364,7 +364,8 @@ function CardArea:draw()
         and self.config.card_limit and self.config.card_limit > 0
         and #self.cards < self.config.card_limit then
         local limit = self.config.card_limit
-        local slot_w, slot_h = G.CARD_W*0.94, G.CARD_H*0.94
+        local slot_scale = PORTRAIT_CONFIG.joker_slots.slot_scale or 0.94
+        local slot_w, slot_h = G.CARD_W*slot_scale, G.CARD_H*slot_scale
         local r, g, b, a = love.graphics.getColor()
         local lw = love.graphics.getLineWidth()
         love.graphics.push()
@@ -526,7 +527,11 @@ function CardArea:align_cards()
                 card.T.x = self.T.x + (usable_w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w) + (self.T.w - usable_w)/2
                 local highlight_height = G.HIGHLIGHT_H
                 if not card.highlighted then highlight_height = 0 end
-                card.T.y = G.hand.T.y - 1.8*card.T.h - highlight_height + (G.SETTINGS.reduced_motion and 0 or 1)*0.1*math.sin(0.666*G.TIMERS.REAL+card.T.x) + math.abs(1.3*(-#self.cards/2 + k-0.5)/(#self.cards))^2-0.3
+                -- Portrait booster: lift the hand row a little higher than the
+                -- desktop default so a selected pack card (which rises to reveal
+                -- its USE button) clears the hand instead of tucking under it.
+                local pack_hand_lift = (G.F_PORTRAIT and PORTRAIT_CONFIG and PORTRAIT_CONFIG.pack_hand_lift) or 1.8
+                card.T.y = G.hand.T.y - pack_hand_lift*card.T.h - highlight_height + (G.SETTINGS.reduced_motion and 0 or 1)*0.1*math.sin(0.666*G.TIMERS.REAL+card.T.x) + math.abs(1.3*(-#self.cards/2 + k-0.5)/(#self.cards))^2-0.3
                 card.T.x = card.T.x + card.shadow_parrallax.x/30
             end
         end
@@ -584,7 +589,13 @@ function CardArea:align_cards()
                 local max_cards = math.max(#self.cards, self.config.temp_limit)
                 card.T.x = self.T.x + (self.T.w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w) + (self.config.card_limit == 1 and 0.5*(self.T.w - card.T.w) or 0)
                 local highlight_height = G.HIGHLIGHT_H
-                if not card.highlighted then highlight_height = 0 end
+                if not card.highlighted then
+                    highlight_height = 0
+                elseif G.F_PORTRAIT and self.config.type == 'shop' then
+                    -- Lift a focused shop card up so its Buy/Open button (anchored
+                    -- just below it) is revealed clear of the shop panel.
+                    highlight_height = card.T.h * ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.shop_highlight_lift) or 0.45)
+                end
                 card.T.y = self.T.y + self.T.h/2 - card.T.h/2 - highlight_height
                 card.T.x = card.T.x + card.shadow_parrallax.x/30
             end
@@ -597,7 +608,21 @@ function CardArea:align_cards()
                 card.T.r = 0.1*(-#self.cards/2 - 0.5 + k)/(#self.cards)+ (G.SETTINGS.reduced_motion and 0 or 1)*0.02*math.sin(2*G.TIMERS.REAL+card.T.x)
                 local max_cards = math.max(#self.cards, self.config.temp_limit)
                 card.T.x = self.T.x + (self.T.w-self.card_w)*((k-1)/math.max(max_cards-1, 1) - 0.5*(#self.cards-max_cards)/math.max(max_cards-1, 1)) + 0.5*(self.card_w - card.T.w)
-                if #self.cards > 2 or (#self.cards > 1 and self == G.consumeables) or (#self.cards > 1 and self.config.spread) then
+                if G.F_PORTRAIT and (self == G.jokers or self == G.consumeables)
+                    and self.config.card_limit and self.config.card_limit > 1
+                    and #self.cards < self.config.card_limit then
+                    -- Portrait: keep each card in its fixed slot (slot k of
+                    -- card_limit) so cards stay lined up with the empty-slot
+                    -- outline instead of spreading to fill the shelf and drifting
+                    -- outside it when a joker self-destructs (Popcorn/Banana) or
+                    -- when fewer than the limit are held. Identical to the spread
+                    -- math when the shelf is full, so it only changes the partial case.
+                    -- Uses the same slot_scale as the outline so each card centers
+                    -- exactly on its slot instead of a hair to the right.
+                    local slot_scale = (PORTRAIT_CONFIG.joker_slots and PORTRAIT_CONFIG.joker_slots.slot_scale) or 0.94
+                    local slot_w = self.card_w * slot_scale
+                    card.T.x = self.T.x + (self.T.w - slot_w)*((k-1)/(self.config.card_limit-1)) + 0.5*(slot_w - card.T.w)
+                elseif #self.cards > 2 or (#self.cards > 1 and self == G.consumeables) or (#self.cards > 1 and self.config.spread) then
                     card.T.x = self.T.x + (self.T.w-self.card_w)*((k-1)/(#self.cards-1)) + 0.5*(self.card_w - card.T.w)
                 elseif #self.cards > 1 and self ~= G.consumeables then
                     card.T.x = self.T.x + (self.T.w-self.card_w)*((k - 0.5)/(#self.cards)) + 0.5*(self.card_w - card.T.w)
@@ -621,7 +646,14 @@ function CardArea:align_cards()
                     card.T.x = self.T.x + self.T.w/2 - self.card_w/2 + 0.5*(self.card_w - card.T.w)
                 end
                 local highlight_height = G.HIGHLIGHT_H
-                if not card.highlighted then highlight_height = 0 end
+                if not card.highlighted then
+                    highlight_height = 0
+                elseif G.F_PORTRAIT and self == G.pack_cards then
+                    -- Lift the selected pack card up into the gap above the row so
+                    -- its USE button has clear space to appear beneath it (reveal),
+                    -- instead of overlapping the art or colliding with the panel.
+                    highlight_height = card.T.h * ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.pack_highlight_lift) or 0.4)
+                end
                 card.T.y = self.T.y + self.T.h/2 - card.T.h/2 - highlight_height + (not card.highlighted and (G.SETTINGS.reduced_motion and 0 or 1)*0.05*math.sin(2*1.666*G.TIMERS.REAL+card.T.x) or 0)
                 card.T.x = card.T.x + card.shadow_parrallax.x/30
             end

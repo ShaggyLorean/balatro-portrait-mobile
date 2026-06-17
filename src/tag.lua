@@ -546,6 +546,18 @@ function Tag:generate_UI(_size)
     end
     tag_sprite.stop_hover = function(_self) _self.hovering = false; Node.stop_hover(_self); _self.hover_tilt = 0 end
 
+    -- Re-fit the hover tooltip every frame while it exists, mirroring Card:move.
+    -- A tag's popup was only fitted once at hover time, before its width was laid
+    -- out, so a tag near the screen edge kept a stale position and overflowed.
+    -- Clamping each frame uses the real measured width and keeps it on-screen.
+    local _tag_sprite_move = tag_sprite.move
+    tag_sprite.move = function(_self, dt)
+        _tag_sprite_move(_self, dt)
+        if G.F_PORTRAIT and _self.children and _self.children.h_popup and prepare_portrait_popup_fit then
+            prepare_portrait_popup_fit(_self.children.h_popup)
+        end
+    end
+
     tag_sprite:juice_up()
     self.tag_sprite = tag_sprite
 

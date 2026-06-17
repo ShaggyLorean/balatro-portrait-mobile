@@ -239,19 +239,23 @@ end
 function G.UIDEF.use_and_sell_buttons(card)
   -- Portrait: PC-sized Use/Sell buttons are too small for thumbs; scale them up.
   local m = G.F_PORTRAIT and ((PORTRAIT_CONFIG.mobile_ui and PORTRAIT_CONFIG.mobile_ui.card_button_mult) or 1.4) or 1
+  -- Smaller multiplier for the tray Sell/Use column (the tall right-side buttons),
+  -- which were too bulky; the pack USE button keeps the full m.
+  local mt = G.F_PORTRAIT and (m * 0.78) or 1
+  local tray_button_w = 1.25*mt
   local sell = nil
   local use = nil
   if card.area and card.area.config.type == 'joker' then
-    sell = {n=G.UIT.C, config={align = "cr"}, nodes={
-      {n=G.UIT.C, config={ref_table = card, align = "cr",padding = 0.1*m, r=0.08, minw = 1.25*m, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'sell_card', func = 'can_sell_card'}, nodes={
-        {n=G.UIT.B, config = {w=0.1,h=0.6*m}},
+    sell = {n=G.UIT.C, config={align = "cm", minw = tray_button_w}, nodes={
+      {n=G.UIT.C, config={ref_table = card, align = "cm",padding = 0.1*mt, r=0.08, minw = tray_button_w, maxw = tray_button_w, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'sell_card', func = 'can_sell_card'}, nodes={
+        {n=G.UIT.B, config = {w=0.1,h=0.6*mt}},
         {n=G.UIT.C, config={align = "tm"}, nodes={
-          {n=G.UIT.R, config={align = "cm", maxw = 1.25*m}, nodes={
-            {n=G.UIT.T, config={text = localize('b_sell'),colour = G.C.UI.TEXT_LIGHT, scale = 0.4*m, shadow = true}}
+          {n=G.UIT.R, config={align = "cm", maxw = tray_button_w}, nodes={
+            {n=G.UIT.T, config={text = localize('b_sell'),colour = G.C.UI.TEXT_LIGHT, scale = 0.4*mt, shadow = true}}
           }},
           {n=G.UIT.R, config={align = "cm"}, nodes={
-            {n=G.UIT.T, config={text = localize('$'),colour = G.C.WHITE, scale = 0.4*m, shadow = true}},
-            {n=G.UIT.T, config={ref_table = card, ref_value = 'sell_cost_label',colour = G.C.WHITE, scale = 0.55*m, shadow = true}}
+            {n=G.UIT.T, config={text = localize('$'),colour = G.C.WHITE, scale = 0.4*mt, shadow = true}},
+            {n=G.UIT.T, config={ref_table = card, ref_value = 'sell_cost_label',colour = G.C.WHITE, scale = 0.55*mt, shadow = true}}
           }}
         }}
       }},
@@ -263,17 +267,16 @@ function G.UIDEF.use_and_sell_buttons(card)
         n=G.UIT.ROOT, config = {padding = 0, colour = G.C.CLEAR}, nodes={
           {n=G.UIT.R, config={mid = true}, nodes={
           }},
-          {n=G.UIT.R, config={ref_table = card, r = 0.08, padding = 0.1, align = "bm", minw = 0.5*card.T.w - 0.15, minh = 0.8*card.T.h, maxw = 0.7*card.T.w - 0.15, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
+          {n=G.UIT.R, config={ref_table = card, r = 0.08, padding = 0.1, align = "cm", minw = 0.5*card.T.w - 0.15, minh = 0.26*card.T.h, maxw = 0.7*card.T.w - 0.15, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
             {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55*m, shadow = true}}
           }},
       }}
     end
     use =
-    {n=G.UIT.C, config={align = "cr"}, nodes={
+    {n=G.UIT.C, config={align = "cm", minw = tray_button_w}, nodes={
 
-      {n=G.UIT.C, config={ref_table = card, align = "cr",maxw = 1.25*m, padding = 0.1*m, r=0.08, minw = 1.25*m, minh = (card.area and card.area.config.type == 'joker') and 0 or 1*m, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
-        {n=G.UIT.B, config = {w=0.1,h=0.6*m}},
-        {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55*m, shadow = true}}
+      {n=G.UIT.C, config={ref_table = card, align = "cm",maxw = tray_button_w, padding = 0.1*mt, r=0.08, minw = tray_button_w, minh = (card.area and card.area.config.type == 'joker') and 0 or 1*mt, hover = true, shadow = true, colour = G.C.UI.BACKGROUND_INACTIVE, one_press = true, button = 'use_card', func = 'can_use_consumeable'}, nodes={
+        {n=G.UIT.T, config={text = localize('b_use'),colour = G.C.UI.TEXT_LIGHT, scale = 0.55*mt, shadow = true}}
       }}
     }}
   elseif card.area and card.area == G.pack_cards then
@@ -286,11 +289,11 @@ function G.UIDEF.use_and_sell_buttons(card)
   end
     local t = {
       n=G.UIT.ROOT, config = {padding = 0, colour = G.C.CLEAR}, nodes={
-        {n=G.UIT.C, config={padding = 0.15, align = 'cl'}, nodes={
-          {n=G.UIT.R, config={align = 'cl'}, nodes={
+        {n=G.UIT.C, config={padding = 0.15, align = 'cm', minw = tray_button_w}, nodes={
+          {n=G.UIT.R, config={align = 'cm', minw = tray_button_w}, nodes={
             sell
           }},
-          {n=G.UIT.R, config={align = 'cl'}, nodes={
+          {n=G.UIT.R, config={align = 'cm', minw = tray_button_w}, nodes={
             use
           }},
         }},
@@ -862,15 +865,21 @@ end
                     {n=G.UIT.O, config={object = DynaText({string = {{prefix = localize('$'), ref_table = card, ref_value = 'cost'}}, colours = {G.C.MONEY},shadow = true, silent = true, bump = true, pop_in = 0, scale = 0.5})}},
                   }}
               }}
+          -- Portrait: chunkier Buy/Open/Redeem buttons (easier thumb targets) that
+          -- the lifted shop card reveals clear of the shop panel.
+          local sbw, sbW, sbh = (G.F_PORTRAIT and 1.4 or 1.1), (G.F_PORTRAIT and 1.7 or 1.3), (G.F_PORTRAIT and 1.2 or 0.94)
+          local sba = G.F_PORTRAIT and 'cm' or 'bm' -- center the label so the button isn't empty-topped
+          local shop_label_y = G.F_PORTRAIT and 0.14 or 0
+          local redeem_label_y = G.F_PORTRAIT and 0.1 or 0
           local t2 = card.ability.set == 'Voucher' and {
-            n=G.UIT.ROOT, config = {ref_table = card, minw = 1.1, maxw = 1.3, padding = 0.1, align = 'bm', colour = G.C.GREEN, shadow = true, r = 0.08, minh = 0.94, func = 'can_redeem', one_press = true, button = 'redeem_from_shop', hover = true}, nodes={
-                {n=G.UIT.T, config={text = localize('b_redeem'),colour = G.C.WHITE, scale = 0.4}}
+            n=G.UIT.ROOT, config = {ref_table = card, minw = sbw, maxw = sbW, padding = 0.1, align = sba, colour = G.C.GREEN, shadow = true, r = 0.08, minh = sbh, func = 'can_redeem', one_press = true, button = 'redeem_from_shop', hover = true}, nodes={
+                {n=G.UIT.T, config={text = localize('b_redeem'),colour = G.C.WHITE, scale = G.F_PORTRAIT and 0.5 or 0.4, text_offset_y = redeem_label_y}}
             }} or card.ability.set == 'Booster' and {
-            n=G.UIT.ROOT, config = {ref_table = card, minw = 1.1, maxw = 1.3, padding = 0.1, align = 'bm', colour = G.C.GREEN, shadow = true, r = 0.08, minh = 0.94, func = 'can_open', one_press = true, button = 'open_booster', hover = true}, nodes={
-                {n=G.UIT.T, config={text = localize('b_open'),colour = G.C.WHITE, scale = 0.5}}
+            n=G.UIT.ROOT, config = {ref_table = card, minw = sbw, maxw = sbW, padding = 0.1, align = sba, colour = G.C.GREEN, shadow = true, r = 0.08, minh = sbh, func = 'can_open', one_press = true, button = 'open_booster', hover = true}, nodes={
+                {n=G.UIT.T, config={text = localize('b_open'),colour = G.C.WHITE, scale = G.F_PORTRAIT and 0.62 or 0.5, text_offset_y = shop_label_y}}
             }} or {
-            n=G.UIT.ROOT, config = {ref_table = card, minw = 1.1, maxw = 1.3, padding = 0.1, align = 'bm', colour = G.C.GOLD, shadow = true, r = 0.08, minh = 0.94, func = 'can_buy', one_press = true, button = 'buy_from_shop', hover = true}, nodes={
-                {n=G.UIT.T, config={text = localize('b_buy'),colour = G.C.WHITE, scale = 0.5}}
+            n=G.UIT.ROOT, config = {ref_table = card, minw = sbw, maxw = sbW, padding = 0.1, align = sba, colour = G.C.GOLD, shadow = true, r = 0.08, minh = sbh, func = 'can_buy', one_press = true, button = 'buy_from_shop', hover = true}, nodes={
+                {n=G.UIT.T, config={text = localize('b_buy'),colour = G.C.WHITE, scale = G.F_PORTRAIT and 0.62 or 0.5, text_offset_y = shop_label_y}}
             }}
           local t3 = {
             n=G.UIT.ROOT, config = {id = 'buy_and_use', ref_table = card, minh = 1.1, padding = 0.1, align = 'cr', colour = G.C.RED, shadow = true, r = 0.08, minw = 1.1, func = 'can_buy_and_use', one_press = true, button = 'buy_from_shop', hover = true, focus_args = {type = 'none'}}, nodes={
