@@ -43,10 +43,11 @@ A portrait-mode mod for Balatro on Android, built for one-handed mobile play.
 - **Zygisk module** (experimental): a root-only runtime path for the official Google Play install
 - **iOS** (experimental): build a sideloadable `.ipa` with `--ios` (see the [guide](docs/IOS.md))
 
-## Choose Your Install Path
+## Which Version Should I Use?
 
-Most players should use the rootless APK builder. The Zygisk module is for rooted
-power users who specifically want to keep the official Play Store app installed.
+If you are not sure, use the rootless APK builder. It is the normal route and
+does not need root. The Zygisk module is there for rooted users who want to keep
+the official Play Store app installed.
 
 | Path | Best for | Root | What you install |
 |------|----------|------|------------------|
@@ -55,11 +56,11 @@ power users who specifically want to keep the official Play Store app installed.
 | **Zygisk module** | Rooted users keeping the official Play app | Yes | `balatro_portrait.zip` from Releases |
 | **iOS build** | Testers only | No jailbreak required | Experimental sideloadable `.ipa` |
 
-This repository never ships a ready-made rootless APK because that APK contains
-your own Balatro game files. The Zygisk ZIP can be published because it does not
-contain the official APK or bundled game assets.
+I cannot upload ready-made rootless APKs here because those builds contain your
+own Balatro files. The Zygisk ZIP is different: it only contains the portrait
+runtime module, so it can live on the Releases page.
 
-## Requirements
+## What You Need
 
 - A legal copy of Balatro
 - Android 5.0+ for the rootless APK builder
@@ -67,7 +68,7 @@ contain the official APK or bundled game assets.
 - Termux from F-Droid or GitHub for phone-only builds
 - Root + Zygisk only if you choose the experimental Zygisk module
 
-## Rootless APK Builder (Recommended)
+## Rootless APK Builder
 
 Build a separate portrait APK on Windows, macOS, or Linux:
 
@@ -77,8 +78,8 @@ cd balatro-portrait-mobile
 python build.py
 ```
 
-On first run, the script asks for your Balatro game file and extracts the needed
-resources locally. The output is:
+On first run, the script asks where your Balatro install is and extracts the
+files it needs. The APK ends up here:
 
 ```text
 balatro-mobile-maker/balatro-aligned-debugSigned.apk
@@ -90,7 +91,7 @@ Install it on your Android device:
 adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
 ```
 
-Common non-interactive examples:
+Some useful command-line examples:
 
 ```sh
 python build.py --no-crt --readabletro
@@ -98,14 +99,13 @@ python build.py --balatro "D:\Steam\steamapps\common\Balatro\Balatro.exe" --forc
 python build.py --balatro "~/Library/Application Support/Steam/steamapps/common/Balatro/Balatro.app" --force
 ```
 
-Android APK builds always include Lovely, so mod support is not a separate build
-question.
+Android APK builds always include Lovely. You do not need to enable it manually.
 
 ## Phone Build (Termux, No PC)
 
 If the official Play Store Balatro is already installed on your phone, Termux can
-build the rootless portrait APK from that install. No `Balatro.exe`, `Game.love`,
-or root access is needed.
+build the portrait APK from that install. No PC copy of `Balatro.exe` or
+`Game.love` is needed.
 
 1. Install the official Play Store Balatro and launch it once.
 2. Install Termux from F-Droid or GitHub.
@@ -122,7 +122,7 @@ pkg update -y && pkg install -y git && rm -rf balatro-portrait-mobile && git clo
 ```
 
 The helper installs missing Python/Java packages, asks about Readabletro and CRT,
-builds the APK, signs it, and copies it to:
+then builds and signs the APK. When it is done, the file is copied to:
 
 ```text
 /sdcard/Download/balatro-portrait-mobile.apk
@@ -132,10 +132,9 @@ Full guide: [docs/TERMUX.md](docs/TERMUX.md).
 
 ## Zygisk Module (Experimental, Root Only)
 
-This path keeps the official Google Play package
-(`com.playstack.balatro.android`) installed and injects portrait mode at runtime.
-It does not patch or re-sign the APK, but it requires root + Zygisk and is
-currently arm64-only.
+This keeps the official Google Play app installed and injects portrait mode when
+the game starts. It does not patch or re-sign the APK, but it requires root +
+Zygisk and is currently arm64-only.
 
 1. Install the official Play Store Balatro and launch it once.
 2. Download `balatro_portrait.zip` from GitHub Releases.
@@ -143,9 +142,9 @@ currently arm64-only.
 4. Choose Readabletro/CRT options during install.
 5. Reboot and launch the official Balatro app.
 
-More details and local build instructions: [zygisk/README.md](zygisk/README.md).
+More details: [zygisk/README.md](zygisk/README.md).
 
-## iOS (Experimental)
+## iOS
 
 Build with `--ios`, then sideload `balatro-portrait.ipa` with
 [Sideloadly](https://sideloadly.io/) or [AltStore](https://altstore.io/).
@@ -191,12 +190,6 @@ python build.py --crt
 ```
 
 Or answer **yes** to "Apply CRT patch?" during the interactive build.
-
-### Prices look higher than expected
-
-In-game price increases are **base Balatro mechanics**, not a bug in this mod. Common causes:
-- **Overpriced voucher** — multiplies Tarot/Planet pack prices by 1.5×
-- **Inflation joker** — adds $1 to all item prices each round
 
 ## Support
 
