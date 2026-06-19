@@ -2,6 +2,38 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.6.3](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.3) - 2026-06-19
+
+The headline here is Steamodded. Newer Steamodded builds ship Lovely patches that
+target vanilla Balatro UI code, and the portrait rework had moved that code, so
+starting a run with Steamodded loaded could crash on the blind select screen.
+This release makes the portrait UI handle modded content directly instead of
+leaning on those patches landing.
+
+**Steamodded compatibility**
+
+- **Starting a run with Steamodded no longer crashes on the blind select.** The
+  blind name and description boxes now render Steamodded's parsed localization
+  through `SMODS.localize_box`, with a plain-string fallback for vanilla. This
+  covers both the blind-choice cards and the blind info popup.
+- **Hand and discard limits have safe defaults.** `play_limit`, `discard_limit`,
+  and `no_limit` are seeded in the starting params, so mods that read them at the
+  start of a run no longer hit a nil value.
+- **Fixed two variable-shadowing bugs that surfaced under mods.** A local named
+  `type` was shadowing Lua's builtin inside the blind description code, and a
+  local named `os` was shadowing the `os` library during startup.
+
+**Save transfer**
+
+- **Added a guide for moving your save from the official Play app**, using Google
+  Takeout (no root, no Shizuku). `tools/import_save.py` handles the
+  unzip-and-rename step. See [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
+
+**Other**
+
+- The rootless APK now forces portrait at the SDL layer during the build, so the
+  orientation is locked even before the Lua side starts.
+
 ## [v2.6.2](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.2) - 2026-06-17
 
 This is a small but important polish release for the portrait HUD and shop flow.

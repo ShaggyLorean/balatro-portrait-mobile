@@ -1540,7 +1540,7 @@ function create_UIBox_HUD()
               }},
               {n=G.UIT.R, config={align = "cm", minh = 1, padding = 0.1}, nodes={
                 {n=G.UIT.C, config={align = "cr", minw = 2, minh =1, r = 0.1,colour = G.C.UI_CHIPS, id = 'hand_chip_area', emboss = 0.05}, nodes={
-                    {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_chips', object = Moveable(0,0,0,0), w = 0, h = 0}},
+                    {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_chips', object = Moveable(0,0,0,0), w = 0, h = 0, _w = 2.5, _h = 2.5}},
                     {n=G.UIT.O, config={id = 'hand_chips', func = 'hand_chip_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "chip_text"}}, colours = {G.C.UI.TEXT_LIGHT}, font = G.LANGUAGES['en-us'].font, shadow = true, float = true, scale = scale*2.3})}},
                     {n=G.UIT.B, config={w=0.1,h=0.1}},
                 }},
@@ -1548,7 +1548,7 @@ function create_UIBox_HUD()
                   {n=G.UIT.T, config={text = "X", lang = G.LANGUAGES['en-us'], scale = scale*2, colour = G.C.UI_MULT, shadow = true}},
                 }},
                 {n=G.UIT.C, config={align = "cl", minw = 2, minh=1, r = 0.1,colour = G.C.UI_MULT, id = 'hand_mult_area', emboss = 0.05}, nodes={
-                  {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_mult', object = Moveable(0,0,0,0), w = 0, h = 0}},
+                  {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_mult', object = Moveable(0,0,0,0), w = 0, h = 0, _w = 2.5, _h = 2.5}},
                   {n=G.UIT.B, config={w=0.1,h=0.1}},
                   {n=G.UIT.O, config={id = 'hand_mult', func = 'hand_mult_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "mult_text"}}, colours = {G.C.UI.TEXT_LIGHT}, font = G.LANGUAGES['en-us'].font, shadow = true, float = true, scale = scale*2.3})}},
                 }}
@@ -1714,7 +1714,7 @@ function create_UIBox_HUD_vertical()
         }},
         {n=G.UIT.R, config={align = "cm", minh = 0.82, padding = 0.035}, nodes={
           {n=G.UIT.C, config={align = "cr", minw = hand_meter_minw, minh = 0.82, r = 0.1,colour = G.C.UI_CHIPS, id = 'hand_chip_area', emboss = 0.05}, nodes={
-            {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_chips', object = Moveable(0,0,0,0), w = 0, h = 0}},
+            {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_chips', object = Moveable(0,0,0,0), w = 0, h = 0, _w = 2.5, _h = 2.5}},
             {n=G.UIT.O, config={id = 'hand_chips', func = 'hand_chip_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "chip_text"}}, colours = {G.C.UI.TEXT_LIGHT}, font = G.LANGUAGES['en-us'].font, shadow = true, float = true, scale = scale*2.15})}},
             {n=G.UIT.B, config={w=0.1,h=0.1}},
           }},
@@ -1722,7 +1722,7 @@ function create_UIBox_HUD_vertical()
           {n=G.UIT.T, config={text = "X", lang = G.LANGUAGES['en-us'], scale = scale*2, colour = G.C.UI_MULT, shadow = true}},
           }},
           {n=G.UIT.C, config={align = "cl", minw = hand_meter_minw, minh = 0.82, r = 0.1,colour = G.C.UI_MULT, id = 'hand_mult_area', emboss = 0.05}, nodes={
-            {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_mult', object = Moveable(0,0,0,0), w = 0, h = 0}},
+            {n=G.UIT.O, config={func = 'flame_handler',no_role = true, id = 'flame_mult', object = Moveable(0,0,0,0), w = 0, h = 0, _w = 2.5, _h = 2.5}},
             {n=G.UIT.B, config={w=0.1,h=0.1}},
             {n=G.UIT.O, config={id = 'hand_mult', func = 'hand_mult_UI_set',object = DynaText({string = {{ref_table = G.GAME.current_round.current_hand, ref_value = "mult_text"}}, colours = {G.C.UI.TEXT_LIGHT}, font = G.LANGUAGES['en-us'].font, shadow = true, float = true, scale = scale*2.15})}},
           }}
@@ -1930,6 +1930,11 @@ function create_UIBox_blind_tag(blind_choice, run_info)
   }}
 end
 
+-- NOTE: this function's first parameter is named `type`, which shadows Lua's
+-- builtin type() throughout its body -- including the description closures below.
+-- Capture the real builtin here (file scope, before the param exists) so those
+-- closures can still type-check parsed SMODS localization tables.
+local _type = type
 function create_UIBox_blind_choice(type, run_info)
   if not G.GAME.blind_on_deck then
     G.GAME.blind_on_deck = 'Small'
@@ -2005,6 +2010,42 @@ function create_UIBox_blind_choice(type, run_info)
   local loc_target = localize{type = 'raw_descriptions', key = blind_choice.config.key, set = 'Blind', vars = {localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')}}
   local loc_name = localize{type = 'name_text', key = blind_choice.config.key, set = 'Blind'}
   local text_table = loc_target
+  local function blind_choice_desc_text(line)
+    if _type(line) == 'string' then return line end
+    if _type(line) ~= 'table' then return '-' end
+
+    local line_vars = (target and target.vars) or blind_choice.config.vars or {}
+    local assembled_line = ''
+    for _, part in ipairs(line) do
+      if _type(part) == 'string' then
+        assembled_line = assembled_line..part
+      elseif _type(part) == 'table' and part.strings then
+        for _, subpart in ipairs(part.strings) do
+          assembled_line = assembled_line..(_type(subpart) == 'string' and subpart or line_vars[tonumber(subpart[1])] or 'ERROR')
+        end
+      end
+    end
+    return assembled_line ~= '' and assembled_line or '-'
+  end
+  local function blind_choice_desc_nodes(line, line_index)
+    local prefix_node = line_index == 1 and {n=G.UIT.T, config={id = blind_choice.config.key, ref_table = {val = ''}, ref_value = 'val', scale = desc_scale, colour = disabled and G.C.UI.TEXT_INACTIVE or G.C.WHITE, shadow = not disabled, func = 'HUD_blind_debuff_prefix'}} or nil
+    if _type(line) == 'table' and SMODS and SMODS.localize_box then
+      local smods_scale = ((target and target.scale) or 1)*(desc_scale/0.32)
+      if G.F_MOBILE_UI then smods_scale = smods_scale/1.5 end
+      local nodes = SMODS.localize_box(line, {default_col = disabled and G.C.UI.TEXT_INACTIVE or (target and target.text_colour) or G.C.WHITE, shadow = not disabled, vars = (target and target.vars) or blind_choice.config.vars or {}, scale = smods_scale})
+      if prefix_node then table.insert(nodes, 1, prefix_node) end
+      return nodes
+    end
+
+    local nodes = {}
+    if prefix_node then nodes[#nodes+1] = prefix_node end
+    nodes[#nodes+1] = {n=G.UIT.T, config={text = blind_choice_desc_text(line), scale = desc_scale, colour = disabled and G.C.UI.TEXT_INACTIVE or G.C.WHITE, shadow = not disabled}}
+    return nodes
+  end
+  local portrait_blind_desc_nodes = {}
+  for line_index, line in ipairs(text_table or {}) do
+    portrait_blind_desc_nodes[#portrait_blind_desc_nodes+1] = {n=G.UIT.R, config={align = "cm", maxw = blind_text_maxw}, nodes=blind_choice_desc_nodes(line, line_index)}
+  end
   local blind_col = get_blind_main_colour(type)
   local blind_amt = get_blind_amount(G.GAME.round_resets.blind_ante)*blind_choice.config.mult*G.GAME.starting_params.ante_scaling
 
@@ -2035,15 +2076,7 @@ function create_UIBox_blind_choice(type, run_info)
               {n=G.UIT.R, config={align = "cm", minh = G.F_PORTRAIT and 1.28 or 1.5}, nodes={
                 {n=G.UIT.O, config={object = blind_choice.animation}},
               }},
-              text_table[1] and {n=G.UIT.R, config={align = "cm", minh = G.F_PORTRAIT and 0.55 or 0.7, padding = G.F_PORTRAIT and 0.018 or 0.05, minw = 2.9}, nodes={
-                text_table[1] and {n=G.UIT.R, config={align = "cm", maxw = blind_text_maxw}, nodes={
-                  {n=G.UIT.T, config={id = blind_choice.config.key, ref_table = {val = ''}, ref_value = 'val', scale = desc_scale, colour = disabled and G.C.UI.TEXT_INACTIVE or G.C.WHITE, shadow = not disabled, func = 'HUD_blind_debuff_prefix'}},
-                  {n=G.UIT.T, config={text = text_table[1] or '-', scale = desc_scale, colour = disabled and G.C.UI.TEXT_INACTIVE or G.C.WHITE, shadow = not disabled}}
-                }} or nil,
-                text_table[2] and {n=G.UIT.R, config={align = "cm", maxw = blind_text_maxw}, nodes={
-                  {n=G.UIT.T, config={text = text_table[2] or '-', scale = desc_scale, colour = disabled and G.C.UI.TEXT_INACTIVE or G.C.WHITE, shadow = not disabled}}
-                }} or nil,
-              }} or nil,
+              portrait_blind_desc_nodes[1] and {n=G.UIT.R, config={align = "cm", minh = G.F_PORTRAIT and 0.55 or 0.7, padding = G.F_PORTRAIT and 0.018 or 0.05, minw = 2.9}, nodes=portrait_blind_desc_nodes} or nil,
             }},
             {n=G.UIT.R, config={align = "cm",r = 0.1, padding = G.F_PORTRAIT and 0.022 or 0.05, minw = score_minw, colour = G.C.BLACK, emboss = 0.05}, nodes={
               {n=G.UIT.R, config={align = "cm", maxw = blind_text_maxw}, nodes={
@@ -4838,12 +4871,38 @@ function create_UIBox_blind_popup(blind, discovered, vars)
   local _dollars = blind.dollars
   local loc_target = localize{type = 'raw_descriptions', key = blind.key, set = 'Blind', vars = vars or blind.vars}
   local loc_name = localize{type = 'name_text', key = blind.key, set = 'Blind'}
+  local function blind_popup_desc_text(line)
+    if type(line) == 'string' then return line end
+    if type(line) ~= 'table' then return '-' end
+
+    local line_vars = (target and target.vars) or vars or blind.vars or {}
+    local assembled_line = ''
+    for _, part in ipairs(line) do
+      if type(part) == 'string' then
+        assembled_line = assembled_line..part
+      elseif type(part) == 'table' and part.strings then
+        for _, subpart in ipairs(part.strings) do
+          assembled_line = assembled_line..(type(subpart) == 'string' and subpart or line_vars[tonumber(subpart[1])] or 'ERROR')
+        end
+      end
+    end
+    return assembled_line ~= '' and assembled_line or '-'
+  end
+  local function blind_popup_desc_nodes(line, line_index)
+    if type(line) == 'table' and SMODS and SMODS.localize_box then
+      local smods_scale = ((target and target.scale) or 1)*(0.35/0.32)
+      if G.F_MOBILE_UI then smods_scale = smods_scale/1.5 end
+      return SMODS.localize_box(line, {default_col = (target and target.text_colour) or G.C.WHITE, shadow = true, vars = (target and target.vars) or vars or blind.vars or {}, scale = smods_scale})
+    end
+
+    return {{n=G.UIT.T, config={text = (line_index == 1 and blind.name == 'The Wheel' and '1' or '')..blind_popup_desc_text(line), scale = 0.35, shadow = true, colour = G.C.WHITE}}}
+  end
 
   if discovered then 
     local ability_text = {}
     if loc_target then 
       for k, v in ipairs(loc_target) do
-        ability_text[#ability_text + 1] = {n=G.UIT.R, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = (k ==1 and blind.name == 'The Wheel' and '1' or '')..v, scale = 0.35, shadow = true, colour = G.C.WHITE}}}}
+        ability_text[#ability_text + 1] = {n=G.UIT.R, config={align = "cm"}, nodes=blind_popup_desc_nodes(v, k)}
       end
     end
     local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.4)
@@ -7003,18 +7062,17 @@ function create_UIBox_main_menu_buttons()
       n=G.UIT.ROOT, config = {align = "bm", colour = G.C.CLEAR}, nodes={
         {n=G.UIT.C, config={align = "bm"}, nodes={
           {n=G.UIT.R, config={align = "cm", padding = 0.15, r = 2, emboss = 0.1, colour = G.C.L_BLACK, mid = true}, nodes={
-            -- Row 1: Languages + Play
-            {n=G.UIT.R, config={align = "cm", minw = 4, minh = 0.8, padding = 0.15}, nodes={
-              UIBox_button{id = 'main_menu_play', button = not G.SETTINGS.tutorial_complete and "start_run" or "setup_run", colour = G.C.BLUE, minw = 5.55, minh = 2, emboss = 1, label = {localize('b_play_cap')}, scale = text_scale*3, col = true},
-            }},
-            -- Row 2: Options + Quit
-            {n=G.UIT.R, config={align = "cm", padding = 0.25}, nodes={
-              UIBox_button{button = 'options', colour = G.C.ORANGE, minw = 2.55, minh = 1.25, label = {localize('b_options_cap')}, scale = text_scale*1.1, col = true},
-              G.F_QUIT_BUTTON and UIBox_button{button = quit_func, colour = G.C.RED, minw = 2.55, minh = 1.25, label = {localize('b_quit_cap')}, scale = text_scale*1.1, col = true} or nil,
-            }},
-            -- Row 3: Collection
-            {n=G.UIT.R, config={align = "cm", padding = 0.15}, nodes={
-              UIBox_button{id = 'collection_button', button = "your_collection", colour = G.C.PALE_GREEN, minw = 3.65, minh = 1.55, label = {localize('b_collection_cap')}, scale = text_scale*1.5, col = true},
+            {n=G.UIT.C, config={align = "cm", padding = 0}, nodes={
+              {n=G.UIT.R, config={align = "cm", minw = 4, minh = 0.8, padding = 0.15}, nodes={
+                UIBox_button{id = 'main_menu_play', button = not G.SETTINGS.tutorial_complete and "start_run" or "setup_run", colour = G.C.BLUE, minw = 5.55, minh = 2, emboss = 1, label = {localize('b_play_cap')}, scale = text_scale*3, col = true},
+              }},
+              {n=G.UIT.R, config={align = "cm", padding = 0.25}, nodes={
+                UIBox_button{button = 'options', colour = G.C.ORANGE, minw = 2.55, minh = 1.25, label = {localize('b_options_cap')}, scale = text_scale*1.1, col = true},
+                G.F_QUIT_BUTTON and UIBox_button{button = quit_func, colour = G.C.RED, minw = 2.55, minh = 1.25, label = {localize('b_quit_cap')}, scale = text_scale*1.1, col = true} or nil,
+              }},
+              {n=G.UIT.R, config={align = "cm", padding = 0.15}, nodes={
+                UIBox_button{id = 'collection_button', button = "your_collection", colour = G.C.PALE_GREEN, minw = 3.65, minh = 1.55, label = {localize('b_collection_cap')}, scale = text_scale*1.5, col = true},
+              }},
             }},
           }},
         }},

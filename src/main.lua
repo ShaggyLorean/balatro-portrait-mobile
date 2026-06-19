@@ -174,10 +174,10 @@ function love.load()
 	_force_android_portrait_hints()
 
 	G:start_up()
-	local os = love.system.getOS()
-	if os == 'OS X' or os == 'Windows' then
+	local desktop_os = love.system.getOS()
+	if desktop_os == 'OS X' or desktop_os == 'Windows' then
 		local st = nil
-		if os == 'OS X' then
+		if desktop_os == 'OS X' then
 			local dir = love.filesystem.getSourceBaseDirectory()
 			local old_cpath = package.cpath
 			package.cpath = package.cpath .. ';' .. dir .. '/?.so'

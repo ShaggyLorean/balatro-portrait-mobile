@@ -2079,6 +2079,10 @@ function Game:start_run(args)
     local selected_back = saveTable and saveTable.BACK.name or (args.challenge and args.challenge.deck and args.challenge.deck.type) or (self.GAME.viewed_back and self.GAME.viewed_back.name) or self.GAME.selected_back and self.GAME.selected_back.name or 'Red Deck'
     selected_back = get_deck_from_name(selected_back)
     self.GAME = saveTable and saveTable.GAME or self:init_game_object()
+    self.GAME.starting_params = self.GAME.starting_params or get_starting_params()
+    self.GAME.starting_params.play_limit = self.GAME.starting_params.play_limit or 5
+    self.GAME.starting_params.discard_limit = self.GAME.starting_params.discard_limit or 5
+    self.GAME.starting_params.no_limit = self.GAME.starting_params.no_limit or ''
     self.GAME.modifiers = self.GAME.modifiers or {}
     self.GAME.stake = args.stake or self.GAME.stake or 1
     self.GAME.STOP_USE = 0

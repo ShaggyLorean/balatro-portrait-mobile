@@ -43,7 +43,7 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-MOD_VERSION = "2.6.2"
+MOD_VERSION = "2.6.3"
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
@@ -815,6 +815,46 @@ def _apktool(jar, args):
     _java(jar, args)
 
 
+def _patch_sdl_portrait_orientation(apk_out):
+    smali_path = os.path.join(apk_out, "smali", "org", "libsdl", "app", "SDLActivity.smali")
+    if not os.path.exists(smali_path):
+        raise FileNotFoundError(f"SDLActivity.smali not found at {smali_path}")
+
+    with open(smali_path, "r", encoding="utf-8") as f:
+        smali = f.read()
+
+    marker = "# Balatro Portrait: force portrait orientation"
+    if marker in smali:
+        return
+
+    signature = ".method public setOrientationBis(IIZLjava/lang/String;)V"
+    method_start = smali.find(signature)
+    if method_start == -1:
+        raise RuntimeError(f"{signature} not found in {smali_path}")
+
+    method_end = smali.find(".end method", method_start)
+    if method_end == -1:
+        raise RuntimeError(f"{signature} has no .end method in {smali_path}")
+
+    method_body = smali[method_start:method_end]
+    header_match = re.search(r"(?m)^(\s+\.(?:locals|registers)\s+\d+\s*)$", method_body)
+    if not header_match:
+        raise RuntimeError(f"{signature} has no .locals/.registers header in {smali_path}")
+
+    insert_at = method_start + header_match.end()
+    injected = (
+        "\n"
+        f"    {marker}\n"
+        "    const/4 p1, 0x1\n"
+        "    invoke-virtual {p0, p1}, Landroid/app/Activity;->setRequestedOrientation(I)V\n"
+        "    return-void\n"
+    )
+    smali = smali[:insert_at] + injected + smali[insert_at:]
+
+    with open(smali_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(smali)
+
+
 def build_apk(profiler=None):
     """Download tools, package, and sign the always-Lovely Android APK."""
     game_love_src = os.path.abspath("Game.love")
@@ -874,6 +914,9 @@ def build_apk(profiler=None):
         with open(manifest_path, "w") as f:
             f.write(m)
         print("  [Lovely] Manifest patched.")
+
+        _patch_sdl_portrait_orientation(apk_out)
+        print("  [Lovely] SDL orientation patched.")
 
         # Icons
         for density in ["hdpi","mdpi","xhdpi","xxhdpi","xxxhdpi"]:
