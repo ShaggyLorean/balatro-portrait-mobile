@@ -164,6 +164,18 @@ Android APK builds include Lovely automatically. After installation:
 Root or ADB also work as alternatives — see [docs/MODDING.md](docs/MODDING.md)
 for rootless APK paths, official Play/Zygisk paths, and troubleshooting.
 
+## Save Transfer
+
+Already played the official Play Store Balatro? You can move your unlocks and
+progression into the portrait app without root or Shizuku, using Google Takeout.
+A helper script does the unzip-and-rename step:
+
+```sh
+python tools/import_save.py takeout-XXXXXXXX-001.zip
+```
+
+Full walkthrough: [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
+
 ## Troubleshooting
 
 ### Game won't start
