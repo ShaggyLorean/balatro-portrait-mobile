@@ -173,6 +173,23 @@ function love.load()
 
 	_force_android_portrait_hints()
 
+	-- One-time restore of a save baked in at build time (build.py --import-save).
+	-- Only fills an empty profile slot; never overwrites an existing save.
+	pcall(function()
+		if not love.filesystem.getInfo("import_save") then return end
+		for _, slot in ipairs(love.filesystem.getDirectoryItems("import_save")) do
+			local src = "import_save/" .. slot
+			if love.filesystem.getInfo(src, "directory")
+				and not love.filesystem.getInfo(slot .. "/profile.jkr") then
+				love.filesystem.createDirectory(slot)
+				for _, fn in ipairs(love.filesystem.getDirectoryItems(src)) do
+					local data = love.filesystem.read(src .. "/" .. fn)
+					if data then love.filesystem.write(slot .. "/" .. fn, data) end
+				end
+			end
+		end
+	end)
+
 	G:start_up()
 	local desktop_os = love.system.getOS()
 	if desktop_os == 'OS X' or desktop_os == 'Windows' then

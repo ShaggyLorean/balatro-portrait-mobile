@@ -533,7 +533,7 @@ def _apply_readabletro(src_dir, apply):
                     os.remove(os.path.join(texture_dst_dir, fn))
 
 
-def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
+def build_game_love(apply_crt=False, apply_readabletro=False, force=False, import_saves=None):
     """Package src/ into Game.love."""
     src_dir     = "src"
     output_file = "Game.love"
@@ -591,6 +591,14 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False):
                 else:
                     zf.write(fp, arc)
                 count += 1
+
+        if import_saves:
+            for slot, kinds in import_saves.items():
+                for kind, data in kinds.items():
+                    if kind == "save":
+                        continue
+                    zf.writestr(f"import_save/{slot}/{kind}.jkr", data)
+                    count += 1
 
     if apply_crt:
         _apply_crt_patch(src_dir, apply=False)
@@ -1051,11 +1059,60 @@ def _parse_args():
                         help="only build Game.love, skip APK packaging")
     parser.add_argument("--force", action="store_true",
                         help="force Game.love rebuild even if sources are unchanged")
+    parser.add_argument("--import-save", dest="import_save", metavar="PATH",
+                        help="bake a desktop Balatro save folder or Takeout zip into the APK")
     parser.add_argument("--version", action="version", version=f"%(prog)s {MOD_VERSION}")
 
     ns = parser.parse_args()
     flags = {k: v for k, v in vars(ns).items() if v is not None}
     return flags
+
+
+def _load_collect_saves():
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools", "import_save.py")
+    spec = importlib.util.spec_from_file_location("import_save", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.collect_saves
+
+
+def _resolve_import_save(flag_path, interactive):
+    """Return {slot: {kind: bytes}} of progression saves to bake in, or None."""
+    path = flag_path
+    if path is None and interactive:
+        print()
+        print("  Import an existing save (optional)")
+        print("     Bring your unlocks and progression from desktop Balatro or the")
+        print("     official Play Store app (via Google Takeout). Leave blank to skip.")
+        guess = os.path.join(os.environ["APPDATA"], "Balatro") if os.environ.get("APPDATA") else None
+        if guess and os.path.isdir(guess):
+            print(f"     Detected desktop save: {guess}")
+        try:
+            path = input("     Save folder or Takeout zip (blank = skip): ").strip().strip('"')
+        except EOFError:
+            path = ""
+    if not path:
+        return None
+
+    try:
+        saves = _load_collect_saves()(path)
+    except Exception as exc:
+        print(f"  Save import skipped: {exc}")
+        return None
+
+    # Progression only (meta/profile/unlock_notify); an in-progress run is not
+    # carried over, matching the documented transfer.
+    cleaned = {}
+    for slot, kinds in saves.items():
+        keep = {k: v for k, v in kinds.items() if k != "save"}
+        if keep:
+            cleaned[slot] = keep
+    if not cleaned:
+        print("  Save import: no profile data found in that source.")
+        return None
+    print("  Save import: baking " + ", ".join(f"profile {s}" for s in sorted(cleaned)) + " into the build.")
+    return cleaned
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1120,6 +1177,10 @@ def main():
     build_ios         = cli.get("ios",           config.get("ios",         DEFAULT_BUILD_CONFIG["ios"]))
     balatro_path      = cli.get("balatro_path",  None)
     force             = cli.get("force",         False)
+    import_saves      = _resolve_import_save(
+        cli.get("import_save"),
+        interactive=("import_save" not in cli and not all_cli_set),
+    )
 
     total = 4 if build_ios else 3
 
@@ -1137,7 +1198,8 @@ def main():
     # ── Step 2 — Game.love ─────────────────────────────────────────────────
     print()
     print(f"[2/{total}] Building Game.love ...")
-    build_game_love(apply_crt=apply_crt, apply_readabletro=apply_readabletro, force=force)
+    build_game_love(apply_crt=apply_crt, apply_readabletro=apply_readabletro,
+                    force=force or bool(import_saves), import_saves=import_saves)
 
     # ── Step 3 — APK ───────────────────────────────────────────────────────
     if cli.get("skip_apk"):

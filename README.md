@@ -166,15 +166,16 @@ for rootless APK paths, official Play/Zygisk paths, and troubleshooting.
 
 ## Save Transfer
 
-Already played the official Play Store Balatro? You can move your unlocks and
-progression into the portrait app without root or Shizuku, using Google Takeout.
-A helper script does the unzip-and-rename step:
+Carry your unlocks and progression into the portrait app from **desktop Balatro**
+or the **official Play Store app** (via Google Takeout, no root or Shizuku). The
+build can bake a save straight in, so it's there on first launch:
 
 ```sh
-python tools/import_save.py takeout-XXXXXXXX-001.zip
+python build.py --import-save "%APPDATA%\Balatro"        # desktop save folder
+python build.py --import-save takeout-XXXXXXXX-001.zip   # official-app export
 ```
 
-Full walkthrough: [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
+Full walkthrough, including the manual copy route: [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
 
 ## Troubleshooting
 

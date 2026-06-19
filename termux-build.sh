@@ -68,6 +68,16 @@ if [ "$has_crt_flag" -eq 0 ]; then
     opts+=("--no-crt")
   fi
 fi
+
+has_import_flag=0
+for arg in "$@"; do
+  case "$arg" in --import-save|--import-save=*) has_import_flag=1 ;; esac
+done
+if [ "$has_import_flag" -eq 0 ] && [ -r /dev/tty ]; then
+  printf 'Import a save from a Google Takeout zip? Enter path (blank to skip): ' > /dev/tty
+  read -r import_path < /dev/tty || import_path=""
+  if [ -n "$import_path" ]; then opts+=("--import-save" "$import_path"); fi
+fi
 echo
 
 python build.py --no-ios "${opts[@]}" "$@"

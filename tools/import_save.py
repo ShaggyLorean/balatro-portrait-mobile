@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-import_save.py - Recover a Balatro save from a Google Takeout export.
+import_save.py - Recover a Balatro save for the portrait build.
 
-The official Google Play build of Balatro backs its save up to Google Play Games
-Services. You can export that data with Google Takeout (no root and no Shizuku)
-and move it into the portrait build. This script handles the unzip-and-rename
-step: it reads the Play Games snapshots out of the export and writes the plain
-.jkr files Balatro expects.
+Two sources are supported:
 
-See docs/SAVE_TRANSFER.md for the full walkthrough, including how to request the
-Takeout export and where to drop the files afterwards.
+  * A Google Takeout export of the official Play Store save (no root, no Shizuku).
+    Each save is a Play Games snapshot folder like "1-meta.jkr" with the real blob
+    inside as "Data.bin".
+  * A desktop Balatro save folder (Steam/standalone), e.g. %APPDATA%\\Balatro on
+    Windows, which already stores plain "1/meta.jkr", "1/profile.jkr", ... files.
+
+Run standalone it writes the recovered files to game/<slot>/, ready to drop into
+the portrait app's save folder. build.py imports collect_saves() to bake a save
+straight into the APK (see docs/SAVE_TRANSFER.md).
 
 Usage:
-    python tools/import_save.py <takeout.zip | extracted-folder> [-o OUTDIR]
+    python tools/import_save.py <takeout.zip | save-folder> [-o OUTDIR]
 """
 
 import argparse
@@ -21,82 +24,98 @@ import re
 import sys
 import zipfile
 
-# Play Games stores each snapshot in a folder named like "1-meta.jkr" with the
-# real save blob inside as "Data.bin". The leading number is the Balatro profile
-# slot (1, 2, 3). We keep meta/profile/save and skip everything else.
+# Takeout snapshot: ".../Saved Games/1-meta.jkr/Data.bin". The leading number is
+# the Balatro profile slot.
 SNAPSHOT_RE = re.compile(
     r"(?:^|/)(\d+)-(meta|profile|save|unlock_notify)\.jkr/Data\.bin$",
+    re.IGNORECASE,
+)
+
+# Desktop/Android layout: ".../1/profile.jkr".
+PLAIN_RE = re.compile(
+    r"(?:^|/)(\d+)/(meta|profile|save|unlock_notify)\.jkr$",
     re.IGNORECASE,
 )
 
 
 def find_in_zip(zip_path):
     found = []
-    with zipfile.ZipFile(zip_path) as z:
-        for name in z.namelist():
+    with zipfile.ZipFile(zip_path) as archive:
+        for name in archive.namelist():
             match = SNAPSHOT_RE.search(name.replace("\\", "/"))
             if match:
-                found.append((match.group(1), match.group(2).lower(), z.read(name)))
+                found.append((match.group(1), match.group(2).lower(), archive.read(name)))
     return found
 
 
-def find_in_dir(root):
+def _walk(root, pattern):
     found = []
     for dirpath, _dirs, files in os.walk(root):
         for filename in files:
             full = os.path.join(dirpath, filename)
-            match = SNAPSHOT_RE.search(full.replace("\\", "/"))
+            match = pattern.search(full.replace("\\", "/"))
             if match:
                 with open(full, "rb") as handle:
                     found.append((match.group(1), match.group(2).lower(), handle.read()))
     return found
 
 
+def collect_saves(source):
+    """Return {slot: {kind: bytes}} for the saves found in a Takeout export
+    (zip or folder) or a plain Balatro save folder."""
+    if not os.path.exists(source):
+        raise FileNotFoundError(f"'{source}' does not exist")
+
+    if os.path.isdir(source):
+        found = _walk(source, SNAPSHOT_RE) or _walk(source, PLAIN_RE)
+    elif zipfile.is_zipfile(source):
+        found = find_in_zip(source)
+    else:
+        raise ValueError(f"'{source}' is not a folder or a .zip")
+
+    saves = {}
+    for slot, kind, data in found:
+        saves.setdefault(slot, {})[kind] = data
+    return saves
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert a Google Takeout Play Games export into Balatro .jkr save files."
+        description="Recover Balatro .jkr save files from a Takeout export or a desktop save folder."
     )
-    parser.add_argument("source", help="The Takeout .zip, or an already-extracted folder")
+    parser.add_argument("source", help="The Takeout .zip, or a Balatro save folder")
     parser.add_argument(
         "-o", "--out", default="balatro-save-import",
         help="Output folder (default: balatro-save-import)",
     )
     args = parser.parse_args()
 
-    if not os.path.exists(args.source):
-        sys.exit(f"error: '{args.source}' does not exist")
+    try:
+        saves = collect_saves(args.source)
+    except Exception as exc:
+        sys.exit(f"error: {exc}")
 
-    if os.path.isdir(args.source):
-        found = find_in_dir(args.source)
-    elif zipfile.is_zipfile(args.source):
-        found = find_in_zip(args.source)
-    else:
-        sys.exit(f"error: '{args.source}' is not a folder or a .zip")
-
-    if not found:
+    if not saves:
         sys.exit(
-            "No Balatro Play Games snapshots found.\n"
-            'Make sure you exported "Google Play Game Services" in Takeout and that\n'
-            "the archive contains paths like .../Saved Games/1-meta.jkr/Data.bin"
+            "No Balatro saves found.\n"
+            "For the official app, export \"Google Play Game Services\" in Takeout.\n"
+            "For desktop, point at your Balatro save folder (e.g. %APPDATA%\\Balatro)."
         )
 
-    slots = {}
-    for slot, kind, data in found:
+    print("Recovered save files:")
+    for slot in sorted(saves):
         slot_dir = os.path.join(args.out, "game", slot)
         os.makedirs(slot_dir, exist_ok=True)
-        with open(os.path.join(slot_dir, f"{kind}.jkr"), "wb") as handle:
-            handle.write(data)
-        slots.setdefault(slot, []).append(f"{kind}.jkr")
-
-    print("Recovered save files:")
-    for slot in sorted(slots):
-        print(f"  profile {slot}: " + ", ".join(sorted(slots[slot])))
+        for kind, data in saves[slot].items():
+            with open(os.path.join(slot_dir, f"{kind}.jkr"), "wb") as handle:
+                handle.write(data)
+        print(f"  profile {slot}: " + ", ".join(f"{k}.jkr" for k in sorted(saves[slot])))
 
     out_game = os.path.abspath(os.path.join(args.out, "game"))
     print()
     print(f"Written to: {out_game}")
-    print("Next, copy the game/<slot>/ folder into the portrait app's save at")
-    print("  game/<slot>/   (see docs/SAVE_TRANSFER.md for no-root / root / ADB paths)")
+    print("Copy the game/<slot>/ folder into the portrait app's save, or just build")
+    print("with  python build.py --import-save <this source>  to bake it into the APK.")
 
 
 if __name__ == "__main__":

@@ -25,9 +25,11 @@ leaning on those patches landing.
 
 **Save transfer**
 
-- **Added a guide for moving your save from the official Play app**, using Google
-  Takeout (no root, no Shizuku). `tools/import_save.py` handles the
-  unzip-and-rename step. See [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
+- **Carry your save into the portrait app**, from desktop Balatro or the official
+  Play Store app (via Google Takeout, no root or Shizuku). `build.py --import-save`
+  bakes the save into the APK and the first launch restores it into an empty
+  profile; `tools/import_save.py` and a manual copy still work too. See
+  [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
 
 **Other**
 
