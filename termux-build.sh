@@ -7,11 +7,13 @@ if [ ! -d /data/data/com.termux/files/usr ]; then
 fi
 
 missing=()
+command -v git >/dev/null 2>&1 || missing+=("git")
 command -v python >/dev/null 2>&1 || missing+=("python")
 command -v java >/dev/null 2>&1 || missing+=("openjdk-17")
 
 if [ "${#missing[@]}" -gt 0 ]; then
   echo "Installing Termux packages: ${missing[*]}"
+  pkg update -y
   pkg install -y "${missing[@]}"
 fi
 
@@ -77,6 +79,16 @@ if [ "$has_import_flag" -eq 0 ] && [ -r /dev/tty ]; then
   printf 'Import a save from a Google Takeout zip? Enter path (blank to skip): ' > /dev/tty
   read -r import_path < /dev/tty || import_path=""
   if [ -n "$import_path" ]; then opts+=("--import-save" "$import_path"); fi
+fi
+
+has_smods_flag=0
+for arg in "$@"; do
+  case "$arg" in --steamodded|--steamodded=*) has_smods_flag=1 ;; esac
+done
+if [ "$has_smods_flag" -eq 0 ] && [ -r /dev/tty ]; then
+  if ask_yes_no "Bundle Steamodded (newest)?" "no"; then
+    opts+=("--steamodded")
+  fi
 fi
 echo
 
