@@ -3,9 +3,9 @@
 The portrait build is a separate app (`com.unofficial.balatro`), so it starts
 with an empty save. You can carry your unlocks and progression over from either:
 
-- **Desktop Balatro** (Steam/standalone) — the save folder, e.g. `%APPDATA%\Balatro`
+- **Desktop Balatro** (Steam/standalone): the save folder, e.g. `%APPDATA%\Balatro`
   on Windows.
-- **The official Play Store app** — exported with **Google Takeout** (no root, no
+- **The official Play Store app**, exported with **Google Takeout** (no root, no
   Shizuku), since that build backs its save up to Google Play Games Services.
 
 > **What transfers:** unlocks, stats, money, stake/deck progression (`profile.jkr`
@@ -68,7 +68,7 @@ the surrounding files, e.g. `chown -R u0_aNNN:u0_aNNN` and `restorecon`).
 
 **3.** Launch and load profile 1. Your unlocks and progression should be there.
 
-> Mods live in `ASET/Mods/`, saves live in `game/<slot>/` — different folders,
+> Mods live in `game/Mods/`, saves live in `game/<slot>/`. Different folders,
 > don't mix them. See [MODDING.md](MODDING.md) for the mod side.
 
 The Takeout route was documented by the community in

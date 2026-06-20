@@ -1,78 +1,83 @@
 # Mod Support
 
-Balatro Portrait Mobile now has two Android paths. They use different package
-names, so their mod folders are different.
+Balatro Portrait Mobile has two Android paths. They use different package names,
+so their mod folders are different.
 
-## Path A — Rootless APK Builder
+## Path A: Rootless APK builder
 
-This is the normal recommended path for most players.
+The normal path for most players.
 
 - Package name: `com.unofficial.balatro`
 - Mod runtime: Lovely is always embedded in Android builds
 - Root: not required
-- Mod folder inside the app storage: `ASET/Mods/`
+- Mod folder: `game/Mods/` inside the app storage
 - Direct root path:
 
 ```text
-/data/user/0/com.unofficial.balatro/files/save/ASET/Mods/
+/data/user/0/com.unofficial.balatro/files/save/game/Mods/
 ```
 
-### Install Mods Without Root
+### Bundle Steamodded at build time (easiest)
+
+Most mods need Steamodded, and the build can fetch and bundle it for you:
+
+```sh
+python build.py --steamodded          # newest Steamodded
+python build.py --steamodded <tag>    # a specific release
+```
+
+It installs itself on the first launch. Restart the game once and Steamodded is
+active.
+
+### Install mods without root
 
 1. Build and install the APK from `python build.py`.
-2. Launch the game once so Lovely creates the folder structure.
+2. Launch the game once so the folder structure is created.
 3. Install [Material Files](https://play.google.com/store/apps/details?id=me.zhanghai.android.files).
-4. Open Material Files → menu → **Add storage...** → **External storage**.
-5. In the Android picker menu, choose the **Balatro** app and tap **Use this folder**.
-6. Open `ASET/Mods/`.
+4. Material Files menu -> **Add storage...** -> **External storage**.
+5. In the Android picker, choose the **Balatro** app and tap **Use this folder**.
+6. Open `game/Mods/`.
 7. Copy mod folders there.
 8. Restart Balatro.
 
 This Material Files flow comes from Lovely Mobile Maker's FAQ and avoids root.
 
-### Install Mods With Root
+### Install mods with root
 
-Open a root file manager and copy mod folders to:
+Copy mod folders to:
 
 ```text
-/data/user/0/com.unofficial.balatro/files/save/ASET/Mods/
+/data/user/0/com.unofficial.balatro/files/save/game/Mods/
 ```
 
-### Install Mods With ADB
+## Path B: Experimental Zygisk module
 
-```bash
-adb push MyMod /data/local/tmp/MyMod
-adb shell run-as com.unofficial.balatro cp -r /data/local/tmp/MyMod files/save/ASET/Mods/
-```
-
-## Path B — Experimental Zygisk Module
-
-This is the root-only power-user path for the official Google Play app.
+The root-only path for the official Google Play app.
 
 - Package name: `com.playstack.balatro.android`
-- Root: required
-- Zygisk: required
+- Root and Zygisk: required
 - APK patching/re-signing: not used
-- Current scope: portrait runtime injection, orientation lock, shader/resource payload
-- Modding parity: not complete yet; Lovely is not embedded in the official APK
+- Current scope: portrait injection, orientation lock, shader/resource payload
+- Modding: Lovely is not embedded in the official APK, so this path does not run
+  Steamodded mods yet
 
-The official app's matching save/mod folder is:
+The official app's matching mod folder is:
 
 ```text
 /data/user/0/com.playstack.balatro.android/files/save/ASET/Mods/
 ```
 
-That path is useful for future Zygisk mod-loader work, but the current Zygisk
-module should not be advertised as a full Lovely/Steamodded replacement until a
-runtime mod loader is implemented and tested.
+That path is for future Zygisk mod-loader work. Until a runtime mod loader is in
+place, treat the Zygisk module as portrait-only, not a Lovely/Steamodded
+replacement.
 
-## Mod Folder Structure
+## Mod folder structure
 
 ```text
 Mods/
 ├── Steamodded/
-│   ├── core/
-│   ├── lovely.toml
+│   ├── src/
+│   ├── lovely/
 │   └── ...
 ├── YourMod/
 │   └── YourMod.lua
@@ -82,37 +87,25 @@ Mods/
 
 ## Troubleshooting
 
-### "I can't see the Balatro app in Add storage → External storage"
+**"I can't see the Balatro app in Add storage."** Launch the game at least once
+first. The app list is inside the Android document picker's menu, not the
+Material Files sidebar. Pick the right package: `com.unofficial.balatro` for the
+rootless builder, `com.playstack.balatro.android` for the Zygisk app.
 
-- Launch the game at least once first.
-- The app list is inside the Android document picker's menu, not Material Files'
-  sidebar.
-- Make sure you are picking the correct app:
-  - Rootless builder: `com.unofficial.balatro`
-  - Zygisk official app: `com.playstack.balatro.android`
+**"Mods folder doesn't exist."** Launch the game once after installing. The
+rootless builder creates `game/Mods/` on the first run.
 
-### "Mods folder doesn't exist"
+**"Game crashes after adding mods."** Not every PC mod works on Android.
+Shader-heavy mods can crash; remove the mod's `resources/shaders/` folder if it
+ships desktop shaders. Check `game/Mods/lovely/log/` for Lovely logs.
 
-Launch the game at least once after installing the APK. Lovely creates
-`ASET/Mods/` on first run for the rootless builder path.
-
-### "Game crashes after adding mods"
-
-- Not all PC mods are compatible with Android.
-- Shader-dependent mods may crash; remove the mod's `resources/shaders/` folder
-  if the mod bundles desktop shaders.
-- Check `ASET/Mods/lovely/log/` for Lovely logs.
-
-### "Mod doesn't load / game runs vanilla"
-
-- Make sure the mod folder is directly inside `ASET/Mods/`, not nested one level
-  deeper.
-- Make sure you are using the rootless APK builder path. The Zygisk module does
-  not yet provide full Lovely mod loading for the official Play package.
+**"Mod doesn't load / game runs vanilla."** Make sure the mod folder is directly
+inside `game/Mods/`, not nested one level deeper, and that you are on the
+rootless builder path.
 
 ## Notes
 
-- Android builds from `build.py` always use the Lovely base APK now.
-- iOS builds remain vanilla; Lovely is Android-only.
-- The Zygisk path keeps the official Play install intact and is intentionally
-  documented separately from the rootless Lovely APK path.
+- `build.py` always uses the Lovely base APK for Android.
+- iOS builds are vanilla; Lovely is Android-only.
+- The Zygisk path keeps the official install intact and is documented separately
+  from the rootless Lovely APK path.

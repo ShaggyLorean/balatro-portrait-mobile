@@ -190,6 +190,31 @@ function love.load()
 		end
 	end)
 
+	-- Same idea for a bundled mod (build.py --steamodded): copy it into the mod
+	-- folder once, on the first launch. Lovely picks it up after one restart.
+	pcall(function()
+		if not love.filesystem.getInfo("install_mods") then return end
+		local function copy_dir(src, dst)
+			love.filesystem.createDirectory(dst)
+			for _, item in ipairs(love.filesystem.getDirectoryItems(src)) do
+				local sp, dp = src .. "/" .. item, dst .. "/" .. item
+				if love.filesystem.getInfo(sp, "directory") then
+					copy_dir(sp, dp)
+				else
+					local data = love.filesystem.read(sp)
+					if data then love.filesystem.write(dp, data) end
+				end
+			end
+		end
+		for _, mod in ipairs(love.filesystem.getDirectoryItems("install_mods")) do
+			local src = "install_mods/" .. mod
+			if love.filesystem.getInfo(src, "directory")
+				and not love.filesystem.getInfo("Mods/" .. mod) then
+				copy_dir(src, "Mods/" .. mod)
+			end
+		end
+	end)
+
 	G:start_up()
 	local desktop_os = love.system.getOS()
 	if desktop_os == 'OS X' or desktop_os == 'Windows' then

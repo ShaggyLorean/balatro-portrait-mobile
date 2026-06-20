@@ -533,7 +533,96 @@ def _apply_readabletro(src_dir, apply):
                     os.remove(os.path.join(texture_dst_dir, fn))
 
 
-def build_game_love(apply_crt=False, apply_readabletro=False, force=False, import_saves=None):
+STEAMODDED_REPO = "Steamodded/smods"
+
+
+def _patch_lovely_mod_dir(apk_out):
+    """Repoint Lovely's mod folder from save/ASET/Mods to save/game/Mods so it sits
+    inside the LOVE save dir, which the Lua side can write to. This is what lets a
+    bundled mod (build.py --steamodded) install itself on first run."""
+    old, new = b"/save/ASET/Mods", b"/save/game/Mods"
+    patched = 0
+    for arch in ("arm64-v8a", "armeabi-v7a"):
+        so = os.path.join(apk_out, "lib", arch, "liblove.so")
+        if not os.path.exists(so):
+            continue
+        with open(so, "rb") as f:
+            data = f.read()
+        if new in data:
+            patched += 1
+            continue
+        count = data.count(old)
+        if count != 1:
+            print(f"  Warning: skipped mod-dir patch for {arch} (found {count} matches).")
+            continue
+        with open(so, "wb") as f:
+            f.write(data.replace(old, new))
+        patched += 1
+    if not patched:
+        raise RuntimeError("could not repoint Lovely mod directory (liblove.so unpatched)")
+
+
+def _steamodded_versions(limit=15):
+    url = f"https://api.github.com/repos/{STEAMODDED_REPO}/releases?per_page={limit}"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return [rel["tag_name"] for rel in json.loads(resp.read().decode())]
+
+
+def _fetch_steamodded(version):
+    """Download a Steamodded release tag and return {relpath: bytes} of the mod."""
+    os.makedirs(WORKDIR, exist_ok=True)
+    tmp = os.path.join(WORKDIR, "steamodded.zip")
+    _download(f"https://github.com/{STEAMODDED_REPO}/archive/refs/tags/{version}.zip", tmp)
+    files = {}
+    with zipfile.ZipFile(tmp) as z:
+        for name in z.namelist():
+            if name.endswith("/"):
+                continue
+            parts = name.split("/", 1)            # strip the top "smods-<version>/" folder
+            if len(parts) == 2 and parts[1]:
+                files[parts[1]] = z.read(name)
+    os.remove(tmp)
+    if not files:
+        raise RuntimeError("Steamodded archive was empty")
+    return files
+
+
+def _resolve_steamodded(flag_value, interactive):
+    """Return ('Steamodded', {relpath: bytes}) to bundle, or None."""
+    version = flag_value
+    if version is None and interactive:
+        if not _ask("     Also bundle Steamodded (mod framework)?", default=False):
+            return None
+        try:
+            versions = _steamodded_versions()
+        except Exception as exc:
+            print(f"  Could not fetch Steamodded versions: {exc}")
+            return None
+        print()
+        for i, tag in enumerate(versions, 1):
+            print(f"     {i:2}. {tag}" + ("   (latest)" if i == 1 else ""))
+        try:
+            sel = input("     Pick a version [1]: ").strip()
+        except EOFError:
+            sel = ""
+        idx = int(sel) - 1 if sel.isdigit() and 1 <= int(sel) <= len(versions) else 0
+        version = versions[idx]
+    if not version:
+        return None
+    if version == "latest":
+        version = _steamodded_versions()[0]
+    print(f"  Steamodded: fetching {version} ...")
+    try:
+        files = _fetch_steamodded(version)
+    except Exception as exc:
+        print(f"  Steamodded fetch failed: {exc}")
+        return None
+    print(f"  Steamodded: bundling {len(files)} files ({version}).")
+    return ("Steamodded", files)
+
+
+def build_game_love(apply_crt=False, apply_readabletro=False, force=False, import_saves=None, import_mods=None):
     """Package src/ into Game.love."""
     src_dir     = "src"
     output_file = "Game.love"
@@ -598,6 +687,12 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False, impor
                     if kind == "save":
                         continue
                     zf.writestr(f"import_save/{slot}/{kind}.jkr", data)
+                    count += 1
+
+        if import_mods:
+            for modname, mfiles in import_mods.items():
+                for relpath, data in mfiles.items():
+                    zf.writestr(f"install_mods/{modname}/{relpath}", data)
                     count += 1
 
     if apply_crt:
@@ -926,6 +1021,9 @@ def build_apk(profiler=None):
         _patch_sdl_portrait_orientation(apk_out)
         print("  [Lovely] SDL orientation patched.")
 
+        _patch_lovely_mod_dir(apk_out)
+        print("  [Lovely] Mod folder repointed to save/game/Mods.")
+
         # Icons
         for density in ["hdpi","mdpi","xhdpi","xxhdpi","xxxhdpi"]:
             src = os.path.join(WORKDIR, "res", f"drawable-{density}", "love.png")
@@ -956,7 +1054,7 @@ def build_apk(profiler=None):
     print()
     print("  Mod installation:")
     print("  1. Launch the game once")
-    print("  2. Put mod folders in ASET/Mods/")
+    print("  2. Put mod folders in game/Mods/")
     print("  3. Restart the game")
     print("  See docs/MODDING.md for no-root, root, and ADB paths.")
 
@@ -1061,6 +1159,8 @@ def _parse_args():
                         help="force Game.love rebuild even if sources are unchanged")
     parser.add_argument("--import-save", dest="import_save", metavar="PATH",
                         help="bake a desktop Balatro save folder or Takeout zip into the APK")
+    parser.add_argument("--steamodded", dest="steamodded", metavar="VERSION", nargs="?", const="latest",
+                        help="bundle Steamodded into the APK (optional version tag; default latest)")
     parser.add_argument("--version", action="version", version=f"%(prog)s {MOD_VERSION}")
 
     ns = parser.parse_args()
@@ -1181,6 +1281,11 @@ def main():
         cli.get("import_save"),
         interactive=("import_save" not in cli and not all_cli_set),
     )
+    steamodded        = _resolve_steamodded(
+        cli.get("steamodded"),
+        interactive=("steamodded" not in cli and not all_cli_set),
+    )
+    import_mods       = dict([steamodded]) if steamodded else None
 
     total = 4 if build_ios else 3
 
@@ -1199,7 +1304,8 @@ def main():
     print()
     print(f"[2/{total}] Building Game.love ...")
     build_game_love(apply_crt=apply_crt, apply_readabletro=apply_readabletro,
-                    force=force or bool(import_saves), import_saves=import_saves)
+                    force=force or bool(import_saves) or bool(import_mods),
+                    import_saves=import_saves, import_mods=import_mods)
 
     # ── Step 3 — APK ───────────────────────────────────────────────────────
     if cli.get("skip_apk"):

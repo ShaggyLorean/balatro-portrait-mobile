@@ -1,9 +1,9 @@
 # iOS Build (EXPERIMENTAL)
 
 > **Status: experimental and untested by the maintainer** (no iOS device available).
-> The build pipeline is sound — it mirrors how
+> The build pipeline is sound, it mirrors how
 > [balatro-mobile-maker](https://github.com/blake502/balatro-mobile-maker) builds
-> its iOS package — but layout, safe-area/notch behavior, and performance on real
+> its iOS package, but layout, safe-area/notch behavior, and performance on real
 > devices have not been verified. If you try it, **please
 > [open an issue](https://github.com/ShaggyLorean/balatro-portrait-mobile/issues)**
 > with your device model and screenshots, working or not. We'll help you debug.
@@ -14,7 +14,7 @@ There is no Xcode and no macOS involved. The build:
 
 1. Downloads a prebuilt, unsigned LÖVE iOS app shell
    (`balatro-base.ipa` from [balatro-apk-maker](https://github.com/blake502/balatro-apk-maker)'s
-   Additional Tools — SHA-256 verified, contains **no game data**)
+   Additional Tools, SHA-256 verified, contains **no game data**)
 2. Inserts your locally built `Game.love` (made from **your** copy of Balatro)
    into `Payload/Balatro.app/`
 3. Locks `Info.plist` to portrait orientation and stamps the mod version
@@ -63,15 +63,15 @@ data survives re-signing as long as you don't delete the app.
 
 ## Known unknowns (testers wanted)
 
-- **Notch/Dynamic Island overlap** — the HUD sits at the top of the screen;
+- **Notch/Dynamic Island overlap**, the HUD sits at the top of the screen;
   on notched iPhones it may need a safe-area offset (`safe_area_y` and
   `hud_top_space` in `src/portrait_config.lua`)
-- **Home indicator** — the bottom button row may sit close to the swipe bar
-- **High refresh rate** — `fps_cap = 'auto'` should pick up 120 Hz on ProMotion
+- **Home indicator**, the bottom button row may sit close to the swipe bar
+- **High refresh rate**, `fps_cap = 'auto'` should pick up 120 Hz on ProMotion
   devices; unverified
-- **Haptics** — `love.system.vibrate` support varies on iOS; worst case it's a
+- **Haptics**, `love.system.vibrate` support varies on iOS; worst case it's a
   silent no-op
-- **Performance** — the CRT shader may behave differently on Apple GPUs; if you
+- **Performance**, the CRT shader may behave differently on Apple GPUs; if you
   see artifacts, rebuild with `--crt`
 
 ## Troubleshooting
@@ -81,7 +81,7 @@ Free Apple IDs are limited to 3 sideloaded apps and ~10 app IDs per week.
 Remove an old app or wait, then retry.
 
 ### Game opens in landscape or letterboxed
-This shouldn't happen (orientation is locked in `Info.plist`) — if it does,
+This shouldn't happen (orientation is locked in `Info.plist`), if it does,
 open an issue with a screenshot; that's exactly the feedback we need.
 
 ### Game crashes on launch

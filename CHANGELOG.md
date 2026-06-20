@@ -31,6 +31,15 @@ leaning on those patches landing.
   profile; `tools/import_save.py` and a manual copy still work too. See
   [docs/SAVE_TRANSFER.md](docs/SAVE_TRANSFER.md).
 
+**Mods**
+
+- **One-command Steamodded.** `build.py --steamodded` fetches a version you pick
+  from GitHub and bundles it into the APK. It installs itself on the first launch;
+  restart the game once and it is active. See [docs/MODDING.md](docs/MODDING.md).
+- **The mod folder moved to `game/Mods/`.** This sits inside the LOVE save dir, so
+  a bundled mod can install itself without root. Put manual mods there instead of
+  the old `ASET/Mods/`. (The Zygisk path keeps using `ASET/Mods/`.)
+
 **Other**
 
 - The rootless APK now forces portrait at the SDL layer during the build, so the
