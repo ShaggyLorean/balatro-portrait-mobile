@@ -58,7 +58,15 @@ PORTRAIT_CONFIG = {
         slot_scale = 0.94, -- slot size vs card size; shared by the outline AND the
                            -- card placement so held cards center exactly on slots
     },
+    -- Top inset kept clear of the notch / Dynamic Island / display cutout, in
+    -- room tiles. On iOS this is only a FLOOR: the real per-device safe-area
+    -- inset is read at runtime (see get_mobile_safe_area_top) so a bigger island
+    -- (iPhone 14 Pro / 15 / 16) gets pushed down enough. Android keeps this exact
+    -- tuned value to avoid regressing the many devices already dialed in.
     safe_area_y = 0.85,
+    -- Extra breathing gap (room tiles) added under the *measured* iOS inset only.
+    -- Bump this a touch if the score still hugs the island on some device.
+    safe_area_extra_ios = 0.0,
     tooltip_screen_padding = 0.12,
     tooltip_touch_gap = 1.6,
     -- How far a selected booster-pack card lifts (fraction of card height) so its
@@ -182,6 +190,38 @@ function get_portrait_scale(w, h)
         s = s * (PORTRAIT_CONFIG.swipe_only.scale_mult or 0.92)
     end
     return s
+end
+
+-- Top inset (in room tiles) that keeps the HUD clear of a notch / Dynamic Island
+-- / display cutout. Off-mobile it is 0. On Android it returns the tuned static
+-- value unchanged. On iOS it converts the device's *real* top safe-area inset
+-- (love.window.getSafeArea, in DPI-scaled pixels) into room tiles and uses that,
+-- so an iPhone with a tall Dynamic Island gets pushed down enough instead of
+-- relying on one hard-coded guess. The static value stays as a floor, and every
+-- lookup is guarded so a missing API or a zero inset just falls back to it.
+-- Must be called after G.TILESCALE is set for the current frame.
+function get_mobile_safe_area_top(os_name)
+    os_name = os_name or (love.system and love.system.getOS and love.system.getOS())
+    if os_name ~= 'Android' and os_name ~= 'iOS' then return 0 end
+
+    local fallback = (PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_y) or 0.85
+    if os_name ~= 'iOS' then return fallback end
+
+    if not (love.window and love.window.getSafeArea
+            and G and G.TILESCALE and G.TILESIZE
+            and G.TILESCALE > 0 and G.TILESIZE > 0) then
+        return fallback
+    end
+
+    local ok, _sx, sy = pcall(love.window.getSafeArea)
+    if not ok or type(sy) ~= 'number' or sy <= 0 then
+        return fallback
+    end
+
+    -- px -> room tiles, the same conversion used for room width/height.
+    local inset_tiles = sy / (G.TILESCALE * G.TILESIZE)
+    inset_tiles = inset_tiles + ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_extra_ios) or 0)
+    return math.max(inset_tiles, fallback)
 end
 
 --Bottom space reserved under the hand: smaller in Swipe Only mode, where only

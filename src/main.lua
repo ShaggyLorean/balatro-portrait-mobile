@@ -711,7 +711,7 @@ function love.resize(w, h)
 			G.ROOM.T.w = w / (G.TILESCALE * G.TILESIZE)
 			G.ROOM.T.h = h / (G.TILESCALE * G.TILESIZE)
 			G.ROOM.T.x = 0
-			G.ROOM.T.y = (os_name == 'Android' or os_name == 'iOS') and (PORTRAIT_CONFIG.safe_area_y) or 0
+			G.ROOM.T.y = get_mobile_safe_area_top(os_name)
 
 			G.ROOM_ATTACH.T.w = G.ROOM.T.w
 			G.ROOM_ATTACH.T.h = G.ROOM.T.h

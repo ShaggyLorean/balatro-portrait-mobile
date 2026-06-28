@@ -43,7 +43,7 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-MOD_VERSION = "2.6.3"
+MOD_VERSION = "2.6.4"
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"

@@ -66,6 +66,13 @@ function Game:set_globals()
         self.F_MOBILE_UI = true
         self.F_EXTERNAL_LINKS = false
         self.F_HAPTIC = true
+        -- Mobile OSes own the app lifecycle; there is no user-facing "quit". The
+        -- main-menu Quit button calls love.event.quit(), which finishes the
+        -- activity but leaves the Android process alive, so the next launch
+        -- re-runs love.boot against an already-initialized filesystem and dies
+        -- with "Failed to initialize filesystem: already initialized" on every
+        -- relaunch until app data is cleared. Hide it like we do on console.
+        self.F_QUIT_BUTTON = false
     end
 
     if love.system.getOS() == 'Nintendo Switch' then

@@ -2,6 +2,41 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.6.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.4) - 2026-06-28
+
+Two fixes straight from the issue tracker: a Quit button that could brick relaunch
+on mobile, and the iPhone notch sitting on top of the score.
+
+**Android / mobile**
+
+- **The main-menu Quit button is hidden on Android and iOS.** Quit called
+  `love.event.quit()`, which finishes the activity but leaves the Android process
+  alive, so the next launch re-ran `love.boot` against an already-initialized
+  filesystem and died with `Failed to initialize filesystem: already initialized`
+  on every relaunch until app data was cleared (#33). Mobile OSes own the app
+  lifecycle, so the button now follows the same rule as the console builds and is
+  gone. (Steamodded users already sidestepped this, since it swaps Quit for the
+  Mods button.)
+
+**iOS (experimental, testers wanted)**
+
+- **The score no longer hides behind the notch / Dynamic Island.** iOS was reusing
+  one static top inset tuned for Android front-camera punch-holes
+  (`safe_area_y = 0.85`), which is too short for an iPhone island (#34, #11). The
+  top inset is now read from the device at runtime with `love.window.getSafeArea()`
+  and converted to room tiles, so each iPhone is pushed down by its own real safe
+  area, with the static value kept only as a floor. Android behaviour is unchanged.
+  This is still unverified on a physical iPhone — please report how it looks on
+  yours. `portrait_config.lua` has a `safe_area_extra_ios` knob if you want a touch
+  more breathing room.
+
+**Heads-up**
+
+- A build posted on issue #34 that claims to "fix the notch" is **malware, not a
+  patch** — it is an unrelated `.apk` linked from a throwaway repo, with no Balatro
+  code in it. Do not install random "fixed" builds. The only safe path is building
+  your own APK/IPA from this source, or the signed Zygisk ZIP on the Releases page.
+
 ## [v2.6.3](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.3) - 2026-06-19
 
 The headline here is Steamodded. Newer Steamodded builds ship Lovely patches that
