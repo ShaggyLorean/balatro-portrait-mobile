@@ -22,6 +22,9 @@ Options:
     --skip-setup          Skip resource extraction (if src/resources already exists)
     --skip-apk            Only build Game.love, skip APK packaging
     --force               Force Game.love rebuild even if sources are unchanged
+    --import-save PATH    Bake a desktop save folder or Takeout zip into the APK
+    --steamodded [TAG]    Bundle Steamodded into the APK (default: latest release)
+    --version             Print the mod version and exit
 """
 
 import argparse

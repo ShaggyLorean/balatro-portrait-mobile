@@ -18,6 +18,15 @@ if (-not (Test-Path (Join-Path $NdkDir "build\cmake\android.toolchain.cmake"))) 
 $ninja = (Get-Command ninja -ErrorAction Stop).Source
 $python = (Get-Command python -ErrorAction Stop).Source
 
+# The flashable module's version lives in module.prop while the repo version
+# lives in build.py; they have drifted before (2.6.3 needed its own bump
+# commit). Refuse to package a ZIP whose version does not match the repo.
+$modVersion = (Select-String -Path (Join-Path $repo "build.py") -Pattern 'MOD_VERSION\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+$propVersion = (Select-String -Path (Join-Path $root "module\module.prop") -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
+if ($modVersion -ne $propVersion) {
+    throw "Version mismatch: build.py MOD_VERSION is '$modVersion' but zygisk/module/module.prop says '$propVersion'. Bump them together."
+}
+
 & (Join-Path $root "fetch_deps.ps1")
 
 $distRoot = Join-Path $root "dist"
