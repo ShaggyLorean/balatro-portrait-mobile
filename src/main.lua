@@ -708,10 +708,15 @@ function love.resize(w, h)
 		G.TILESCALE = w / (G.TILE_W * portrait_scale_factor * G.TILESIZE)
 
 		if G.ROOM then
+			local safe_top = get_mobile_safe_area_top(os_name)
 			G.ROOM.T.w = w / (G.TILESCALE * G.TILESIZE)
-			G.ROOM.T.h = h / (G.TILESCALE * G.TILESIZE)
+			-- Full height minus the iOS bottom trim: shifting the room down by
+			-- the top inset pushes its bottom edge (and everything anchored to
+			-- it, like the title-screen buttons) below the physical screen once
+			-- the inset outgrows the Android-tuned floor (#35).
+			G.ROOM.T.h = h / (G.TILESCALE * G.TILESIZE) - get_mobile_room_bottom_trim(os_name, safe_top)
 			G.ROOM.T.x = 0
-			G.ROOM.T.y = get_mobile_safe_area_top(os_name)
+			G.ROOM.T.y = safe_top
 
 			G.ROOM_ATTACH.T.w = G.ROOM.T.w
 			G.ROOM_ATTACH.T.h = G.ROOM.T.h

@@ -2,6 +2,29 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.6.5](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.5) - 2026-07-07
+
+Follow-up to the v2.6.4 notch fix: the same safe-area shift was quietly pushing
+the bottom of the title screen off iPhones.
+
+**iOS (experimental, testers wanted)**
+
+- **Title-screen buttons no longer fall off the bottom of the screen.** The room
+  is shifted down by the top safe-area inset but kept its full window height, so
+  everything anchored to its bottom edge — the Options button and the
+  profile/language corner buttons — overshot the physical screen by the same
+  amount. Android layouts were tuned with the static 0.85-tile overshoot baked
+  in, but on an iPhone the measured island inset is ~2 tiles and the home
+  indicator adds a bottom inset on top of that (#35). The room height is now
+  trimmed by the overshoot beyond the tuned floor plus the real bottom inset
+  from `love.window.getSafeArea()`, so bottom-anchored UI keeps its
+  Android-tuned spacing relative to the safe-area bottom edge. In-game layout
+  gains the same clearance above the swipe bar. Android behaviour is unchanged,
+  and the trim falls back to the old behaviour if the safe-area API is missing.
+  **Still unverified on a physical iPhone — please report how it looks on
+  yours.** There is a `safe_area_bottom_extra_ios` knob in `portrait_config.lua`
+  if you want more breathing room above the home indicator.
+
 ## [v2.6.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.4) - 2026-06-28
 
 Two fixes straight from the issue tracker: a Quit button that could brick relaunch

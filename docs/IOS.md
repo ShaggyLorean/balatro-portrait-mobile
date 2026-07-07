@@ -63,10 +63,12 @@ data survives re-signing as long as you don't delete the app.
 
 ## Known unknowns (testers wanted)
 
-- **Notch/Dynamic Island overlap**, the HUD sits at the top of the screen;
-  on notched iPhones it may need a safe-area offset (`safe_area_y` and
-  `hud_top_space` in `src/portrait_config.lua`)
-- **Home indicator**, the bottom button row may sit close to the swipe bar
+- **Notch/Dynamic Island overlap**, the top inset is read from the device at
+  runtime since v2.6.4; `safe_area_extra_ios` in `src/portrait_config.lua` adds
+  extra gap if the HUD still hugs the island
+- **Home indicator**, the bottom inset is read at runtime since v2.6.5 so the
+  title-screen buttons clear the swipe bar; `safe_area_bottom_extra_ios` in
+  `src/portrait_config.lua` adds extra gap
 - **High refresh rate**, `fps_cap = 'auto'` should pick up 120 Hz on ProMotion
   devices; unverified
 - **Haptics**, `love.system.vibrate` support varies on iOS; worst case it's a

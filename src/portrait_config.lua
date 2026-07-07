@@ -67,6 +67,9 @@ PORTRAIT_CONFIG = {
     -- Extra breathing gap (room tiles) added under the *measured* iOS inset only.
     -- Bump this a touch if the score still hugs the island on some device.
     safe_area_extra_ios = 0.0,
+    -- Extra bottom gap (room tiles) kept above the home indicator, iOS only.
+    -- Bump this if the menu / corner buttons still crowd the swipe bar.
+    safe_area_bottom_extra_ios = 0.0,
     tooltip_screen_padding = 0.12,
     tooltip_touch_gap = 1.6,
     -- How far a selected booster-pack card lifts (fraction of card height) so its
@@ -222,6 +225,45 @@ function get_mobile_safe_area_top(os_name)
     local inset_tiles = sy / (G.TILESCALE * G.TILESIZE)
     inset_tiles = inset_tiles + ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_extra_ios) or 0)
     return math.max(inset_tiles, fallback)
+end
+
+-- Tiles to trim off the room HEIGHT so bottom-anchored UI stays on screen.
+-- The room is shifted down by the top inset but has always kept its full
+-- window height, so it overshoots the physical bottom by that same inset.
+-- Every bottom offset (main-menu buttons, corner buttons, the hand) was tuned
+-- on Android with the static 0.85-tile overshoot baked in, so Android trims
+-- nothing and keeps its dialed-in look. On iOS the measured island inset is
+-- ~2 tiles and the home indicator adds a bottom inset on top of that, which
+-- is what clipped the title-screen buttons (#35): trim the overshoot beyond
+-- the tuned floor plus the real bottom inset, so the Android-tuned bottom
+-- spacing is reproduced relative to the iOS safe-area bottom edge instead of
+-- a point below the screen. Falls back to 0 (old behaviour) whenever the
+-- safe-area API is unavailable. Must be called after G.TILESCALE is set.
+function get_mobile_room_bottom_trim(os_name, safe_top)
+    os_name = os_name or (love.system and love.system.getOS and love.system.getOS())
+    if os_name ~= 'iOS' then return 0 end
+
+    local floor_inset = (PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_y) or 0.85
+    local trim = math.max((safe_top or 0) - floor_inset, 0)
+
+    if not (love.window and love.window.getSafeArea
+            and love.graphics and love.graphics.getHeight
+            and G and G.TILESCALE and G.TILESIZE
+            and G.TILESCALE > 0 and G.TILESIZE > 0) then
+        return trim
+    end
+
+    local ok, _sx, sy, _sw, sh = pcall(love.window.getSafeArea)
+    if not ok or type(sy) ~= 'number' or type(sh) ~= 'number' then
+        return trim
+    end
+
+    local bottom_px = love.graphics.getHeight() - (sy + sh)
+    if bottom_px > 0 then
+        trim = trim + bottom_px / (G.TILESCALE * G.TILESIZE)
+    end
+    trim = trim + ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_bottom_extra_ios) or 0)
+    return math.max(trim, 0)
 end
 
 --Bottom space reserved under the hand: smaller in Swipe Only mode, where only
