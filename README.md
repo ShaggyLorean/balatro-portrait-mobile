@@ -128,11 +128,25 @@ arm64 only. It does not provide Lovely mods; that is the rootless build's job.
 
 More details: [zygisk/README.md](zygisk/README.md).
 
-## iOS (experimental)
+## iOS (experimental, testers wanted)
 
 Build with `--ios`, then sideload `balatro-portrait.ipa` with
 [Sideloadly](https://sideloadly.io/) or [AltStore](https://altstore.io/). Full
-guide: [docs/IOS.md](docs/IOS.md). Still needs testers.
+guide: [docs/IOS.md](docs/IOS.md).
+
+The notch / Dynamic Island inset (v2.6.4) and the home-indicator inset
+(v2.6.5) are read from the device at runtime, but this project is developed
+without an iPhone, so none of it is verified on real hardware. If the layout
+still looks off on yours, `src/portrait_config.lua` has two knobs:
+`safe_area_extra_ios` (more gap under the island) and
+`safe_area_bottom_extra_ios` (more gap above the swipe bar).
+
+**Testing takes five minutes and helps a lot.** [Open an issue](https://github.com/ShaggyLorean/balatro-portrait-mobile/issues)
+with:
+
+- your device model and iOS version
+- a screenshot of the title screen and one mid-run
+- anything clipped, overlapped, or unreachable
 
 ## Mods
 
