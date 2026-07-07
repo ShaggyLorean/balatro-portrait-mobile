@@ -58,6 +58,9 @@ foreach ($variant in $variants) {
         --readabletro $variant.Readabletro `
         --crt-disable $variant.Ctr `
         --out (Join-Path $root "src\assets_gen.h")
+    # Without this check a gen_assets failure (e.g. missing src/resources
+    # extraction) only surfaces later as a baffling missing-header compile error.
+    if ($LASTEXITCODE -ne 0) { throw "gen_assets.py failed for $name (is src/resources extracted? run build.py once)" }
 
     $buildDir = Join-Path $root "build\$name"
     if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir }
