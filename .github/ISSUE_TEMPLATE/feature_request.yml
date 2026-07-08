@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest an improvement to the portrait mod
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation where you miss this feature.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: build-path
+    attributes:
+      label: Which build do you use?
+      options:
+        - Rootless APK
+        - Termux phone build
+        - Zygisk module
+        - iOS sideload

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Install / build questions
+    url: https://github.com/ShaggyLorean/balatro-portrait-mobile#which-build-should-i-use
+    about: The README covers which build to pick, modding, and save transfer.

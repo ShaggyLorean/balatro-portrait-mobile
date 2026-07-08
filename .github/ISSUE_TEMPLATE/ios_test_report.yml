@@ -1,0 +1,60 @@
+name: iOS test report
+description: Report how the experimental iOS build looks on your iPhone — this project is developed without one, so every report counts
+title: "iOS test report: "
+labels: [ios, testing]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing! This project has no iPhone to verify on, so your
+        report is the only way iOS layout gets validated. Five minutes here
+        saves a release cycle.
+  - type: input
+    id: device
+    attributes:
+      label: iPhone model
+      placeholder: e.g. iPhone 15 Pro
+    validations:
+      required: true
+  - type: input
+    id: ios-version
+    attributes:
+      label: iOS version
+      placeholder: e.g. iOS 26.5
+    validations:
+      required: true
+  - type: dropdown
+    id: installer
+    attributes:
+      label: How did you sideload?
+      options:
+        - AltStore
+        - Sideloadly
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics report
+      description: Open Options -> Diagnostics -> Copy to clipboard and paste here. This carries the exact safe-area numbers of your device.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: title-screen
+    attributes:
+      label: Title screen screenshot
+      description: Drag a screenshot of the title screen here. Check the top (score/notch) and the bottom row (Options, language).
+    validations:
+      required: true
+  - type: textarea
+    id: in-game
+    attributes:
+      label: In-game screenshot
+      description: One mid-run screenshot (hand visible at the bottom).
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything clipped, overlapped, or unreachable?
+      placeholder: e.g. the language button sits under the home indicator

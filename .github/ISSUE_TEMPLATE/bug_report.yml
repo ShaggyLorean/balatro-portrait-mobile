@@ -1,0 +1,49 @@
+name: Bug report
+description: Something broke in the game or during the build
+labels: [bug]
+body:
+  - type: dropdown
+    id: build-path
+    attributes:
+      label: Which build?
+      options:
+        - Rootless APK (build.py)
+        - Termux phone build
+        - Zygisk module
+        - iOS sideload
+        - Desktop (testing)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS version
+      placeholder: e.g. Pixel 8, Android 15
+    validations:
+      required: true
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      description: Shown in Options -> Diagnostics (or the release you downloaded).
+      placeholder: e.g. 2.7.0
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead? Paste build output here if the build failed.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics report
+      description: In-game, open Options -> Diagnostics -> Copy to clipboard and paste it here. Skip if the game does not start.
+      render: text
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag images here if the problem is visual.
