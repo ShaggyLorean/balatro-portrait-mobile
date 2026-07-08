@@ -2334,7 +2334,12 @@ function Game:start_run(args)
 
     set_screen_positions()
 
-    G.SPLASH_BACK = Sprite(-30, -6, G.ROOM.T.w+60, G.ROOM.T.h+12, G.ASSET_ATLAS["ui_1"], {x = 2, y = 0})
+    -- Same +22 vertical margin as the menu splash. This one is centered on
+    -- G.play (the swirl tracks the play area), which sits above the room's
+    -- midpoint, so the old +12 margin left the felt 0.7 tiles short of the
+    -- physical top once the iOS inset pushed the room down and the bottom
+    -- trim shortened it: a black bar under the notch, in-run only (#36).
+    G.SPLASH_BACK = Sprite(-30, -11, G.ROOM.T.w+60, G.ROOM.T.h+22, G.ASSET_ATLAS["ui_1"], {x = 2, y = 0})
     G.SPLASH_BACK:set_alignment({
         major = G.play,
         type = 'cm',
