@@ -733,9 +733,11 @@ function G.UIDEF.shop()
           {n=G.UIT.R, config = {align = "cm", padding= 0.06, colour = G.C.DYN_UI.MAIN, r=0.1}, nodes={
           {n=G.UIT.C, config={align = "cm", padding = 0.07, emboss = 0.05, r = 0.1, colour = G.C.DYN_UI.BOSS_MAIN}, nodes={
             {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
+              -- Same order as vanilla (Next Round above Reroll): players carry
+              -- muscle memory from desktop and were rerolling by accident.
               {n=G.UIT.C, config={align = "cm", padding = 0.06}, nodes={
-                reroll_button,
                 next_round_button,
+                reroll_button,
               }},
               {n=G.UIT.C, config={align = "cm", padding = 0.1, r=0.2, colour = G.C.L_BLACK, emboss = 0.05}, nodes={
                 {n=G.UIT.O, config={object = G.shop_jokers}},
