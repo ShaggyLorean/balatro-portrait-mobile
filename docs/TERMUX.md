@@ -90,6 +90,20 @@ The automatic Play Store app detection is only used when you do not pass
 
 ## Troubleshooting
 
+### `Unable to locate package openjdk-17`
+
+Two known causes:
+
+1. **Termux from Google Play.** That build is abandoned and its package repo
+   is frozen, so it has no JDK at all. Uninstall it and install Termux from
+   [F-Droid](https://f-droid.org/packages/com.termux/) or
+   [GitHub releases](https://github.com/termux/termux-app/releases), then
+   start over. The build script now detects this case and stops early with
+   the same advice.
+2. **A stale mirror.** Run `termux-change-repo`, pick a different mirror,
+   then rerun the script. The script tries `openjdk-17`, `openjdk-21` and
+   `openjdk` in order, so a renamed package is handled on its own.
+
 ### `termux-setup-storage` was not run
 
 The build can still finish, but the helper may not be able to copy the APK to

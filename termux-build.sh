@@ -6,15 +6,49 @@ if [ ! -d /data/data/com.termux/files/usr ]; then
   exit 1
 fi
 
+# The Google Play build of Termux was abandoned years ago and its package
+# repo (termux.net) is frozen: no JDK, stale everything. Installs from it
+# die later with a confusing "Unable to locate package openjdk-17", so
+# catch it here with a message that says what to actually do.
+if [ "${TERMUX_APK_RELEASE:-}" = "PLAY_STORE" ] \
+   || grep -qsE 'termux\.net|bintray' "${PREFIX:-/data/data/com.termux/files/usr}/etc/apt/sources.list"; then
+  echo "ERROR: this Termux was installed from Google Play. That build is" >&2
+  echo "abandoned and its package repo no longer has the tools this script" >&2
+  echo "needs. Uninstall it, install Termux from F-Droid" >&2
+  echo "(https://f-droid.org/packages/com.termux/) or from" >&2
+  echo "https://github.com/termux/termux-app/releases, then run this again." >&2
+  exit 1
+fi
+
 missing=()
 command -v git >/dev/null 2>&1 || missing+=("git")
 command -v python >/dev/null 2>&1 || missing+=("python")
-command -v java >/dev/null 2>&1 || missing+=("openjdk-17")
+need_java=0
+command -v java >/dev/null 2>&1 || need_java=1
 
+if [ "${#missing[@]}" -gt 0 ] || [ "$need_java" -eq 1 ]; then
+  pkg update -y
+fi
 if [ "${#missing[@]}" -gt 0 ]; then
   echo "Installing Termux packages: ${missing[*]}"
-  pkg update -y
   pkg install -y "${missing[@]}"
+fi
+if [ "$need_java" -eq 1 ]; then
+  # Termux has renamed its JDK package between releases, and some mirrors
+  # lag behind. Try the known names in order instead of hard-failing on one.
+  for jdk in openjdk-17 openjdk-21 openjdk; do
+    echo "Installing $jdk..."
+    if pkg install -y "$jdk" >/dev/null 2>&1; then
+      break
+    fi
+    echo "  $jdk is not available on this mirror, trying the next name."
+  done
+  if ! command -v java >/dev/null 2>&1; then
+    echo "ERROR: no Java JDK could be installed from your Termux mirror." >&2
+    echo "Run 'termux-change-repo', pick a different mirror, then run this" >&2
+    echo "script again." >&2
+    exit 1
+  fi
 fi
 
 # Build options. Termux runs in a real terminal, so ask through /dev/tty instead
