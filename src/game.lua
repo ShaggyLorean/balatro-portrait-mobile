@@ -135,12 +135,35 @@ function Game:start_up()
         local extension = string.sub(filename, -3)
         if extension == '.fs' then
             local shader_name = string.sub(filename, 1, -4)
-            -- Prefer injected portrait shader sources at runtime; fall back to
-            -- bundled files for the normal build.py path.
+            -- Prefer injected portrait shader rules at runtime; fall back to
+            -- bundled files for the normal build.py path. The Zygisk module
+            -- ships only shaders it owns (Readabletro replacements) plus
+            -- find/replace rules for the game's shaders, which are read from
+            -- the installed APK here instead of being redistributed in the
+            -- module. A rule's optional guard makes insertion-shaped patches
+            -- idempotent (skip when the replacement is already in place);
+            -- uncomment-shaped patches carry no guard on purpose, since their
+            -- replacement text is a substring of the commented original.
             local shader_source
             local ok, portrait_shaders = pcall(require, "portrait_shaders")
             if ok and type(portrait_shaders) == "table" then
-                shader_source = portrait_shaders[filename]
+                if portrait_shaders.replace and portrait_shaders.replace[filename] then
+                    shader_source = portrait_shaders.replace[filename]
+                elseif portrait_shaders.patches and portrait_shaders.patches[filename] then
+                    local src = love.filesystem.read("resources/shaders/"..filename)
+                    if src then
+                        src = src:gsub("\r\n", "\n")
+                        for _, rule in ipairs(portrait_shaders.patches[filename]) do
+                            if not (rule.guard and src:find(rule.guard, 1, true)) then
+                                local s, e = src:find(rule.find, 1, true)
+                                if s then
+                                    src = src:sub(1, s - 1) .. rule.replace .. src:sub(e + 1)
+                                end
+                            end
+                        end
+                        shader_source = src
+                    end
+                end
             end
             if shader_source then
                 self.SHADERS[shader_name] = love.graphics.newShader(shader_source)

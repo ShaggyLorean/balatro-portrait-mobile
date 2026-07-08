@@ -37,10 +37,12 @@ def _parse_args():
         help="embed Readabletro Lua/resource overrides",
     )
     parser.add_argument(
-        "--crt-disable",
+        "--disable-crt", "--crt-disable",
+        dest="crt_disable",
         choices=("on", "off"),
         default="on" if _truth(os.environ.get("BALATRO_ZYGISK_CRT_DISABLE")) else "off",
-        help="disable CRT in portrait, matching build.py --crt",
+        help="disable the CRT shader in portrait, matching build.py --disable-crt"
+             " (--crt-disable is a deprecated alias)",
     )
     parser.add_argument(
         "--out",
@@ -101,28 +103,6 @@ def _apply_lua_transforms(rel, data, readabletro, crt_disable):
     return data
 
 
-def _apply_shader_transforms(rel, data, readabletro):
-    data = _normalize_lf(data)
-
-    if readabletro and rel in ("resources/shaders/background.fs", "resources/shaders/splash.fs"):
-        override = REPO_ROOT / "patches" / "readabletro" / "shaders" / Path(rel).name
-        if not override.exists():
-            raise FileNotFoundError(f"Readabletro shader not found: {override}")
-        data = _normalize_lf(_read(override))
-
-    if rel == "resources/shaders/CRT.fs":
-        content = data.decode("utf-8")
-        content = _replace_once(
-            content,
-            portrait_build.CRT_MASK_ORIGINAL,
-            portrait_build.CRT_MASK_MODIFIED,
-            "CRT slider mask CRT.fs",
-        )
-        data = content.encode("utf-8")
-
-    return data
-
-
 def _pick_bracket(data):
     level = 0
     while ("]" + "=" * level + "]").encode() in data or ("[" + "=" * level + "[").encode() in data:
@@ -130,14 +110,37 @@ def _pick_bracket(data):
     return ("[" + "=" * level + "[").encode(), ("]" + "=" * level + "]").encode()
 
 
-def _lua_table_module(name, entries):
+def _lua_long_string(data):
+    """Quote bytes as a Lua long-bracket string, preserving them exactly.
+
+    The newline right after the opening bracket is stripped by Lua, so it
+    protects data that itself starts with a newline; nothing is appended, so
+    find/replace rules stay byte-exact.
+    """
+    open_bracket, close_bracket = _pick_bracket(data)
+    return open_bracket + b"\n" + data + close_bracket
+
+
+def _lua_shader_rules_module(name, replace, patches):
     parts = [f'package.preload["{name}"] = function(...)\nreturn {{\n'.encode()]
-    for key in sorted(entries):
-        data = entries[key]
-        open_bracket, close_bracket = _pick_bracket(data)
-        parts.append(b'["' + key.encode() + b'"]=' + open_bracket + b"\n")
-        parts.append(data)
-        parts.append(b"\n" + close_bracket + b",\n")
+
+    parts.append(b"replace={\n")
+    for key in sorted(replace):
+        parts.append(b'["' + key.encode() + b'"]=' + _lua_long_string(replace[key]) + b",\n")
+    parts.append(b"},\n")
+
+    parts.append(b"patches={\n")
+    for key in sorted(patches):
+        parts.append(b'["' + key.encode() + b'"]={\n')
+        for rule in patches[key]:
+            parts.append(b"{find=" + _lua_long_string(rule["find"])
+                         + b",replace=" + _lua_long_string(rule["replace"]))
+            if "guard" in rule:
+                parts.append(b",guard=" + _lua_long_string(rule["guard"]))
+            parts.append(b"},\n")
+        parts.append(b"},\n")
+    parts.append(b"},\n")
+
     parts.append(b"}\nend\n")
     return b"".join(parts)
 
@@ -290,15 +293,51 @@ def _collect_lua_files(readabletro, crt_disable):
 
 
 def _collect_shader_module(readabletro):
-    shaders_dir = SRC_DIR / "resources" / "shaders"
-    entries = {}
-    if not shaders_dir.is_dir():
-        raise FileNotFoundError(f"Shader directory not found: {shaders_dir}")
+    """Emit shader replacements and patch rules, never the game's shaders.
 
-    for path in sorted(shaders_dir.glob("*.fs")):
-        rel = _rel_of(path)
-        entries[path.name] = _apply_shader_transforms(rel, _read(path), readabletro)
-    return _lua_table_module("portrait_shaders", entries)
+    The module runs inside the official app, so game.lua reads the original
+    shader sources from the APK at runtime and applies these rules there.
+    Only repo-owned Readabletro replacements are embedded whole; the CRT
+    slider-mask fix ships as a find/replace pair mirroring _replace_once.
+    This keeps the flashable ZIP free of game-derived content and removes
+    the build-time dependency on an extracted src/resources tree.
+    """
+    replace = {}
+    if readabletro:
+        base = REPO_ROOT / "patches" / "readabletro" / "shaders"
+        for name in ("background.fs", "splash.fs"):
+            path = base / name
+            if not path.exists():
+                raise FileNotFoundError(f"Readabletro shader not found: {path}")
+            replace[name] = _normalize_lf(_read(path))
+
+    # Every CRT.fs transform build.py applies to the extracted tree, expressed
+    # as rules. If a new shader patch lands in _apply_crt_slider_mask_patch
+    # (or anywhere else in build.py), it must be wired in here too — the
+    # runtime otherwise sees the pristine APK shader without it.
+    crt_rules = [
+        _shader_rule(portrait_build.CRT_MASK_ORIGINAL, portrait_build.CRT_MASK_MODIFIED),
+    ]
+    for original, replacement in portrait_build.CRT_NOISE_COMMENTED_LINES:
+        crt_rules.append(_shader_rule(original, replacement))
+    patches = {"CRT.fs": crt_rules}
+    return _lua_shader_rules_module("portrait_shaders", replace, patches)
+
+
+def _shader_rule(find, replace):
+    """Build one runtime patch rule, choosing the idempotency guard by shape.
+
+    Insertion-shaped rules (the mask patch: replacement still contains the
+    target) need a 'skip if the replacement is already present' guard, or
+    they would re-apply forever. Uncomment-shaped rules (the noise lines:
+    the target contains the replacement) must NOT have that guard — the
+    replacement text is a substring of the still-commented original, so the
+    guard would always fire and the rule would never apply.
+    """
+    rule = {"find": find.encode("utf-8"), "replace": replace.encode("utf-8")}
+    if find in replace:
+        rule["guard"] = replace.encode("utf-8")
+    return rule
 
 
 def _collect_readabletro_files(readabletro):
