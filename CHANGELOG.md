@@ -2,6 +2,21 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.1](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.1) - 2026-07-08
+
+Patch for the first v2.7.0 iPhone test report, and a good showing for the new
+Diagnostics screen: the pasted numbers made the bug reproducible on desktop
+down to the pixel.
+
+**iOS (experimental, testers wanted)**
+
+- **No more black bar above the HUD during a run** (#36). The in-run felt
+  background is centered on the play area and carried a smaller vertical
+  margin than the menu splash, so once the top inset pushed the room down
+  and the bottom trim shortened it, the felt stopped 0.7 tiles short of the
+  physical top. It now uses the same margin as the menu. The title screen
+  was already fine, and Android looks the same as before.
+
 ## [v2.7.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.0) - 2026-07-08
 
 A big one. The flashable Zygisk ZIP stops carrying files derived from the

@@ -2,7 +2,7 @@ PORTRAIT_CONFIG = {
     -- Single source of truth for the mod version: build.py parses it from
     -- here, and the Zygisk packaging refuses to ship a module.prop that
     -- disagrees with it. Bump this, module.prop and the CHANGELOG together.
-    version = "2.7.0",
+    version = "2.7.1",
     scale_factor = 0.63,
     hud_top_space = 13,
     bottom_margin = 0.35,
