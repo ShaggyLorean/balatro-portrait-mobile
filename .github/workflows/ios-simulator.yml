@@ -1,0 +1,64 @@
+name: iOS Simulator inset check
+
+# Validates tests/ios_inset_fixtures.txt against what real iOS Simulators
+# report, so the safe-area numbers driving the portrait layout math cannot
+# silently drift. This is the closest this project gets to iOS hardware.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - src/portrait_config.lua
+      - tests/ios_inset_fixtures.txt
+      - tools/ios_inset_probe/**
+      - .github/workflows/ios-simulator.yml
+
+jobs:
+  inset-probe:
+    name: ${{ matrix.device }}
+    runs-on: macos-14
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - iPhone SE (3rd generation)
+          - iPhone 15
+          - iPhone 15 Pro Max
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build probe app
+        run: |
+          cd tools/ios_inset_probe
+          xcrun -sdk iphonesimulator swiftc \
+            -target arm64-apple-ios15.0-simulator main.swift -o InsetProbe
+          mkdir -p InsetProbe.app
+          mv InsetProbe InsetProbe.app/
+          cp Info.plist InsetProbe.app/
+
+      - name: Boot simulator
+        run: |
+          xcrun simctl list devices available
+          xcrun simctl boot "${{ matrix.device }}"
+          xcrun simctl bootstatus "${{ matrix.device }}" -b
+
+      - name: Run probe
+        run: |
+          xcrun simctl install "${{ matrix.device }}" tools/ios_inset_probe/InsetProbe.app
+          xcrun simctl launch --console-pty "${{ matrix.device }}" \
+            com.balatroportrait.insetprobe | tee probe_out.txt
+          grep -m1 INSET_PROBE probe_out.txt
+
+      - name: Compare with fixtures
+        run: |
+          probe=$(grep -m1 'INSET_PROBE ' probe_out.txt)
+          top=$(echo "$probe" | sed -n 's/.*top=\([0-9]*\).*/\1/p')
+          bottom=$(echo "$probe" | sed -n 's/.*bottom=\([0-9]*\).*/\1/p')
+          line=$(grep -F "${{ matrix.device }}|" tests/ios_inset_fixtures.txt)
+          exp_top=$(echo "$line" | cut -d'|' -f4)
+          exp_bottom=$(echo "$line" | cut -d'|' -f5)
+          echo "simulator: top=$top bottom=$bottom / fixtures: top=$exp_top bottom=$exp_bottom"
+          test "$top" = "$exp_top"
+          test "$bottom" = "$exp_bottom"

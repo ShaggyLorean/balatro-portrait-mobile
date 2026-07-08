@@ -26,6 +26,30 @@ jobs:
           done < <(find src -name '*.lua')
           exit $fail
 
+  luacheck:
+    name: Luacheck (undefined globals)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install luacheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua-check
+
+      - name: Lint Lua sources
+        run: luacheck src -q
+
+  safe-area-math:
+    name: Safe-area math test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq luajit
+
+      - name: Run safe-area fixtures
+        run: luajit tests/safe_area_test.lua
+
   python-build:
     name: Build script check
     runs-on: ubuntu-latest
@@ -44,5 +68,5 @@ jobs:
           # No game files in CI (copyrighted) — packaging src/ alone is enough
           # to catch path bugs and patch-target drift in build.py.
           mkdir -p src/resources/fonts src/resources/shaders src/localization
-          python build.py --no-crt --no-readabletro --no-ios --skip-setup --skip-apk --force
+          python build.py --keep-crt --no-readabletro --no-ios --skip-setup --skip-apk --force
           test -f Game.love && unzip -l Game.love | tail -3

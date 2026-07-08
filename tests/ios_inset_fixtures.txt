@@ -1,0 +1,7 @@
+# Portrait-orientation window size and safe-area insets per device, in points.
+# Format: device name|width|height|top inset|bottom inset
+# These drive tests/safe_area_test.lua, and the ios-simulator workflow checks
+# them against what the real iOS Simulator reports so drift gets caught.
+iPhone SE (3rd generation)|375|667|20|0
+iPhone 15|393|852|59|34
+iPhone 15 Pro Max|430|932|59|34
