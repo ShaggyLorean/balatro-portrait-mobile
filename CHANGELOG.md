@@ -4,66 +4,80 @@ All notable changes to Balatro Portrait Mobile.
 
 ## [v2.7.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.0) - 2026-07-08
 
-The iPhone title screen no longer loses its bottom row, the flashable Zygisk
-ZIP no longer contains any game-derived files, the CRT option stops lying
-about its polarity, and the game grew a Diagnostics screen so bug reports can
-carry exact numbers instead of guesses.
-
-**iOS (experimental, testers wanted)**
-
-- **Title-screen buttons no longer fall off the bottom of the screen.** The room
-  is shifted down by the top safe-area inset but kept its full window height, so
-  everything anchored to its bottom edge — the Options button and the
-  profile/language corner buttons — overshot the physical screen by the same
-  amount. Android layouts were tuned with the static 0.85-tile overshoot baked
-  in, but on an iPhone the measured island inset is ~2 tiles and the home
-  indicator adds a bottom inset on top of that (#35). The room height is now
-  trimmed by the overshoot beyond the tuned floor plus the real bottom inset
-  from `love.window.getSafeArea()`, so bottom-anchored UI keeps its
-  Android-tuned spacing relative to the safe-area bottom edge. Android
-  behaviour is unchanged, and the trim falls back to the old behaviour if the
-  safe-area API is missing. **Still unverified on a physical iPhone — please
-  report how it looks on yours.** There is a `safe_area_bottom_extra_ios` knob
-  in `portrait_config.lua` for more breathing room above the home indicator.
-- The safe-area math now has a fixture test (`tests/safe_area_test.lua`), and a
-  CI workflow boots real iOS Simulators to verify the device numbers those
-  fixtures assume.
+A big one. The iPhone title screen gets its bottom row back, the flashable
+Zygisk ZIP stops carrying files derived from the game, the shop buttons match
+vanilla again, and there is a new Diagnostics screen that puts exact numbers
+into bug reports.
 
 **All builds**
 
-- **New Diagnostics screen** under Options: mod/game version, window and
-  safe-area numbers, tile and room dimensions, build type, FPS — with a
-  one-tap **Copy to clipboard** for pasting into issues. The new issue forms
-  ask for it.
-- **CRT flags renamed to say what they do.** `--crt` used to *disable* the CRT
-  shader; the canonical flags are now `--disable-crt` / `--keep-crt` (old ones
-  kept as deprecated aliases), and the interactive prompts ask "Disable the
-  CRT shader?" everywhere. Zygisk variant names read literally now: `crt-on`
+- **The shop buttons are back in vanilla order.** Portrait mode had Reroll on
+  top and Next Round below it, the opposite of desktop, and muscle memory made
+  people reroll when they meant to leave the shop. Next Round now sits on top.
+- **New Diagnostics screen** under Options: mod and game version, window and
+  safe-area numbers, tile and room dimensions, build type, FPS. One tap copies
+  the whole report for pasting into an issue, and the new issue forms ask for
+  exactly that.
+- **The CRT flags now say what they do.** `--crt` used to disable the CRT
+  shader, which read backwards. The real flags are `--disable-crt` and
+  `--keep-crt` (old spellings still work as aliases), every prompt asks
+  "Disable the CRT shader?", and Zygisk variant names read literally: `crt-on`
   means the shader is on.
-- The mod version lives in one place (`PORTRAIT_CONFIG.version` in
-  `src/portrait_config.lua`); `build.py` parses it from there and the Zygisk
+- The mod version lives in one place now (`PORTRAIT_CONFIG.version` in
+  `src/portrait_config.lua`). `build.py` reads it from there, and the Zygisk
   packaging refuses to ship a `module.prop` or `update.json` that disagrees.
+
+**iOS (experimental, testers wanted)**
+
+- **Title-screen buttons no longer fall off the bottom of the screen.** The
+  room is shifted down by the top safe-area inset but kept its full window
+  height, so the Options button and the profile/language corner buttons
+  overshot the physical screen once the measured iPhone inset outgrew the
+  Android-tuned 0.85-tile floor, and the home indicator was never accounted
+  for at all (#35). The room height is now trimmed using the real bottom inset
+  from `love.window.getSafeArea()`, which lands the bottom row exactly where
+  the Android tuning intended. Android behaviour is unchanged, and the trim
+  falls back to the old behaviour if the safe-area API is missing. Still
+  unverified on a physical iPhone, so please report how it looks on yours.
+  The `safe_area_bottom_extra_ios` knob in `portrait_config.lua` adds more
+  room above the swipe bar if you want it.
+- The safe-area math has a fixture test now (`tests/safe_area_test.lua`), and
+  a CI workflow boots real iOS Simulators to check the device numbers those
+  fixtures assume.
 
 **Zygisk**
 
 - **The flashable ZIP no longer embeds the game's shaders.** It used to carry
-  transformed copies of every `.fs` from the extracted game; now it ships only
-  repo-owned Readabletro replacements plus find/replace patch rules, and
-  `game.lua` applies those to the originals read from the installed APK at
-  runtime. This also makes the module build self-contained: no extracted
-  game resources are needed to package it.
-- **Update notifications**: `module.prop` points at `zygisk/update.json`, so
-  KernelSU/Magisk/APatch can flag new releases in the manager app.
+  transformed copies of every `.fs` file from the extracted game. Only two of
+  them were actually replaced (with repo-owned Readabletro files) and one was
+  patched, so now the ZIP ships just the replacements plus find/replace rules,
+  and `game.lua` applies those to the originals read from the installed APK at
+  runtime. A parity test checks the result byte for byte against what
+  `build.py` produces. Side effect worth having: the module now builds from a
+  bare checkout, no extracted game resources needed.
+- **Update notifications.** `module.prop` points at `zygisk/update.json`, so
+  KernelSU, Magisk and APatch can show new releases in the manager app.
+- The ZIP itself is packaged with forward slashes and LF line endings no
+  matter which PowerShell or git config built it. A ZIP built with Windows
+  PowerShell 5.1 used to flash broken (backslash entry names, CRLF
+  `customize.sh`).
+
+**Termux**
+
+- The build script now recognizes the abandoned Google Play build of Termux
+  and stops early with instructions to install from F-Droid, instead of dying
+  later with `Unable to locate package openjdk-17`. On healthy installs it
+  tries `openjdk-17`, `openjdk-21` and `openjdk` in order, so a renamed JDK
+  package no longer kills the build.
 
 **Project**
 
-- CI: `luacheck` (undefined-global lint with a tuned config), the safe-area
-  fixture test, and the iOS Simulator inset check joined the existing syntax
-  and build-script jobs.
+- CI grew three jobs: `luacheck` with a config tuned for a mostly-vanilla
+  codebase, the safe-area fixture test, and the iOS Simulator inset check.
 - GitHub issue forms: bug report, iOS test report (device, iOS version,
   Diagnostics paste and screenshots required), and feature request.
-- README: quick-nav links, tester call-to-action for iOS, per-path
-  troubleshooting links, less repetition.
+- README: jump links up top, a proper tester ask for iOS, troubleshooting
+  links per build path, less repetition.
 
 ## [v2.6.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.4) - 2026-06-28
 
