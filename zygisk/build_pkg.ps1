@@ -92,8 +92,38 @@ foreach ($variant in $variants) {
 $defaultVariant = Join-Path $moduleDir "zygisk\variants\readabletro-on_crt-on.so"
 Copy-Item $defaultVariant (Join-Path $moduleDir "zygisk\arm64-v8a.so") -Force
 
+# Package explicitly instead of CreateFromDirectory: .NET Framework (Windows
+# PowerShell 5.1) writes backslash entry separators, which Android unzips as
+# literal 'system\lib64\...' file names, and a CRLF checkout of customize.sh
+# breaks mksh at flash time. Forward slashes everywhere, LF for text files —
+# the ZIP comes out right no matter which PowerShell or git config built it.
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory($moduleDir, $moduleZip)
+$lfFiles = @("customize.sh", "module.prop")
+$zipStream = [System.IO.File]::Open($moduleZip, [System.IO.FileMode]::Create)
+$archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($file in Get-ChildItem $moduleDir -Recurse -File) {
+        $rel = $file.FullName.Substring($moduleDir.Length + 1).Replace('\', '/')
+        $entry = $archive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+        $entryStream = $entry.Open()
+        try {
+            if ($lfFiles -contains $rel) {
+                $text = [System.IO.File]::ReadAllText($file.FullName).Replace("`r`n", "`n")
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
+                $entryStream.Write($bytes, 0, $bytes.Length)
+            } else {
+                $fileStream = [System.IO.File]::OpenRead($file.FullName)
+                try { $fileStream.CopyTo($entryStream) } finally { $fileStream.Close() }
+            }
+        } finally {
+            $entryStream.Close()
+        }
+    }
+} finally {
+    $archive.Dispose()
+    $zipStream.Close()
+}
 
 Write-Host "Packaged: $moduleZip"
 Write-Host "Install this ZIP from KernelSU, Magisk, or APatch, then reboot."

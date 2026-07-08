@@ -1,0 +1,6 @@
+# Files that execute on Android (flash-time installer, Termux helper) must
+# stay LF: a CRLF checkout on Windows breaks mksh line by line, which is
+# exactly how a flash dies with ": not found" errors.
+*.sh text eol=lf
+zygisk/module/module.prop text eol=lf
+zygisk/update.json text eol=lf
