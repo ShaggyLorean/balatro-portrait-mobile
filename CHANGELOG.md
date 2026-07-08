@@ -2,10 +2,12 @@
 
 All notable changes to Balatro Portrait Mobile.
 
-## [v2.6.5](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.5) - 2026-07-07
+## [v2.7.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.0) - 2026-07-08
 
-Follow-up to the v2.6.4 notch fix: the same safe-area shift was quietly pushing
-the bottom of the title screen off iPhones.
+The iPhone title screen no longer loses its bottom row, the flashable Zygisk
+ZIP no longer contains any game-derived files, the CRT option stops lying
+about its polarity, and the game grew a Diagnostics screen so bug reports can
+carry exact numbers instead of guesses.
 
 **iOS (experimental, testers wanted)**
 
@@ -18,12 +20,50 @@ the bottom of the title screen off iPhones.
   indicator adds a bottom inset on top of that (#35). The room height is now
   trimmed by the overshoot beyond the tuned floor plus the real bottom inset
   from `love.window.getSafeArea()`, so bottom-anchored UI keeps its
-  Android-tuned spacing relative to the safe-area bottom edge. In-game layout
-  gains the same clearance above the swipe bar. Android behaviour is unchanged,
-  and the trim falls back to the old behaviour if the safe-area API is missing.
-  **Still unverified on a physical iPhone — please report how it looks on
-  yours.** There is a `safe_area_bottom_extra_ios` knob in `portrait_config.lua`
-  if you want more breathing room above the home indicator.
+  Android-tuned spacing relative to the safe-area bottom edge. Android
+  behaviour is unchanged, and the trim falls back to the old behaviour if the
+  safe-area API is missing. **Still unverified on a physical iPhone — please
+  report how it looks on yours.** There is a `safe_area_bottom_extra_ios` knob
+  in `portrait_config.lua` for more breathing room above the home indicator.
+- The safe-area math now has a fixture test (`tests/safe_area_test.lua`), and a
+  CI workflow boots real iOS Simulators to verify the device numbers those
+  fixtures assume.
+
+**All builds**
+
+- **New Diagnostics screen** under Options: mod/game version, window and
+  safe-area numbers, tile and room dimensions, build type, FPS — with a
+  one-tap **Copy to clipboard** for pasting into issues. The new issue forms
+  ask for it.
+- **CRT flags renamed to say what they do.** `--crt` used to *disable* the CRT
+  shader; the canonical flags are now `--disable-crt` / `--keep-crt` (old ones
+  kept as deprecated aliases), and the interactive prompts ask "Disable the
+  CRT shader?" everywhere. Zygisk variant names read literally now: `crt-on`
+  means the shader is on.
+- The mod version lives in one place (`PORTRAIT_CONFIG.version` in
+  `src/portrait_config.lua`); `build.py` parses it from there and the Zygisk
+  packaging refuses to ship a `module.prop` or `update.json` that disagrees.
+
+**Zygisk**
+
+- **The flashable ZIP no longer embeds the game's shaders.** It used to carry
+  transformed copies of every `.fs` from the extracted game; now it ships only
+  repo-owned Readabletro replacements plus find/replace patch rules, and
+  `game.lua` applies those to the originals read from the installed APK at
+  runtime. This also makes the module build self-contained: no extracted
+  game resources are needed to package it.
+- **Update notifications**: `module.prop` points at `zygisk/update.json`, so
+  KernelSU/Magisk/APatch can flag new releases in the manager app.
+
+**Project**
+
+- CI: `luacheck` (undefined-global lint with a tuned config), the safe-area
+  fixture test, and the iOS Simulator inset check joined the existing syntax
+  and build-script jobs.
+- GitHub issue forms: bug report, iOS test report (device, iOS version,
+  Diagnostics paste and screenshots required), and feature request.
+- README: quick-nav links, tester call-to-action for iOS, per-path
+  troubleshooting links, less repetition.
 
 ## [v2.6.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.4) - 2026-06-28
 

@@ -5,7 +5,15 @@
 
 A portrait-mode mod for Balatro on Android, built for one-handed play.
 
-> ☕ Enjoying the mod? You can [support it on Ko-fi](https://ko-fi.com/loreanxavier).
+**Jump to:**
+[Which build should I use?](#which-build-should-i-use) ·
+[Rootless APK](#rootless-apk-builder) ·
+[Termux](#phone-build-termux-no-pc) ·
+[Zygisk](#zygisk-module-experimental-root-only) ·
+[iOS](#ios-experimental-testers-wanted) ·
+[Mods](#mods) ·
+[Save transfer](#save-transfer) ·
+[Troubleshooting](#troubleshooting)
 
 ## Demo
 
@@ -36,6 +44,8 @@ A portrait-mode mod for Balatro on Android, built for one-handed play.
 - **Hand preview**: a floating chip shows the current poker hand (name, level, chips x mult)
 - **Redesigned HUD** with thumb-sized targets
 - **High refresh rate** matched to your display (90/120 Hz)
+- **Diagnostics screen** (Options -> Diagnostics) with a copyable device/layout
+  report that drops straight into bug reports
 - **Mods** through [Lovely](https://github.com/ethangreen-dev/lovely-injector), with optional one-command Steamodded install
 - **Save transfer** from desktop Balatro or the official Play app, no root needed
 - **Termux builds** with no PC, using the installed Play Store app as the source
@@ -57,12 +67,8 @@ Ready-made rootless APKs are not uploaded here because they contain your own
 Balatro files. The Zygisk ZIP only holds the portrait module, so it can live on
 the Releases page.
 
-## What you need
-
-- A legal copy of Balatro
-- Python 3.6+ for PC builds
-- Termux (F-Droid or GitHub build) for phone-only builds
-- Root + Zygisk only for the experimental Zygisk module
+Every path needs a legal copy of Balatro. PC builds also need Python 3.6+;
+phone-only builds need Termux (F-Droid or GitHub build).
 
 ## Rootless APK builder
 
@@ -90,7 +96,7 @@ adb install balatro-mobile-maker/balatro-aligned-debugSigned.apk
 Common options:
 
 ```sh
-python build.py --no-crt --readabletro
+python build.py --keep-crt --readabletro
 python build.py --steamodded                       # bundle Steamodded (newest)
 python build.py --import-save "%APPDATA%\Balatro"   # bring your save across
 python build.py --balatro "D:\Steam\steamapps\common\Balatro\Balatro.exe" --force
@@ -135,7 +141,7 @@ Build with `--ios`, then sideload `balatro-portrait.ipa` with
 guide: [docs/IOS.md](docs/IOS.md).
 
 The notch / Dynamic Island inset (v2.6.4) and the home-indicator inset
-(v2.6.5) are read from the device at runtime, but this project is developed
+(v2.7.0) are read from the device at runtime, but this project is developed
 without an iPhone, so none of it is verified on real hardware. If the layout
 still looks off on yours, `src/portrait_config.lua` has two knobs:
 `safe_area_extra_ios` (more gap under the island) and
@@ -194,8 +200,16 @@ tools download automatically on the first build (about 250 MB), so you need an
 internet connection.
 
 **Black ellipse or colored sliver at the bottom.** The CRT shader can cause this
-in portrait on some devices. Rebuild with `python build.py --crt`, or answer
-**yes** to "Apply CRT patch?" in the interactive build.
+in portrait on some devices. Rebuild with `python build.py --disable-crt`, or
+answer **yes** to "Disable the CRT shader?" in the interactive build.
+
+**Something looks misplaced or cut off.** Open **Options -> Diagnostics** in
+game, tap **Copy to clipboard**, and paste the report into your issue — it
+carries the exact screen and safe-area numbers of your device.
+
+Path-specific problems are covered in their own guides:
+[Zygisk](zygisk/README.md) · [Termux](docs/TERMUX.md) · [iOS](docs/IOS.md) ·
+[Modding](docs/MODDING.md) · [Save transfer](docs/SAVE_TRANSFER.md)
 
 ## Support
 
