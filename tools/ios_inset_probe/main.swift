@@ -37,4 +37,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-_ = UIApplicationMain(CommandLine.argc, CommandLine.argv, nil, NSStringFromClass(AppDelegate.self))
+_ = UIApplicationMain(CommandLine.argc, CommandLine.unsafeArgv, nil, NSStringFromClass(AppDelegate.self))
