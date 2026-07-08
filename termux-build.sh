@@ -26,7 +26,7 @@ has_crt_flag=0
 for arg in "$@"; do
   case "$arg" in
     --readabletro|--no-readabletro) has_readabletro_flag=1 ;;
-    --crt|--no-crt) has_crt_flag=1 ;;
+    --disable-crt|--keep-crt|--crt|--no-crt) has_crt_flag=1 ;;
   esac
 done
 
@@ -65,9 +65,9 @@ fi
 
 if [ "$has_crt_flag" -eq 0 ]; then
   if ask_yes_no "Disable CRT in portrait mode?" "no"; then
-    opts+=("--crt")
+    opts+=("--disable-crt")
   else
-    opts+=("--no-crt")
+    opts+=("--keep-crt")
   fi
 fi
 

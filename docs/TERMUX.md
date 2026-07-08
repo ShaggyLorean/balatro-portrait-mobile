@@ -50,7 +50,7 @@ To skip the prompts in scripted runs, pass the same flags as `build.py`, for
 example:
 
 ```sh
-bash termux-build.sh --force --readabletro --no-crt
+bash termux-build.sh --force --readabletro --keep-crt
 ```
 
 ## What The Script Does

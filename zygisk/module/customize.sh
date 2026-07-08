@@ -71,10 +71,11 @@ else
   readabletro="off"
 fi
 
+# Variant names read literally: crt-on = CRT shader stays on (vanilla look).
 if choose_yes_no "Disable CRT in portrait mode?" "no"; then
-  crt="on"
-else
   crt="off"
+else
+  crt="on"
 fi
 
 variant="readabletro-${readabletro}_crt-${crt}"
@@ -89,5 +90,5 @@ cp -f "$variant_so" "$target_so" || abort "Could not select Zygisk variant"
 rm -rf "$MODPATH/zygisk/variants"
 
 ui_print ""
-ui_print "Selected: Readabletro=$readabletro, CRT disable=$crt"
+ui_print "Selected: Readabletro=$readabletro, CRT shader=$crt"
 ui_print "Reboot, then launch the official Play Store Balatro."

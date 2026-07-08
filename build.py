@@ -12,8 +12,10 @@ Usage:
     python build.py [options]
 
 Options:
-    --crt                 Apply the CRT-disabling portrait patch
-    --no-crt              Keep the source CRT shader path unchanged (default)
+    --disable-crt         Disable the CRT shader in portrait (fixes black-ellipse
+                          artifacts on some devices; --crt is a deprecated alias)
+    --keep-crt            Keep the CRT shader enabled (default; --no-crt is a
+                          deprecated alias)
     --readabletro         Apply Readabletro font and high-res texture patch (default)
     --no-readabletro      Skip Readabletro patch
     --ios                 Also build an iOS .ipa for sideloading (EXPERIMENTAL)
@@ -46,12 +48,27 @@ import zipfile
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-MOD_VERSION = "2.6.5"
+def _read_mod_version():
+    """The mod version lives in src/portrait_config.lua (PORTRAIT_CONFIG.version)
+    so the game can show it in Options -> Diagnostics; parse it from there
+    instead of keeping a second copy here that can drift."""
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "src", "portrait_config.lua")
+    with open(config_path, encoding="utf-8") as fh:
+        match = re.search(r'^\s*version\s*=\s*"([^"]+)"', fh.read(), re.MULTILINE)
+    if not match:
+        raise RuntimeError("PORTRAIT_CONFIG.version not found in src/portrait_config.lua")
+    return match.group(1)
+
+
+MOD_VERSION = _read_mod_version()
 
 CONFIG_FILE = ".buildconfig.json"
 CACHE_FILE  = ".build_cache.json"
 OFFICIAL_ANDROID_PACKAGE = "com.playstack.balatro.android"
 DEFAULT_BUILD_CONFIG = {
+    # Legacy key name kept for saved .buildconfig.json files: "crt": True
+    # means the CRT shader gets DISABLED (the user-facing flag is --disable-crt).
     "crt": False,
     "readabletro": True,
     "ios": False,
@@ -1134,11 +1151,14 @@ def _parse_args():
         description="Balatro Portrait Mobile - unified build script "
                     "(resource extraction, Game.love creation, APK packaging).",
     )
+    # The flag polarity used to be a trap: "--crt" DISABLED the CRT shader.
+    # The explicit names are canonical now; the old ones stay as aliases so
+    # existing scripts and docs keep working.
     crt = parser.add_mutually_exclusive_group()
-    crt.add_argument("--crt",    dest="crt", action="store_true",  default=None,
-                     help="apply the CRT-disabling portrait patch")
-    crt.add_argument("--no-crt", dest="crt", action="store_false",
-                     help="keep the CRT shader unchanged (default)")
+    crt.add_argument("--disable-crt", "--crt", dest="crt", action="store_true", default=None,
+                     help="disable the CRT shader in portrait (--crt is a deprecated alias)")
+    crt.add_argument("--keep-crt", "--no-crt", dest="crt", action="store_false",
+                     help="keep the CRT shader enabled (default; --no-crt is a deprecated alias)")
 
     rdb = parser.add_mutually_exclusive_group()
     rdb.add_argument("--readabletro",    dest="readabletro", action="store_true", default=None,
@@ -1239,7 +1259,7 @@ def main():
                     config = json.load(f)
                 print()
                 print("  Saved settings:")
-                print(f"    CRT patch (desktop portrait):  {'yes' if config.get('crt') else 'no'}")
+                print(f"    Disable CRT shader:            {'yes' if config.get('crt') else 'no'}")
                 print(f"    Readabletro:                   {'yes' if config.get('readabletro') else 'no'}")
                 print("    Lovely mod support:            yes (always on for Android)")
                 print(f"    iOS .ipa (experimental):       {'yes' if config.get('ios') else 'no'}")
@@ -1258,7 +1278,7 @@ def main():
             print("     portrait mode: a black ellipse or a thin colored sliver at")
             print("     the bottom of the screen. Enable this to disable CRT and")
             print("     fix those issues. If your game looks fine, skip it.")
-            config["crt"] = _ask("     Apply CRT patch?", default=DEFAULT_BUILD_CONFIG["crt"])
+            config["crt"] = _ask("     Disable the CRT shader?", default=DEFAULT_BUILD_CONFIG["crt"])
             print()
             print("  2. Readabletro")
             print("     Replaces the pixel font with TypoQuik-Bold and adds")

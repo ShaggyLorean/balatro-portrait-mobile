@@ -19,12 +19,17 @@ $ninja = (Get-Command ninja -ErrorAction Stop).Source
 $python = (Get-Command python -ErrorAction Stop).Source
 
 # The flashable module's version lives in module.prop while the repo version
-# lives in build.py; they have drifted before (2.6.3 needed its own bump
-# commit). Refuse to package a ZIP whose version does not match the repo.
-$modVersion = (Select-String -Path (Join-Path $repo "build.py") -Pattern 'MOD_VERSION\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+# lives in src/portrait_config.lua (single source; build.py parses it from
+# there too). They have drifted before (2.6.3 needed its own bump commit), so
+# refuse to package a ZIP whose version does not match the repo.
+$modVersion = (Select-String -Path (Join-Path $repo "src\portrait_config.lua") -Pattern '^\s*version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
 $propVersion = (Select-String -Path (Join-Path $root "module\module.prop") -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
 if ($modVersion -ne $propVersion) {
-    throw "Version mismatch: build.py MOD_VERSION is '$modVersion' but zygisk/module/module.prop says '$propVersion'. Bump them together."
+    throw "Version mismatch: src/portrait_config.lua says '$modVersion' but zygisk/module/module.prop says '$propVersion'. Bump them together."
+}
+$updateJson = Get-Content (Join-Path $root "update.json") -Raw | ConvertFrom-Json
+if ($updateJson.version -ne $modVersion) {
+    throw "Version mismatch: src/portrait_config.lua says '$modVersion' but zygisk/update.json says '$($updateJson.version)'. Bump them together."
 }
 
 & (Join-Path $root "fetch_deps.ps1")
@@ -44,11 +49,14 @@ New-Item -ItemType Directory -Force -Path @(
 Copy-Item (Join-Path $root "module\module.prop") $moduleDir -Force
 Copy-Item (Join-Path $root "module\customize.sh") $moduleDir -Force
 
+# Variant names read literally now: "crt-on" means the CRT shader stays ON
+# (vanilla look), "crt-off" means it is disabled. Before v2.7.0 the axis
+# secretly meant "crt-disable", so the old crt-on was actually CRT off.
 $variants = @(
-    @{ Name = "readabletro-on_crt-off";  Readabletro = "on";  Ctr = "off" },
-    @{ Name = "readabletro-on_crt-on";   Readabletro = "on";  Ctr = "on"  },
-    @{ Name = "readabletro-off_crt-off"; Readabletro = "off"; Ctr = "off" },
-    @{ Name = "readabletro-off_crt-on";  Readabletro = "off"; Ctr = "on"  }
+    @{ Name = "readabletro-on_crt-on";   Readabletro = "on";  DisableCrt = "off" },
+    @{ Name = "readabletro-on_crt-off";  Readabletro = "on";  DisableCrt = "on"  },
+    @{ Name = "readabletro-off_crt-on";  Readabletro = "off"; DisableCrt = "off" },
+    @{ Name = "readabletro-off_crt-off"; Readabletro = "off"; DisableCrt = "on"  }
 )
 
 foreach ($variant in $variants) {
@@ -56,8 +64,9 @@ foreach ($variant in $variants) {
     Write-Host "=== Building $name ==="
     & $python (Join-Path $root "gen_assets.py") `
         --readabletro $variant.Readabletro `
-        --crt-disable $variant.Ctr `
+        --disable-crt $variant.DisableCrt `
         --out (Join-Path $root "src\assets_gen.h")
+    if ($LASTEXITCODE -ne 0) { throw "gen_assets.py failed for $name" }
     # Without this check a gen_assets failure (e.g. missing src/resources
     # extraction) only surfaces later as a baffling missing-header compile error.
     if ($LASTEXITCODE -ne 0) { throw "gen_assets.py failed for $name (is src/resources extracted? run build.py once)" }
@@ -80,7 +89,7 @@ foreach ($variant in $variants) {
         (Join-Path $moduleDir "system\lib64\libshadowhook_nothing.so") -Force
 }
 
-$defaultVariant = Join-Path $moduleDir "zygisk\variants\readabletro-on_crt-off.so"
+$defaultVariant = Join-Path $moduleDir "zygisk\variants\readabletro-on_crt-on.so"
 Copy-Item $defaultVariant (Join-Path $moduleDir "zygisk\arm64-v8a.so") -Force
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
