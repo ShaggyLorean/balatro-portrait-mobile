@@ -4,10 +4,9 @@ All notable changes to Balatro Portrait Mobile.
 
 ## [v2.7.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.0) - 2026-07-08
 
-A big one. The iPhone title screen gets its bottom row back, the flashable
-Zygisk ZIP stops carrying files derived from the game, the shop buttons match
-vanilla again, and there is a new Diagnostics screen that puts exact numbers
-into bug reports.
+A big one. The flashable Zygisk ZIP stops carrying files derived from the
+game, the shop buttons match vanilla again, and there is a new Diagnostics
+screen that puts exact numbers into bug reports.
 
 **All builds**
 
@@ -29,21 +28,11 @@ into bug reports.
 
 **iOS (experimental, testers wanted)**
 
-- **Title-screen buttons no longer fall off the bottom of the screen.** The
-  room is shifted down by the top safe-area inset but kept its full window
-  height, so the Options button and the profile/language corner buttons
-  overshot the physical screen once the measured iPhone inset outgrew the
-  Android-tuned 0.85-tile floor, and the home indicator was never accounted
-  for at all (#35). The room height is now trimmed using the real bottom inset
-  from `love.window.getSafeArea()`, which lands the bottom row exactly where
-  the Android tuning intended. Android behaviour is unchanged, and the trim
-  falls back to the old behaviour if the safe-area API is missing. Still
-  unverified on a physical iPhone, so please report how it looks on yours.
-  The `safe_area_bottom_extra_ios` knob in `portrait_config.lua` adds more
-  room above the swipe bar if you want it.
-- The safe-area math has a fixture test now (`tests/safe_area_test.lua`), and
-  a CI workflow boots real iOS Simulators to check the device numbers those
-  fixtures assume.
+- The v2.6.5 safe-area math has a fixture test now
+  (`tests/safe_area_test.lua`), pinned to recorded per-device insets, and a
+  CI workflow boots real iOS Simulators to check the numbers those fixtures
+  assume. Reports from physical iPhones are still the missing piece: the new
+  issue form plus the Diagnostics screen make one take about five minutes.
 
 **Zygisk**
 
@@ -78,6 +67,26 @@ into bug reports.
   Diagnostics paste and screenshots required), and feature request.
 - README: jump links up top, a proper tester ask for iOS, troubleshooting
   links per build path, less repetition.
+
+## [v2.6.5](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.5) - 2026-07-07
+
+Follow-up to the v2.6.4 notch fix: the same safe-area shift was quietly
+pushing the bottom of the title screen off iPhones.
+
+**iOS (experimental, testers wanted)**
+
+- **Title-screen buttons no longer fall off the bottom of the screen.** The
+  room is shifted down by the top safe-area inset but kept its full window
+  height, so the Options button and the profile/language corner buttons
+  overshot the physical screen once the measured iPhone inset outgrew the
+  Android-tuned 0.85-tile floor, and the home indicator was never accounted
+  for at all (#35). The room height is now trimmed using the real bottom
+  inset from `love.window.getSafeArea()`, which lands the bottom row exactly
+  where the Android tuning intended. Android behaviour is unchanged, and the
+  trim falls back to the old behaviour if the safe-area API is missing.
+  Still unverified on a physical iPhone, so please report how it looks on
+  yours. The `safe_area_bottom_extra_ios` knob in `portrait_config.lua` adds
+  more room above the swipe bar if you want it.
 
 ## [v2.6.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.6.4) - 2026-06-28
 
