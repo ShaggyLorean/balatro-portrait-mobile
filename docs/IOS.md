@@ -66,15 +66,16 @@ data survives re-signing as long as you don't delete the app.
 - **Notch/Dynamic Island overlap**, the top inset is read from the device at
   runtime since v2.6.4; `safe_area_extra_ios` in `src/portrait_config.lua` adds
   extra gap if the HUD still hugs the island
-- **Home indicator**, the bottom inset is read at runtime since v2.6.5 so the
+- **Home indicator**, the bottom inset is read at runtime since v2.7.0 so the
   title-screen buttons clear the swipe bar; `safe_area_bottom_extra_ios` in
-  `src/portrait_config.lua` adds extra gap
+  `src/portrait_config.lua` adds extra gap. If something still looks off,
+  attach the **Options -> Diagnostics** report to your issue
 - **High refresh rate**, `fps_cap = 'auto'` should pick up 120 Hz on ProMotion
   devices; unverified
 - **Haptics**, `love.system.vibrate` support varies on iOS; worst case it's a
   silent no-op
 - **Performance**, the CRT shader may behave differently on Apple GPUs; if you
-  see artifacts, rebuild with `--crt`
+  see artifacts, rebuild with `--disable-crt`
 
 ## Troubleshooting
 

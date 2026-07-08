@@ -1,4 +1,8 @@
 PORTRAIT_CONFIG = {
+    -- Single source of truth for the mod version: build.py parses it from
+    -- here, and the Zygisk packaging refuses to ship a module.prop that
+    -- disagrees with it. Bump this, module.prop and the CHANGELOG together.
+    version = "2.7.0",
     scale_factor = 0.63,
     hud_top_space = 13,
     bottom_margin = 0.35,
@@ -264,6 +268,64 @@ function get_mobile_room_bottom_trim(os_name, safe_top)
     end
     trim = trim + ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_bottom_extra_ios) or 0)
     return math.max(trim, 0)
+end
+
+-- Plain-text device/layout report shown in Options -> Diagnostics and copied
+-- to the clipboard from there. This exists because the project is developed
+-- without an iOS device: a pasted report turns "the buttons look off" into
+-- exact inset and tile numbers. Every probe is guarded so a partial LOVE API
+-- (or being called before boot finishes) degrades to "?" instead of erroring.
+function portrait_diagnostics_report()
+    local lines = {}
+    local function add(label, value)
+        lines[#lines + 1] = label .. ": " .. tostring(value == nil and "?" or value)
+    end
+    local function fmt(n) return type(n) == "number" and string.format("%.2f", n) or "?" end
+
+    add("Portrait mod", PORTRAIT_CONFIG and PORTRAIT_CONFIG.version)
+    add("Game version", G and G.VERSION)
+    local os_name = love.system and love.system.getOS and love.system.getOS()
+    add("OS", os_name)
+    if love.getVersion then
+        local maj, min, rev = love.getVersion()
+        add("LOVE", maj .. "." .. min .. "." .. rev)
+    end
+    if love.graphics and love.graphics.getWidth then
+        add("Window", love.graphics.getWidth() .. "x" .. love.graphics.getHeight())
+    end
+    if love.window and love.window.getDPIScale then
+        add("DPI scale", love.window.getDPIScale())
+    end
+    if love.window and love.window.getSafeArea then
+        local ok, sx, sy, sw, sh = pcall(love.window.getSafeArea)
+        if ok and type(sy) == "number" then
+            add("Safe area px", "x=" .. sx .. " y=" .. sy .. " w=" .. sw .. " h=" .. sh)
+        end
+    end
+    if G then
+        add("Tile scale", fmt(G.TILESCALE))
+        if G.ROOM and G.ROOM.T then
+            add("Room tiles", "w=" .. fmt(G.ROOM.T.w) .. " h=" .. fmt(G.ROOM.T.h) .. " y=" .. fmt(G.ROOM.T.y))
+        end
+        add("Portrait", G.F_PORTRAIT and "yes" or "no")
+        add("Swipe only", G.F_SWIPE_ONLY and "yes" or "no")
+    end
+    local top_ok, top = pcall(get_mobile_safe_area_top, os_name)
+    add("Safe top (tiles)", top_ok and fmt(top) or "?")
+    local trim_ok, trim = pcall(get_mobile_room_bottom_trim, os_name, top_ok and top or 0)
+    add("Bottom trim (tiles)", trim_ok and fmt(trim) or "?")
+    local zygisk_ok, shaders = pcall(require, "portrait_shaders")
+    if zygisk_ok and type(shaders) == "table" then
+        local n = 0
+        if shaders.replace then for _ in pairs(shaders.replace) do n = n + 1 end end
+        add("Build", "zygisk (readabletro shaders: " .. n .. ")")
+    else
+        add("Build", "bundled (build.py)")
+    end
+    if love.timer and love.timer.getFPS then
+        add("FPS", love.timer.getFPS())
+    end
+    return table.concat(lines, "\n")
 end
 
 --Bottom space reserved under the hand: smaller in Swipe Only mode, where only

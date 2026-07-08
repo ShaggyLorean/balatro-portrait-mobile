@@ -2804,6 +2804,9 @@ function create_UIBox_options()
   local settings = UIBox_button({button = 'settings', label = {localize('b_settings')}, minw = 5, focus_args = {snap_to = true}})
   local high_scores = UIBox_button{ label = {localize('b_stats')}, button = "high_scores", minw = 5}
   local customize = UIBox_button{ label = {localize('b_customize_deck')}, button = "customize_deck", minw = 5}
+  -- Unlocalized on purpose: the report it opens is pasted into GitHub issues,
+  -- so the label should read the same in every user's screenshot.
+  local diagnostics = UIBox_button{ label = {'Diagnostics'}, button = "open_portrait_diagnostics", minw = 5, id = 'diagnostics_button'}
 
   local t = create_UIBox_generic_options({ contents = {
       settings,
@@ -2813,9 +2816,23 @@ function create_UIBox_options()
       high_scores,
       your_collection,
       customize,
+      diagnostics,
       credits
     }})
   return t
+end
+
+function G.UIDEF.portrait_diagnostics()
+  local rows = {}
+  for line in string.gmatch(portrait_diagnostics_report(), "[^\n]+") do
+    rows[#rows + 1] = {n = G.UIT.R, config = {align = "cl", padding = 0.03}, nodes = {
+      {n = G.UIT.T, config = {text = line, scale = 0.33, colour = G.C.UI.TEXT_LIGHT}}
+    }}
+  end
+  rows[#rows + 1] = {n = G.UIT.R, config = {align = "cm", padding = 0.15}, nodes = {
+    UIBox_button{label = {'Copy to clipboard'}, button = 'copy_portrait_diagnostics', colour = G.C.BLUE, minw = 4.5, minh = 0.7, scale = 0.4}
+  }}
+  return create_UIBox_generic_options({back_func = 'options', contents = rows})
 end
 
 function create_UIBox_settings()

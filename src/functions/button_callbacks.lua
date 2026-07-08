@@ -1930,7 +1930,24 @@ G.FUNCS.copy_seed = function(e)
     G.CLIPBOARD = G.GAME.pseudorandom.seed
   else
     love.system.setClipboardText(G.GAME.pseudorandom.seed)
-  end 
+  end
+end
+
+G.FUNCS.open_portrait_diagnostics = function(e)
+  G.FUNCS.overlay_menu{definition = G.UIDEF.portrait_diagnostics()}
+end
+
+G.FUNCS.copy_portrait_diagnostics = function(e)
+  local report = portrait_diagnostics_report()
+  if G.F_LOCAL_CLIPBOARD then
+    G.CLIPBOARD = report
+  else
+    love.system.setClipboardText(report)
+  end
+  attention_text({
+    scale = 0.7, text = 'Copied!', hold = 1.2, align = 'cm',
+    major = G.ROOM_ATTACH, offset = {x = 0, y = 0}
+  })
 end
 
 G.FUNCS.start_setup_run = function(e)
