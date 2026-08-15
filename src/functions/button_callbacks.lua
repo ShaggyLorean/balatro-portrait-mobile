@@ -1336,6 +1336,21 @@ G.FUNCS.RUN_SETUP_check_back = function(e)
   end
 end
 
+--Collections deck viewer variant of RUN_SETUP_check_back: regenerates at the
+--default scale every time, so the description keeps the size of the first
+--render across deck switches (#39). The run setup screen stays on the compact
+--portrait scale above.
+G.FUNCS.COLLECTION_check_back = function(e)
+  if G.GAME.viewed_back.name ~= e.config.id then
+    e.config.object:remove()
+    e.config.object = UIBox{
+      definition = G.GAME.viewed_back:generate_UI(),
+      config = {offset = {x=0,y=0}, align = 'cm', parent = e}
+    }
+    e.config.id = G.GAME.viewed_back.name
+  end
+end
+
 G.FUNCS.RUN_SETUP_check_back_name = function(e)
   if e.config.object and G.GAME.viewed_back.name ~= e.config.id then 
     --removes the UI from the previously selected back and adds the new one
