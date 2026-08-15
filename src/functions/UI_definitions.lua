@@ -1968,6 +1968,33 @@ function create_UIBox_blind_choice(type, run_info)
     {shader = 'dissolve', shadow_height = 0.05},
     {shader = 'dissolve'}
   })
+  -- Portrait: tapping the blind token pops up the same info card the
+  -- Collections Blinds page uses, so the rules are readable at full size
+  -- without growing the panel text (#40).
+  if G.F_PORTRAIT then
+    local token = blind_choice.animation
+    token.float = true
+    token.states.hover.can = true
+    token.states.drag.can = false
+    token.states.collide.can = true
+    token.config = {blind = blind_choice.config, force_focus = true}
+    local popup_vars = {localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')}
+    token.hover = function()
+      if not G.CONTROLLER.dragging.target or G.CONTROLLER.using_touch then
+        if not token.hovering and token.states.visible then
+          token.hovering = true
+          token.hover_tilt = 3
+          token:juice_up(0.05, 0.02)
+          play_sound('chips1', math.random()*0.1 + 0.55, 0.12)
+          token.config.h_popup = create_UIBox_blind_popup(blind_choice.config, true, popup_vars)
+          token.config.h_popup_config = get_portrait_top_popup_config and get_portrait_top_popup_config(token)
+            or {align = 'tm', offset = {x=0,y=-0.1}, parent = token}
+          Node.hover(token)
+        end
+      end
+    end
+    token.stop_hover = function() token.hovering = false; Node.stop_hover(token); token.hover_tilt = 0 end
+  end
   local extras = nil
   local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.5)
 
