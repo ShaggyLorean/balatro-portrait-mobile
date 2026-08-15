@@ -4759,6 +4759,16 @@ function create_UIBox_your_collection_tags()
 end
 
 function create_UIBox_your_collection_blinds(exit)
+  -- Portrait: compact metrics so the ante table and the 5-wide chip grid fit a
+  -- phone-width room without clipping the screen edges (#38). Landscape keeps
+  -- the vanilla numbers.
+  local pc_cb = (G.F_PORTRAIT and PORTRAIT_CONFIG and PORTRAIT_CONFIG.mobile_ui and PORTRAIT_CONFIG.mobile_ui.collection_blinds) or {}
+  local chip_size = pc_cb.chip_size or 1.3
+  local cell_pad = pc_cb.cell_pad or 0.1
+  local ante_minw = pc_cb.ante_minw or 0.7
+  local base_minw = pc_cb.base_minw or 2.8
+  local tbl_scale = pc_cb.text_scale or 0.4
+  local box_pad = pc_cb.box_pad or 0.1
   local blind_matrix = {
     {},{},{}, {}, {}, {}
   }
@@ -4772,7 +4782,7 @@ function create_UIBox_your_collection_blinds(exit)
   local blinds_to_be_alerted = {}
   for k, v in ipairs(blind_tab) do
     local discovered = v.discovered
-    local temp_blind = AnimatedSprite(0,0,1.3,1.3, G.ANIMATION_ATLAS['blind_chips'], discovered and v.pos or G.b_undiscovered.pos)
+    local temp_blind = AnimatedSprite(0,0,chip_size,chip_size, G.ANIMATION_ATLAS['blind_chips'], discovered and v.pos or G.b_undiscovered.pos)
     temp_blind:define_draw_steps({
       {shader = 'dissolve', shadow_height = 0.05},
       {shader = 'dissolve'}
@@ -4814,7 +4824,7 @@ function create_UIBox_your_collection_blinds(exit)
       end
     temp_blind.stop_hover = function() temp_blind.hovering = false; Node.stop_hover(temp_blind); temp_blind.hover_tilt = 0 end
   end
-    blind_matrix[math.ceil((k-1)/5+0.001)][1+((k-1)%5)] = {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+    blind_matrix[math.ceil((k-1)/5+0.001)][1+((k-1)%5)] = {n=G.UIT.C, config={align = "cm", padding = cell_pad}, nodes={
       (k==6 or k ==16 or k == 26) and {n=G.UIT.B, config={h=0.2,w=0.5}} or nil,
       {n=G.UIT.O, config={object = temp_blind, focus_with_object = true}},
       (k==5 or k ==15 or k == 25) and {n=G.UIT.B, config={h=0.2,w=0.5}} or nil,
@@ -4844,27 +4854,27 @@ function create_UIBox_your_collection_blinds(exit)
     local blind_chip = Sprite(0,0,0.2,0.2,G.ASSET_ATLAS["ui_"..(G.SETTINGS.colourblind_option and 2 or 1)], {x=0, y=0})
       blind_chip.states.drag.can = false
       ante_amounts[#ante_amounts+1] = {n=G.UIT.R, config={align = "cm", padding = 0.03}, nodes={
-        {n=G.UIT.C, config={align = "cm", minw = 0.7}, nodes={
-          {n=G.UIT.T, config={text = i, scale = 0.4, colour = G.C.FILTER, shadow = true}},
+        {n=G.UIT.C, config={align = "cm", minw = ante_minw}, nodes={
+          {n=G.UIT.T, config={text = i, scale = tbl_scale, colour = G.C.FILTER, shadow = true}},
         }},
-        {n=G.UIT.C, config={align = "cr", minw = 2.8}, nodes={
+        {n=G.UIT.C, config={align = "cr", minw = base_minw}, nodes={
           {n=G.UIT.O, config={object = blind_chip}},
           {n=G.UIT.C, config={align = "cm", minw = 0.03, minh = 0.01}, nodes={}},
-          {n=G.UIT.T, config={text =number_format(get_blind_amount(i)), scale = 0.4, colour = i <= G.PROFILES[G.SETTINGS.profile].high_scores.furthest_ante.amt and G.C.RED or G.C.JOKER_GREY, shadow = true}},
+          {n=G.UIT.T, config={text =number_format(get_blind_amount(i)), scale = tbl_scale, colour = i <= G.PROFILES[G.SETTINGS.profile].high_scores.furthest_ante.amt and G.C.RED or G.C.JOKER_GREY, shadow = true}},
         }}
       }}
   end
   
   local extras = nil
   local t = create_UIBox_generic_options({ back_func = exit or 'your_collection', contents = {
-    {n=G.UIT.C, config={align = "cm", r = 0.1, colour = G.C.BLACK, padding = 0.1, emboss = 0.05}, nodes={
-      {n=G.UIT.C, config={align = "cm", r = 0.1, colour = G.C.L_BLACK, padding = 0.1, force_focus = true, focus_args = {nav = 'tall'}}, nodes={
+    {n=G.UIT.C, config={align = "cm", r = 0.1, colour = G.C.BLACK, padding = box_pad, emboss = 0.05}, nodes={
+      {n=G.UIT.C, config={align = "cm", r = 0.1, colour = G.C.L_BLACK, padding = box_pad, force_focus = true, focus_args = {nav = 'tall'}}, nodes={
         {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-          {n=G.UIT.C, config={align = "cm", minw = 0.7}, nodes={
-            {n=G.UIT.T, config={text = localize('k_ante_cap'), scale = 0.4, colour = lighten(G.C.FILTER, 0.2), shadow = true}},
+          {n=G.UIT.C, config={align = "cm", minw = ante_minw}, nodes={
+            {n=G.UIT.T, config={text = localize('k_ante_cap'), scale = tbl_scale, colour = lighten(G.C.FILTER, 0.2), shadow = true}},
           }},
-          {n=G.UIT.C, config={align = "cr", minw = 2.8}, nodes={
-            {n=G.UIT.T, config={text = localize('k_base_cap'), scale = 0.4, colour = lighten(G.C.RED, 0.2), shadow = true}},
+          {n=G.UIT.C, config={align = "cr", minw = base_minw}, nodes={
+            {n=G.UIT.T, config={text = localize('k_base_cap'), scale = tbl_scale, colour = lighten(G.C.RED, 0.2), shadow = true}},
           }}
         }},
         {n=G.UIT.R, config={align = "cm"}, nodes=ante_amounts}

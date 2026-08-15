@@ -168,6 +168,14 @@ PORTRAIT_CONFIG = {
             tag_skip_scale = 0.6,
             tag_reward_scale = 0.5,
         },
+        collection_blinds = {
+            chip_size = 1.15,
+            cell_pad = 0.06,
+            ante_minw = 0.55,
+            base_minw = 2.5,
+            text_scale = 0.36,
+            box_pad = 0.05,
+        },
         shop_sign = {
             w = 2.85,
             h = 1.43,
