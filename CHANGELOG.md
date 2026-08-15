@@ -2,6 +2,33 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.2](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.2) - 2026-08-16
+
+Collections cleanup round. Both bugs came in through the issue forms with
+screenshots that made them reproducible on desktop, plus one readability
+request for the blind select screen.
+
+**All builds**
+
+- **The Blinds page in Collections fits the screen again** (#38). The ante
+  table and the chip grid kept their desktop dimensions, about a tile wider
+  than a phone room, so both edges clipped on narrow screens. Portrait now
+  uses compact metrics for that page (slightly smaller chips, tighter
+  padding, narrower table columns) and the window sits inside the screen
+  with a margin on both sides. Landscape keeps the vanilla numbers.
+- **Deck descriptions in Collections keep one size** (#39). The first
+  render used the default text scale, but switching decks rebuilt the info
+  through the run-setup path and its compact portrait scale, so the text
+  shrank and stayed small until the window was reopened. The collections
+  viewer has its own rebuild now: every deck shows at the same full size,
+  and even four-line descriptions stay inside the white card with
+  Readabletro fonts.
+- **Tap a blind token for a full-size rules card** (#40). The boss rules on
+  the blind select screen are the smallest text there because the panel has
+  to fit three columns. The token now answers a tap with the same popup
+  card the Collections Blinds page uses: name, rules text at readable size,
+  and the score requirement.
+
 ## [v2.7.1](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.1) - 2026-07-08
 
 Patch for the first v2.7.0 iPhone test report, and a good showing for the new
