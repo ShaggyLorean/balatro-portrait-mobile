@@ -4809,7 +4809,18 @@ function create_UIBox_your_collection_blinds(exit)
   local blinds_to_be_alerted = {}
   for k, v in ipairs(blind_tab) do
     local discovered = v.discovered
-    local temp_blind = AnimatedSprite(0,0,chip_size,chip_size, G.ANIMATION_ATLAS['blind_chips'], discovered and v.pos or G.b_undiscovered.pos)
+    local temp_blind = AnimatedSprite(0,0,1.3,1.3, G.ANIMATION_ATLAS['blind_chips'], discovered and v.pos or G.b_undiscovered.pos)
+    -- The portrait shrink happens after the constructor on purpose: Steamodded's
+    -- lovely patches anchor on that exact line and rewrite it when modded blinds
+    -- need their own chip scale, so it has to stay byte-identical (#41). The 1.3
+    -- guard leaves Steamodded's own scaling alone when it kicked in.
+    if chip_size ~= 1.3 and temp_blind.T.w == 1.3 then
+      temp_blind.T.w = chip_size
+      temp_blind.T.h = chip_size
+      temp_blind.VT.w = chip_size
+      temp_blind.VT.h = chip_size
+      temp_blind:rescale()
+    end
     temp_blind:define_draw_steps({
       {shader = 'dissolve', shadow_height = 0.05},
       {shader = 'dissolve'}
@@ -4851,11 +4862,24 @@ function create_UIBox_your_collection_blinds(exit)
       end
     temp_blind.stop_hover = function() temp_blind.hovering = false; Node.stop_hover(temp_blind); temp_blind.hover_tilt = 0 end
   end
-    blind_matrix[math.ceil((k-1)/5+0.001)][1+((k-1)%5)] = {n=G.UIT.C, config={align = "cm", padding = cell_pad}, nodes={
+    blind_matrix[math.ceil((k-1)/5+0.001)][1+((k-1)%5)] = {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
       (k==6 or k ==16 or k == 26) and {n=G.UIT.B, config={h=0.2,w=0.5}} or nil,
       {n=G.UIT.O, config={object = temp_blind, focus_with_object = true}},
       (k==5 or k ==15 or k == 25) and {n=G.UIT.B, config={h=0.2,w=0.5}} or nil,
     }}
+  end
+
+  -- Same anchor rule as the chip constructor: Steamodded replaces the matrix
+  -- cell line wholesale, so the portrait cell padding is applied after the
+  -- matrix is built instead of inside that line (#41).
+  if cell_pad ~= 0.1 then
+    for _, matrix_row in ipairs(blind_matrix) do
+      for _, matrix_cell in ipairs(matrix_row) do
+        if matrix_cell.config and matrix_cell.config.padding == 0.1 then
+          matrix_cell.config.padding = cell_pad
+        end
+      end
+    end
   end
 
   G.E_MANAGER:add_event(Event({
