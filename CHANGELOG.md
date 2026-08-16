@@ -2,6 +2,22 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.3](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.3) - 2026-08-16
+
+Hotfix for Steamodded builds broken by v2.7.2.
+
+**All builds**
+
+- **Steamodded loads again** (#41). The v2.7.2 Blinds-page fix edited two
+  lines inside `create_UIBox_your_collection_blinds` that Steamodded's
+  lovely patches use as anchors. With Steamodded bundled, part of the patch
+  set stopped matching while its cleanup step still applied, which left
+  unbalanced code behind and crashed the game on boot with a syntax error.
+  Both anchor lines are byte-identical to vanilla again and the portrait
+  metrics are applied after them instead of inside them, so the page keeps
+  the compact v2.7.2 look with and without Steamodded. Verified against the
+  Steamodded 1.0.0-beta-1814a patch set.
+
 ## [v2.7.2](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.2) - 2026-08-16
 
 Collections cleanup round. Both bugs came in through the issue forms with
