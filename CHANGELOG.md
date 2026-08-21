@@ -2,6 +2,37 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.4) - 2026-08-21
+
+The windows that ran off the side of a phone screen, reported together in #42
+with a screenshot for every one of them.
+
+**All builds**
+
+- **Boss rules are readable again with Steamodded installed** (#42). Steamodded
+  changes how a blind's description is stored: instead of two strings the same
+  table holds parsed text nodes, and the HUD patch that would have handled them
+  does not match the portrait HUD. The two rows printed the raw table pointer
+  ("table: 0x...") as a result. They now go through the same flattening the
+  blind popup has always used, so the text reads correctly with and without
+  Steamodded.
+- **Credits, Language and Card Stats fit the screen** (#42). All three were laid
+  out for a desktop-width room and were cut off on both edges. Each now measures
+  itself against the live room width, so the fit holds on any aspect ratio
+  instead of one tuned device.
+- **Steamodded's Collection pages fit too** (#42). Every card page there is built
+  by a single Steamodded helper that sizes each row for a desktop room, which
+  pushed the outer cards past the screen edge. Portrait now feeds that helper
+  sizes derived from the room. Pages that already fit are left exactly as
+  Steamodded built them.
+
+**Still open**
+
+- Steamodded also replaces Collection > Blinds, View Deck and Run Info > Poker
+  Hands outright, and those replacements are still wider than a phone room. Its
+  loading screen is laid out for landscape as well. They are Steamodded's own
+  screens with no size hooks to feed, so they belong upstream rather than here.
+
 ## [v2.7.3](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.3) - 2026-08-16
 
 Hotfix for Steamodded builds broken by v2.7.2.
