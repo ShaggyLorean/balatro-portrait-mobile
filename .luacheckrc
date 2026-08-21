@@ -24,8 +24,11 @@ ignore = {
     "6..",  -- whitespace (vanilla noise)
 }
 
-read_globals = {
-    "SMODS",  -- defined by Steamodded when installed
+-- Steamodded defines this when installed. It is writable rather than read-only
+-- because portrait installs its Collection page-size hook into it (see
+-- portrait_hook_smods_collection in src/portrait_config.lua).
+globals = {
+    "SMODS",
 }
 
 files = {
