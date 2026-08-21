@@ -1336,6 +1336,15 @@ end
 function create_UIBox_HUD_blind()
   local scale = 0.4
   local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.5)
+  -- Plain-text mirror of G.GAME.blind.loc_debuff_lines. The two debuff rows are
+  -- text nodes, and under Steamodded those lines are parsed tables rather than
+  -- strings, which used to render as "table: 0x..." (#42). The mirror is seeded
+  -- here and kept in sync by G.FUNCS.HUD_blind_debuff.
+  local _debuff_lines = (G.GAME.blind and G.GAME.blind.loc_debuff_lines) or {}
+  local debuff_text = {
+    portrait_flatten_blind_line(_debuff_lines[1], _debuff_lines.vars),
+    portrait_flatten_blind_line(_debuff_lines[2], _debuff_lines.vars),
+  }
   local is_portrait = G.F_PORTRAIT
   local mobile_ui = PORTRAIT_CONFIG.mobile_ui or {}
 
@@ -1398,10 +1407,10 @@ function create_UIBox_HUD_blind()
             -- G.HUD_blind == e.UIBox) crashes when run during init. Deferring
             -- the func attachment to post-construction sidesteps this for
             -- both vanilla and SMODS-modded runs.
-            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 1, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_1'}}
+            {n=G.UIT.T, config={ref_table = debuff_text, ref_value = 1, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_1'}}
           }},
           {n=G.UIT.R, config={align = "cm", minh = line_h, maxw = body_maxw}, nodes={
-            {n=G.UIT.T, config={ref_table = G.GAME.blind.loc_debuff_lines, ref_value = 2, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_2'}}
+            {n=G.UIT.T, config={ref_table = debuff_text, ref_value = 2, scale = scale*debuff_scale, colour = G.C.UI.TEXT_LIGHT, id = 'HUD_blind_debuff_2'}}
           }},
         }},
         {n=G.UIT.R, config={align = "cm",padding = lower_pad}, nodes={
@@ -3071,7 +3080,10 @@ function create_UIBox_usage(args)
 
   local scale_histo = 1
   if G.F_PORTRAIT then
-    scale_histo = 0.7
+    -- Ten histogram columns are laid out for a desktop room; the old flat 0.7
+    -- still spilled over both edges on a phone (#42), so derive it from the
+    -- room width instead.
+    scale_histo = math.min(0.7, get_portrait_fit_scale(17.7))
   end
 
   local histograms = {}
@@ -4299,6 +4311,9 @@ end
 
 
 function create_UIBox_your_collection()
+  -- Every collection page is reached from here, so this is where the Steamodded
+  -- page-size hook gets installed (see portrait_config.lua).
+  if portrait_hook_smods_collection then portrait_hook_smods_collection() end
   set_discover_tallies()
   G.E_MANAGER:add_event(Event({
     blockable = false,
@@ -5207,7 +5222,11 @@ function G.UIDEF.viewed_collab_option(_new_option)
 end
 
 function G.UIDEF.credits()
-  local text_scale = 0.75
+  -- Portrait: the credits tabs are built for a desktop room and ran off both
+  -- edges of a phone screen (#42). Every size in here is driven by text_scale
+  -- and the tab minw, so one factor measured against the room shrinks the lot.
+  local credits_fit = get_portrait_fit_scale(21.3)
+  local text_scale = 0.75*credits_fit
   local t =   create_UIBox_generic_options({contents ={
       {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
         create_tabs(
@@ -5216,7 +5235,7 @@ function G.UIDEF.credits()
               label = "Production",
               chosen = true,
               tab_definition_function = function() return 
-                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10}, nodes={
+                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10*credits_fit}, nodes={
                       {n=G.UIT.C, config={align = "cm", padding = 0.2,outline_colour = G.C.JOKER_GREY, r = 0.1, outline = 1}, nodes={
                       {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
                         {n=G.UIT.T, config={text = "Original Soundtrack", scale = text_scale*0.8, colour = G.C.UI.TEXT_LIGHT, shadow = true}},
@@ -5426,7 +5445,7 @@ function G.UIDEF.credits()
             {
               label = "Publishing",
               tab_definition_function = function() return 
-                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10}, nodes={
+                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10*credits_fit}, nodes={
                   {n=G.UIT.C, config={align = "cm", padding = 0.1,outline_colour = G.C.JOKER_GREY, r = 0.1, outline = 1}, nodes={
                     {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
                       {n=G.UIT.T, config={text = "Playstack", scale = text_scale*0.6, colour = G.C.RED, shadow = true}},
@@ -5901,7 +5920,7 @@ function G.UIDEF.credits()
             {
               label = "Sounds",
               tab_definition_function = function() return 
-                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10}, nodes={
+                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10*credits_fit}, nodes={
                   {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
                     {n=G.UIT.T, config={text = "All sounds not listed here fall under ", scale = text_scale*0.6, colour = G.C.UI.TEXT_LIGHT, shadow = true}},
                     {n=G.UIT.T, config={text = "Creative Commons - CC0", scale = text_scale*0.6, colour = G.C.BLUE, shadow = true}},
@@ -5952,7 +5971,7 @@ function G.UIDEF.credits()
             {
               label = "Imagery",
               tab_definition_function = function() return 
-                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10}, nodes={
+                {n=G.UIT.ROOT, config={align = "cm", padding = 0.2, colour = G.C.BLACK, r = 0.1, emboss = 0.05, minh = 6, minw = 10*credits_fit}, nodes={
                   {n=G.UIT.R, config={align = "cm", padding = 0.1,outline_colour = G.C.JOKER_GREY, r = 0.1, outline = 1}, nodes={
                     {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
                       {n=G.UIT.T, config={text = 'The font "m6x11.ttf" by Daniel Linssen (https://managore.itch.io/m6x11)', scale = text_scale*0.5, colour = G.C.UI.TEXT_LIGHT, shadow = true}},
@@ -7215,6 +7234,11 @@ function create_UIBox_main_menu_competittion_name()
 end
 
 function G.UIDEF.language_selector() 
+  -- Portrait: three 4.5 tile buttons per row are wider than a phone room, so the
+  -- outer columns were cut off (#42). Shrink the buttons and their labels to fit.
+  local lang_fit = get_portrait_fit_scale(15.0)
+  local lang_minw = 4.5*lang_fit
+  local lang_text = 0.45*lang_fit
   local rows = {}
   local langs = {}
   for k, v in pairs(G.LANGUAGES) do
@@ -7226,9 +7250,9 @@ function G.UIDEF.language_selector()
   local _row = {}
   for k, v in ipairs(langs) do
     if not G.F_HIDE_BETA_LANGS or (not v.beta) then
-      _row[#_row+1] = {n=G.UIT.C, config={align = "cm", func = 'beta_lang_alert', padding = 0.05, r = 0.1, minh = 0.7, minw = 4.5, button = v.beta and 'warn_lang' or 'change_lang', ref_table = v, colour = v.beta and G.C.RED or G.C.BLUE, hover = true, shadow = true, focus_args = {snap_to = (k == 1)}}, nodes={
+      _row[#_row+1] = {n=G.UIT.C, config={align = "cm", func = 'beta_lang_alert', padding = 0.05, r = 0.1, minh = 0.7, minw = lang_minw, button = v.beta and 'warn_lang' or 'change_lang', ref_table = v, colour = v.beta and G.C.RED or G.C.BLUE, hover = true, shadow = true, focus_args = {snap_to = (k == 1)}}, nodes={
         {n=G.UIT.R, config={align = "cm"}, nodes={
-          {n=G.UIT.T, config={text = v.label, lang = v, scale = 0.45, colour = G.C.UI.TEXT_LIGHT, shadow = true}}
+          {n=G.UIT.T, config={text = v.label, lang = v, scale = lang_text, colour = G.C.UI.TEXT_LIGHT, shadow = true}}
         }}
       }}
     end

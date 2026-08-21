@@ -136,11 +136,22 @@ end
 ---@param e {}
 --**e** Is the UIE that called this function
 G.FUNCS.HUD_blind_debuff = function(e)
+  -- Refresh the plain-text mirror this node reads from. Vanilla keeps strings in
+  -- loc_debuff_lines, Steamodded keeps parsed tables; flattening here means the
+  -- node always has text instead of printing "table: 0x..." (#42).
+  local line_text = ''
+  if G.GAME.blind and G.GAME.blind.loc_debuff_lines then
+    line_text = portrait_flatten_blind_line(G.GAME.blind.loc_debuff_lines[e.config.ref_value], G.GAME.blind.loc_debuff_lines.vars)
+  end
+  if e.config.ref_table and e.config.ref_table[e.config.ref_value] ~= line_text then
+    e.config.ref_table[e.config.ref_value] = line_text
+  end
+
   if G.GAME.blind and G.GAME.blind.loc_debuff_text and G.GAME.blind.loc_debuff_text ~= '' then
     if e.parent.config.minh == 0 or e.config.prev_loc ~= G.GAME.blind.loc_debuff_text then
       e.parent.config.minh = 0.35
       e.config.scale = 0.36
-      if G.GAME.blind.loc_debuff_lines[e.config.ref_value] == '' then e.config.scale = 0.0; e.parent.config.minh = 0.001 end
+      if line_text == '' then e.config.scale = 0.0; e.parent.config.minh = 0.001 end
       e.config.prev_loc = G.GAME.blind.loc_debuff_text
       e.UIBox:recalculate(true)
     end

@@ -336,6 +336,91 @@ function portrait_diagnostics_report()
     return table.concat(lines, "\n")
 end
 
+-- Steamodded builds every Collection card page through one helper, sized for a
+-- desktop room. On a phone the outer cards end up cut off by the screen edge
+-- (#42). The helper already takes size multipliers, so portrait feeds it ones
+-- derived from the live room width instead of rewriting Steamodded's layout.
+-- Idempotent, a no-op without Steamodded, and it leaves pages that already fit
+-- exactly as Steamodded built them.
+function portrait_hook_smods_collection()
+    if not (G and G.F_PORTRAIT) then return end
+    if not (SMODS and type(SMODS.card_collection_UIBox) == 'function') then return end
+    if SMODS.portrait_collection_hooked then return end
+
+    local smods_card_collection_UIBox = SMODS.card_collection_UIBox
+    SMODS.card_collection_UIBox = function(_pool, rows, args)
+        args = args or {}
+        local widest = 0
+        for _, count in ipairs(rows or {}) do
+            if type(count) == 'number' and count > widest then widest = count end
+        end
+        local card_w = G.CARD_W or 0
+        local room_w = (G.ROOM and G.ROOM.T and G.ROOM.T.w) or 0
+
+        if G.F_PORTRAIT and widest > 0 and card_w > 0 and room_w > 0 then
+            -- Steamodded sizes each row as (w_mod*columns + 0.25) cards wide, so
+            -- solve that for the width the room can actually show. Pages that
+            -- already fit are left alone; the ones that do not (more columns than
+            -- the mod's own five, or a page asking for oversized cards like the
+            -- booster packs) are scaled down by the ratio they overshoot by, which
+            -- keeps the page's own proportions intact.
+            local usable = room_w - 1.5
+            local max_w_mod = ((usable/card_w) - 0.25)/widest
+            local base_w_mod = args.w_mod or 1
+            if max_w_mod > 0 and base_w_mod > max_w_mod then
+                local shrink = max_w_mod/base_w_mod
+                args.w_mod = base_w_mod*shrink
+                -- The cards have to come down with the row or they overlap in it.
+                args.card_scale = (args.card_scale or 1)*shrink
+                args.h_mod = (args.h_mod or 1)*shrink
+            end
+        end
+        return smods_card_collection_UIBox(_pool, rows, args)
+    end
+    SMODS.portrait_collection_hooked = true
+end
+
+-- Some vanilla windows are laid out for a desktop-width room and run off the
+-- sides of a phone screen (#42: Credits, Language, Card Stats). Given a window's
+-- natural width in room tiles, this returns the multiplier that makes it fit the
+-- current room with a margin, or 1 when it already fits. Reading the live room
+-- width keeps it correct on every aspect ratio instead of one tuned device.
+function get_portrait_fit_scale(nominal_w, margin)
+    if not (G and G.F_PORTRAIT and G.ROOM and G.ROOM.T and G.ROOM.T.w) then return 1 end
+    if type(nominal_w) ~= 'number' or nominal_w <= 0 then return 1 end
+    local usable = G.ROOM.T.w - (margin or 1.0)
+    if usable <= 0 then return 1 end
+    return math.min(1, usable/nominal_w)
+end
+
+-- Flattens one blind description line into plain text.
+-- Vanilla stores loc_debuff_lines as strings, but Steamodded rewrites
+-- Blind:set_text so the same table holds parsed localization nodes instead.
+-- The HUD renders those lines through a plain text node, which would print
+-- "table: 0x..." for a node table (#42), so anything that needs a string goes
+-- through here first. Mirrors the assembly the blind popup already does.
+function portrait_flatten_blind_line(line, vars)
+    if type(line) == 'string' then return line end
+    if type(line) ~= 'table' then return '' end
+
+    local assembled = ''
+    for _, part in ipairs(line) do
+        if type(part) == 'string' then
+            assembled = assembled..part
+        elseif type(part) == 'table' and part.strings then
+            for _, subpart in ipairs(part.strings) do
+                if type(subpart) == 'string' then
+                    assembled = assembled..subpart
+                else
+                    local var_value = vars and subpart and vars[tonumber(subpart[1])]
+                    assembled = assembled..tostring(var_value or '')
+                end
+            end
+        end
+    end
+    return assembled
+end
+
 --Bottom space reserved under the hand: smaller in Swipe Only mode, where only
 --the compact sort row remains below the cards.
 function get_hand_base_offset()
