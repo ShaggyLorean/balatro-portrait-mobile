@@ -2,6 +2,59 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.5](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.5) - 2026-08-27
+
+A pass over the things that only show up on a phone in your hand, most of them
+reported in #44 with video of each one.
+
+**All builds**
+
+- **Only the device keyboard opens now.** Tapping a text field brought up
+  Balatro's own on-screen keyboard as well, drawn behind the menu with the
+  menu's buttons still live on top of it, so a rename could land on Reset
+  Profile. That keyboard is there for controllers and is no longer built on a
+  phone at all.
+- **Typing replaces what the field held.** The device keyboard opens with an
+  empty buffer of its own, so its backspace could never reach a name or seed
+  that was already there. The first character typed now clears the field, the
+  way selecting the text does on a desktop. Backspace or an arrow key cancels
+  that and editing carries on as normal.
+- **The menu lifts clear of the keyboard.** A field low on the screen sat behind
+  the keyboard while you typed into it. The menu now rises until the field is
+  near the top, and drops back when the keyboard closes.
+- **Seed controls are thumb sized.** The seed field, Paste Seed, the note beside
+  them and the Seeded Run toggle were laid out for a mouse and were too small to
+  read or hit.
+- **Sell and Use buttons on the last slot** used to slide under the card, or off
+  the screen entirely, when there was no room to their right. They move to the
+  other side of the card instead.
+- **Tooltips hold still.** They followed the finger up and down while the card
+  underneath stayed put. They anchor to the card now, with a gap wide enough
+  that a thumb on the card does not cover the text
+  (`PORTRAIT_CONFIG.tooltip_card_gap`).
+- **Tags stay on screen.** The first tag hung off the side of the joker row,
+  which nearly fills a portrait screen, so a third of it sat past the edge.
+- **The Challenges window fits.** Its preview area asked for more width than a
+  phone room has, cutting the page arrows and the Back bar off at both edges.
+- **The Mods button has a place in the menu.** Steamodded appends it to the main
+  menu and restyles the panel on the way past, which left it hanging off the
+  side with the rest of the menu out of line. It sits beside Options at the same
+  size now, and Play and Collection line up with that row.
+- **The mod loader's boot screen fits the screen.** Its icon fell off the left
+  edge and the status line ran past the right. Whatever a loader draws there is
+  scaled to the window and long lines are squeezed to fit, so this holds for
+  future Steamodded releases rather than one version's layout.
+- **The accelerometer is no longer treated as a gamepad.** Android lists it as a
+  three axis joystick, and gravity alone keeps an axis past the deadzone, which
+  could flip the game into controller mode on its own.
+
+**Docs**
+
+- The save transfer guide now says to check the file dates inside a Takeout
+  export before building. Play Games writes the two saved games separately, and
+  `meta.jkr` can carry today's date while the profile beside it is months old
+  (#43).
+
 ## [v2.7.4](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.4) - 2026-08-21
 
 The windows that ran off the side of a phone screen, reported together in #42
