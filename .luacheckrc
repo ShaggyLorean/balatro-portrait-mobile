@@ -39,6 +39,11 @@ files = {
     ["src/functions/UI_definitions.lua"] = {ignore = {
         "113/maxw", "113/badges", "113/disabled", "113/target", "113/show_win_cta",
     }},
+    -- The boot screen fit swaps love.graphics.print for the length of one call
+    -- so an overlong status line can be squeezed to the window, and puts the
+    -- real one back straight after. Writing into the love table is what 122
+    -- flags, and it is deliberate here.
+    ["src/conf.lua"] = {ignore = {"122/love"}},
     -- The mobile LOVE fork adds APIs luacheck's love standard doesn't know
     -- (window.setHint, handlers table access, graphics.isCreated).
     ["src/main.lua"] = {ignore = {"143"}},
