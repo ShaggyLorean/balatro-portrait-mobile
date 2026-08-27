@@ -4295,12 +4295,20 @@ function Card:align_h_popup()
             -- Margin large enough for typical popup half-width (~2 tiles) so the tooltip stays inside the screen
             local edge_margin = 2.5
 
+            -- The popup sits clear of the card by a fixed gap. A thumb resting on
+            -- the card covers a good deal around it, and a tooltip printed right
+            -- against the card edge ends up under the hand that opened it. The gap
+            -- is a constant rather than something measured off the touch point, so
+            -- the tooltip holds its place instead of sliding about while you hold
+            -- (#44). Tune it with PORTRAIT_CONFIG.tooltip_card_gap.
+            local touch_gap = (PORTRAIT_CONFIG and PORTRAIT_CONFIG.tooltip_card_gap) or 0.9
+
             if card_cy > room_h * 0.55 then
                 popup_direction = 'tm'
-                offset_y_tm = focused_ui and -0.15 or -0.2
+                offset_y_tm = (focused_ui and -0.15 or -0.2) - touch_gap
             else
                 popup_direction = 'bm'
-                offset_y_bm = focused_ui and 0.15 or 0.2
+                offset_y_bm = (focused_ui and 0.15 or 0.2) + touch_gap
             end
 
             -- Push popup back into screen when card is near edges (room_w/2 is screen center)
@@ -4656,19 +4664,25 @@ function Card:highlight(is_higlighted)
             local pack_use = G.F_PORTRAIT and self.ability.consumeable and self.area == G.pack_cards
             local is_tray = (self.area == G.jokers) or (self.area == G.consumeables)
             local tray_off = {x = x_off - 0.4, y = 0}
+            local tray_align = 'cr'
             if is_tray and G.F_PORTRAIT and G.ROOM and G.ROOM.T and self.T then
                 local button_mult = (PORTRAIT_CONFIG.mobile_ui and PORTRAIT_CONFIG.mobile_ui.card_button_mult) or 1.4
                 local tray_w = 1.25*(button_mult*0.78) + 0.3
                 local room_right = G.ROOM.T.w - 0.12
-                local fit_x = room_right - (self.T.x + self.T.w) - tray_w
-                if fit_x < tray_off.x then
-                    tray_off.x = math.max(fit_x, x_off - 1.05)
+                local space_right = room_right - (self.T.x + self.T.w)
+                if space_right < tray_w then
+                    -- Not enough screen left of the right edge for the buttons.
+                    -- Sliding them further under the card only hid them (#44), so
+                    -- the last slot puts its Sell/Use column on the card's other
+                    -- side, where there is always room.
+                    tray_align = 'cl'
+                    tray_off = {x = -(x_off - 0.4), y = 0}
                 end
             end
             self.children.use_button = UIBox{
                 definition = G.UIDEF.use_and_sell_buttons(self),
                 config = {align=
-                        is_tray and "cr" or
+                        is_tray and tray_align or
                         pack_use and "bm" or
                         "bmi"
                     , offset =

@@ -11,7 +11,7 @@ $repo = Split-Path -Parent $root
 if (-not $NdkDir) {
     throw "ANDROID_NDK_HOME is not set. Install Android NDK r27c or pass -NdkDir <path>."
 }
-if (-not (Test-Path (Join-Path $NdkDir "build\cmake\android.toolchain.cmake"))) {
+if (-not (Test-Path (Join-Path $NdkDir "build/cmake/android.toolchain.cmake"))) {
     throw "Android NDK toolchain file was not found under: $NdkDir"
 }
 
@@ -22,8 +22,8 @@ $python = (Get-Command python -ErrorAction Stop).Source
 # lives in src/portrait_config.lua (single source; build.py parses it from
 # there too). They have drifted before (2.6.3 needed its own bump commit), so
 # refuse to package a ZIP whose version does not match the repo.
-$modVersion = (Select-String -Path (Join-Path $repo "src\portrait_config.lua") -Pattern '^\s*version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
-$propVersion = (Select-String -Path (Join-Path $root "module\module.prop") -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
+$modVersion = (Select-String -Path (Join-Path $repo "src/portrait_config.lua") -Pattern '^\s*version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+$propVersion = (Select-String -Path (Join-Path $root "module/module.prop") -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
 if ($modVersion -ne $propVersion) {
     throw "Version mismatch: src/portrait_config.lua says '$modVersion' but zygisk/module/module.prop says '$propVersion'. Bump them together."
 }
@@ -42,12 +42,12 @@ if (Test-Path $moduleZip) { Remove-Item -Force $moduleZip }
 
 New-Item -ItemType Directory -Force -Path @(
     (Join-Path $moduleDir "zygisk"),
-    (Join-Path $moduleDir "zygisk\variants"),
-    (Join-Path $moduleDir "system\lib64")
+    (Join-Path $moduleDir "zygisk/variants"),
+    (Join-Path $moduleDir "system/lib64")
 ) | Out-Null
 
-Copy-Item (Join-Path $root "module\module.prop") $moduleDir -Force
-Copy-Item (Join-Path $root "module\customize.sh") $moduleDir -Force
+Copy-Item (Join-Path $root "module/module.prop") $moduleDir -Force
+Copy-Item (Join-Path $root "module/customize.sh") $moduleDir -Force
 
 # Variant names read literally now: "crt-on" means the CRT shader stays ON
 # (vanilla look), "crt-off" means it is disabled. Before v2.7.0 the axis
@@ -65,16 +65,16 @@ foreach ($variant in $variants) {
     & $python (Join-Path $root "gen_assets.py") `
         --readabletro $variant.Readabletro `
         --disable-crt $variant.DisableCrt `
-        --out (Join-Path $root "src\assets_gen.h")
+        --out (Join-Path $root "src/assets_gen.h")
     if ($LASTEXITCODE -ne 0) { throw "gen_assets.py failed for $name" }
     # Without this check a gen_assets failure (e.g. missing src/resources
     # extraction) only surfaces later as a baffling missing-header compile error.
     if ($LASTEXITCODE -ne 0) { throw "gen_assets.py failed for $name (is src/resources extracted? run build.py once)" }
 
-    $buildDir = Join-Path $root "build\$name"
+    $buildDir = Join-Path $root "build/$name"
     if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir }
     cmake -G Ninja -S $root -B $buildDir `
-        "-DCMAKE_TOOLCHAIN_FILE=$NdkDir\build\cmake\android.toolchain.cmake" `
+        "-DCMAKE_TOOLCHAIN_FILE=$NdkDir/build/cmake/android.toolchain.cmake" `
         "-DANDROID_ABI=arm64-v8a" `
         "-DANDROID_PLATFORM=$AndroidPlatform" `
         "-DCMAKE_MAKE_PROGRAM=$ninja" `
@@ -84,13 +84,13 @@ foreach ($variant in $variants) {
     if ($LASTEXITCODE -ne 0) { throw "CMake build failed for $name" }
 
     Copy-Item (Join-Path $buildDir "libbalatro_portrait.so") `
-        (Join-Path $moduleDir "zygisk\variants\$name.so") -Force
+        (Join-Path $moduleDir "zygisk/variants/$name.so") -Force
     Copy-Item (Join-Path $buildDir "libshadowhook_nothing.so") `
-        (Join-Path $moduleDir "system\lib64\libshadowhook_nothing.so") -Force
+        (Join-Path $moduleDir "system/lib64/libshadowhook_nothing.so") -Force
 }
 
-$defaultVariant = Join-Path $moduleDir "zygisk\variants\readabletro-on_crt-on.so"
-Copy-Item $defaultVariant (Join-Path $moduleDir "zygisk\arm64-v8a.so") -Force
+$defaultVariant = Join-Path $moduleDir "zygisk/variants/readabletro-on_crt-on.so"
+Copy-Item $defaultVariant (Join-Path $moduleDir "zygisk/arm64-v8a.so") -Force
 
 # Package explicitly instead of CreateFromDirectory: .NET Framework (Windows
 # PowerShell 5.1) writes backslash entry separators, which Android unzips as
@@ -104,7 +104,7 @@ $zipStream = [System.IO.File]::Open($moduleZip, [System.IO.FileMode]::Create)
 $archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
     foreach ($file in Get-ChildItem $moduleDir -Recurse -File) {
-        $rel = $file.FullName.Substring($moduleDir.Length + 1).Replace('\', '/')
+        $rel = $file.FullName.Substring($moduleDir.Length + 1).Replace('\', '/').Replace([IO.Path]::DirectorySeparatorChar, '/')
         $entry = $archive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
         $entryStream = $entry.Open()
         try {

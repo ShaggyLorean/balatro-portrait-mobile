@@ -1016,7 +1016,12 @@ G.FUNCS.text_input = function(e)
 
   local OSkeyboard_e = e.parent.parent.parent
   if G.CONTROLLER.text_input_hook == e and G.CONTROLLER.HID.controller then
-    if not OSkeyboard_e.children.controller_keyboard then 
+    -- The line above is what Steamodded's mobile patch rewrites to add touch
+    -- devices, so it stays byte-identical to vanilla (see #41). The guard lives
+    -- here instead: on a phone the device keyboard handles text, and drawing
+    -- Balatro's own behind the menu on top of it is what made both appear at
+    -- once with the menu still clickable through them (#44).
+    if not OSkeyboard_e.children.controller_keyboard and not uses_system_keyboard() then 
       OSkeyboard_e.children.controller_keyboard = UIBox{
         definition = create_keyboard_input{backspace_key = true, return_key = true, space_key = false},
         config = {
@@ -1058,6 +1063,14 @@ end
 --[e is the UI Element that calls this click function]
 G.FUNCS.select_text_input = function(e)
   G.CONTROLLER.text_input_hook = e.children[1].children[1]
+
+  -- The device keyboard opens with an empty buffer of its own, so its backspace
+  -- never reaches text the field already held (#44). Arm the field so the first
+  -- character typed replaces what is there, the way selecting the text does on a
+  -- desktop. Backspace or an arrow key cancels it and editing carries on as normal.
+  if uses_system_keyboard() and G.CONTROLLER.text_input_hook and G.CONTROLLER.text_input_hook.config then
+    G.CONTROLLER.text_input_hook.config.ref_table.portrait_replace_on_type = true
+  end
 
   --Start by setting the cursor position to the correct location
   TRANSPOSE_TEXT_INPUT(0)
@@ -1120,6 +1133,23 @@ G.FUNCS.text_input_key = function(args)
   
   --Start by setting the cursor position to the correct location
   TRANSPOSE_TEXT_INPUT(0)
+
+  -- Armed by select_text_input on mobile: the first real character wipes what the
+  -- field already held, since the device keyboard's own backspace cannot (#44).
+  if hook_config.portrait_replace_on_type then
+    if args.key == 'BACKSPACE' or args.key == 'DELETE' or args.key == 'LEFT'
+      or args.key == 'RIGHT' or args.key == 'RETURN' then
+      hook_config.portrait_replace_on_type = nil
+    elseif string.len(args.key) == 1 then
+      hook_config.portrait_replace_on_type = nil
+      local guard = 0
+      while string.len(text.ref_table[text.ref_value]) > 0 and guard < 64 do
+        MODIFY_TEXT_INPUT{letter = '', text_table = text, pos = text.current_position, delete = true}
+        TRANSPOSE_TEXT_INPUT(-1)
+        guard = guard + 1
+      end
+    end
+  end
 
   if string.len(text.ref_table[text.ref_value]) > 0 and args.key == 'BACKSPACE' then --If not at start, remove preceding letter
     MODIFY_TEXT_INPUT{
@@ -2009,18 +2039,32 @@ function G.FUNCS.toggle_seeded_run(e)
     e.config.object:remove()
     e.config.object = nil
   elseif not e.config.object and G.run_setup_seed then
+    -- Portrait: this row was built for a mouse. The field, the paste button and
+    -- the note beside them were too small to hit or read on a phone (#44).
+    local seed_note_scale = G.F_PORTRAIT and 0.34 or 0.26
+    local seed_field_w = G.F_PORTRAIT and 3.1 or 2.5
+    local seed_field_h = G.F_PORTRAIT and 1.0 or 0.7
+    local seed_text_scale = G.F_PORTRAIT and 0.5 or 0.4
+    local paste_w = G.F_PORTRAIT and 1.7 or 1
+    local paste_h = G.F_PORTRAIT and 1.0 or 0.6
+    local paste_scale = G.F_PORTRAIT and 0.4 or 0.3
+    -- The columns either side of the field are desktop breathing room; on a phone
+    -- they push the row past the panel and cut the note off at the screen edge.
+    local seed_note_w = G.F_PORTRAIT and 2.2 or 2.5
+    local seed_tail_w = G.F_PORTRAIT and 0.2 or 2.5
+
     e.config.object = UIBox{
       definition = {n=G.UIT.ROOT, config={align = "cm", colour = G.C.CLEAR}, nodes={
-        {n=G.UIT.C, config={align = "cm", minw = 2.5, padding = 0.05}, nodes={
-          simple_text_container('ml_disabled_seed',{colour = G.C.UI.TEXT_LIGHT, scale = 0.26, shadow = true}),
+        {n=G.UIT.C, config={align = "cm", minw = seed_note_w, padding = 0.05}, nodes={
+          simple_text_container('ml_disabled_seed',{colour = G.C.UI.TEXT_LIGHT, scale = seed_note_scale, shadow = true}),
         }},
         {n=G.UIT.C, config={align = "cm", minw = 0.1}, nodes={
-          create_text_input({max_length = 8, all_caps = true, ref_table = G, ref_value = 'setup_seed', prompt_text = localize('k_enter_seed')}),
+          create_text_input({max_length = 8, all_caps = true, w = seed_field_w, h = seed_field_h, text_scale = seed_text_scale, ref_table = G, ref_value = 'setup_seed', prompt_text = localize('k_enter_seed')}),
           {n=G.UIT.C, config={align = "cm", minw = 0.1}, nodes={}},
-          UIBox_button({label = localize('ml_paste_seed'),minw = 1, minh = 0.6, button = 'paste_seed', colour = G.C.BLUE, scale = 0.3, col = true})
+          UIBox_button({label = localize('ml_paste_seed'),minw = paste_w, minh = paste_h, button = 'paste_seed', colour = G.C.BLUE, scale = paste_scale, col = true})
         }},
 
-        {n=G.UIT.C, config={align = "cm", minw = 2.5}, nodes={
+        {n=G.UIT.C, config={align = "cm", minw = seed_tail_w}, nodes={
         }},
       }},
       config = {offset = {x=0,y=0}, parent = e, type = 'cm'}

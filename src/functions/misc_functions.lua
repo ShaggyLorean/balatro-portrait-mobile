@@ -95,7 +95,50 @@ function version_gte(a, b)
   return compare_version_strings(a, b) >= 0
 end
 
+-- True when text entry goes through the device's own keyboard. Balatro also has
+-- an on-screen keyboard for controllers, and on a phone both used to open at
+-- once: the system keyboard over the bottom half and the game's own drawn behind
+-- the menu, whose buttons stayed clickable through it (#44).
+function uses_system_keyboard()
+    if not (love and love.system and love.system.getOS) then return false end
+    local os_name = love.system.getOS()
+    return os_name == 'Android' or os_name == 'iOS'
+end
+
+-- The device keyboard covers the bottom of the screen and the game knows nothing
+-- about it, so a field low in a menu stays hidden behind it while you type (#44,
+-- the seed box). Lift the whole menu until the focused field sits near the top,
+-- then put it back when the keyboard closes.
+local keyboard_lift_target = 0.22
+
+function portrait_lift_for_keyboard()
+  local box = G and G.OVERLAY_MENU
+  local hook = G and G.CONTROLLER and G.CONTROLLER.text_input_hook
+  if not (box and hook and hook.T and G.ROOM and G.ROOM.T and G.F_PORTRAIT) then return end
+  if box.portrait_keyboard_lift then return end
+
+  local lift = hook.T.y - (G.ROOM.T.h or 20)*keyboard_lift_target
+  if lift <= 0 then return end
+
+  box.portrait_keyboard_lift = lift
+  box.alignment.offset.y = (box.alignment.offset.y or 0) - lift
+  if box.align_to_major then box:align_to_major() end
+end
+
+function portrait_drop_after_keyboard()
+  local box = G and G.OVERLAY_MENU
+  if not (box and box.portrait_keyboard_lift) then return end
+
+  box.alignment.offset.y = (box.alignment.offset.y or 0) + box.portrait_keyboard_lift
+  box.portrait_keyboard_lift = nil
+  if box.align_to_major then box:align_to_major() end
+end
+
 function set_mobile_text_input(enabled)
+  if uses_system_keyboard() then
+    if enabled then portrait_lift_for_keyboard() else portrait_drop_after_keyboard() end
+  end
+
   if not (love and love.keyboard and love.keyboard.setTextInput and love.system and love.system.getOS) then
     return
   end

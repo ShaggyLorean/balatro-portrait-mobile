@@ -1442,12 +1442,10 @@ function add_tag(_tag)
   local align, offset, major
 
   if G.F_PORTRAIT then
-    local pc = PORTRAIT_CONFIG.tag_align
-    local first_tag_align = (G.SETTINGS.play_main_hand == 1) and 'bl' or 'br'
-    local first_tag_x = (G.SETTINGS.play_main_hand == 1) and pc.first_x_left or pc.first_x_right
+    local first_tag_align, first_tag_offset = get_portrait_first_tag_align()
 
     align = previous_tag and 'tm' or first_tag_align
-    offset = previous_tag and {x = 0, y = 0} or {x = first_tag_x, y = 0}
+    offset = previous_tag and {x = 0, y = 0} or first_tag_offset
     major = previous_tag or G.jokers
 
   else
@@ -6421,8 +6419,11 @@ function G.UIDEF.challenge_list(from_game_over)
     end
   end
   if G.F_PORTRAIT then
+    -- The preview area asked for 11.5 tiles, wider than a phone room once the
+    -- window's own padding is added, so both edges ran off the screen (#44).
+    local challenge_minw = math.min(11.5, math.max(6, ((G.ROOM and G.ROOM.T and G.ROOM.T.w) or 11.5) - 1.5))
     local t = create_UIBox_generic_options({ back_id = from_game_over and 'from_game_over' or nil, back_func = 'setup_run', back_id = 'challenge_list', contents = {
-      {n=G.UIT.R, config={align = "cm", minh = 9, minw = 11.5}, nodes={
+      {n=G.UIT.R, config={align = "cm", minh = 9, minw = challenge_minw}, nodes={
         {n=G.UIT.O, config={id = 'challenge_area', object = Moveable()}},
       }},
       {n=G.UIT.R, config={align = "cm", padding = 0.0}, nodes={
@@ -7033,13 +7034,15 @@ function G.UIDEF.run_setup_option(type)
                       {n=G.UIT.O, config={id = nil, func = 'RUN_SETUP_check_stake', insta_func = true, object = Moveable()}},
                     }},
                 }},
-                {n=G.UIT.R, config={align = "cm", padding = 0.05, minh = 0.9}, nodes={
+                -- Portrait keeps taller seed controls, so the slot they float in
+                -- has to grow with them or they land on top of the Play button.
+                {n=G.UIT.R, config={align = "cm", padding = 0.05, minh = G.F_PORTRAIT and 1.7 or 0.9}, nodes={
                   {n=G.UIT.O, config={align = "cm", func = 'toggle_seeded_run', object = Moveable()}, nodes={
                   }},
                 }},
                 {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
                   {n=G.UIT.C, config={align = "cm", minw = 2.4, id = 'run_setup_seed'}, nodes={
-                    type == 'New Run' and create_toggle{col = true, label = localize('k_seeded_run'), label_scale = 0.25, w = 0, scale = 0.7, ref_table = G, ref_value = 'run_setup_seed'} or nil
+                    type == 'New Run' and create_toggle{col = true, label = localize('k_seeded_run'), label_scale = G.F_PORTRAIT and 0.38 or 0.25, w = 0, scale = G.F_PORTRAIT and 1.05 or 0.7, ref_table = G, ref_value = 'run_setup_seed'} or nil
                   }},
                     {n=G.UIT.C, config={align = "cm", minw = 5, minh = 0.8, padding = 0.2, r = 0.1, hover = true, colour = G.C.BLUE, button = "start_setup_run", shadow = true, func = 'can_start_run'}, nodes={
                       {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
@@ -7160,7 +7163,11 @@ function create_UIBox_main_menu_buttons()
     local t = {
       n=G.UIT.ROOT, config = {align = "bm", colour = G.C.CLEAR}, nodes={
         {n=G.UIT.C, config={align = "bm"}, nodes={
-          {n=G.UIT.R, config={align = "cm", padding = 0.15, r = 2, emboss = 0.1, colour = G.C.L_BLACK, mid = true}, nodes={
+          -- Steamodded appends its MODS button straight into this container. A
+          -- row put it out to the side of the whole menu, half off the panel
+          -- (#44); a column drops it under COLLECTION where it belongs. With a
+          -- single child the layout is identical when Steamodded is absent.
+          {n=G.UIT.C, config={align = "cm", padding = 0.15, r = 2, emboss = 0.1, colour = G.C.L_BLACK, mid = true}, nodes={
             {n=G.UIT.C, config={align = "cm", padding = 0}, nodes={
               {n=G.UIT.R, config={align = "cm", minw = 4, minh = 0.8, padding = 0.15}, nodes={
                 UIBox_button{id = 'main_menu_play', button = not G.SETTINGS.tutorial_complete and "start_run" or "setup_run", colour = G.C.BLUE, minw = 5.55, minh = 2, emboss = 1, label = {localize('b_play_cap')}, scale = text_scale*3, col = true},

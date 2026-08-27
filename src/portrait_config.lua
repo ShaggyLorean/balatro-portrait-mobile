@@ -2,7 +2,7 @@ PORTRAIT_CONFIG = {
     -- Single source of truth for the mod version: build.py parses it from
     -- here, and the Zygisk packaging refuses to ship a module.prop that
     -- disagrees with it. Bump this, module.prop and the CHANGELOG together.
-    version = "2.7.4",
+    version = "2.7.5",
     scale_factor = 0.63,
     hud_top_space = 13,
     bottom_margin = 0.35,
@@ -75,6 +75,10 @@ PORTRAIT_CONFIG = {
     -- Bump this if the menu / corner buttons still crowd the swipe bar.
     safe_area_bottom_extra_ios = 0.0,
     tooltip_screen_padding = 0.12,
+    -- Gap in room tiles between a card and its tooltip on touch. Large enough
+    -- that a thumb on the card does not cover the text; raise it if a bigger
+    -- hand still reaches the popup.
+    tooltip_card_gap = 0.9,
     tooltip_touch_gap = 1.6,
     -- How far a selected booster-pack card lifts (fraction of card height) so its
     -- USE button has clear room to appear beneath it instead of overlapping art.
@@ -86,6 +90,9 @@ PORTRAIT_CONFIG = {
     -- button is revealed above the shop panel instead of tucking under it.
     shop_highlight_lift = 0.45,
     main_menu = {
+        row_width = 5.55, -- Play button width; the other rows match it
+        row_gap = 0.34,   -- space between the middle buttons
+        row_height = 1.25,
         x_offset_base = 0.1,
         x_offset_plus = 0.2,
         y_offset_base = -1.55,
@@ -97,6 +104,8 @@ PORTRAIT_CONFIG = {
     tag_align = {
         first_x_left = -0.2,
         first_x_right = 0.2,
+        width = 0.9, -- measured tag UIBox width in room tiles
+        screen_margin = 0.1,
     },
     usable_w_factor = 0.96,
     hand_screen_padding = 0.28,
@@ -380,6 +389,105 @@ function portrait_hook_smods_collection()
     SMODS.portrait_collection_hooked = true
 end
 
+-- Steamodded appends its MODS button to the main menu panel and restyles that
+-- panel on the way past, which left the button hanging beside the menu with the
+-- rest of it knocked out of line (#44). Takes the finished definition, lifts the
+-- button out and seats it next to Options and Quit at their size, and puts the
+-- panel's own styling back. Runs only when that button is actually there, so a
+-- build without Steamodded keeps the menu exactly as it was.
+function portrait_adopt_mods_button(definition)
+    if not (G and G.F_PORTRAIT and definition and definition.nodes) then return definition end
+
+    -- UIBox_button wraps the real button one level down: the id and height live
+    -- on that child, and the width lives on its label rows.
+    local function button_id(node)
+        local inner = node and node.nodes and node.nodes[1]
+        return inner and inner.config and inner.config.id
+    end
+    local function size_button(node, width, height)
+        local inner = node and node.nodes and node.nodes[1]
+        if not inner then return end
+        if height and inner.config then inner.config.minh = height end
+        for _, label_row in ipairs(inner.nodes or {}) do
+            if label_row.config then
+                label_row.config.minw = width
+                label_row.config.maxw = width - 0.2
+            end
+        end
+    end
+
+    local outer = definition.nodes[1]
+    local panel = outer and outer.nodes and outer.nodes[1]
+    if not (panel and panel.nodes) then return definition end
+
+    local mods_index, mods_node
+    for i, child in ipairs(panel.nodes) do
+        if button_id(child) == 'mods_button' then mods_index, mods_node = i, child end
+    end
+    if not mods_node then return definition end
+
+    table.remove(panel.nodes, mods_index)
+    panel.config = {align = "cm", padding = 0.15, r = 2, emboss = 0.1, colour = G.C.L_BLACK, mid = true}
+
+    local column = panel.nodes[1]
+    local rows = column and column.nodes
+    local button_row = rows and rows[2]
+    if not (button_row and button_row.nodes) then
+        table.insert(panel.nodes, mods_node)
+        return definition
+    end
+
+    table.insert(button_row.nodes, mods_node)
+
+    -- Line every row up on the Play button's width. Left alone, the extra button
+    -- made the middle row wider than the rows above and below it and the panel
+    -- grew dead corners (#44). The middle buttons share that width whatever
+    -- their number: a phone build hides Quit, so it is two there and three here.
+    local menu = PORTRAIT_CONFIG.main_menu or {}
+    local menu_w = menu.row_width or 5.55
+    local gap = menu.row_gap or 0.34
+    local count = #button_row.nodes
+    if count > 0 then
+        local each = (menu_w - gap*(count - 1))/count
+        for _, button in ipairs(button_row.nodes) do
+            size_button(button, each, menu.row_height or 1.25)
+        end
+    end
+
+    local collection_row = rows[3]
+    size_button(collection_row and collection_row.nodes and collection_row.nodes[1], menu_w, 1.55)
+
+    return definition
+end
+
+-- Where the first HUD tag hangs off the joker row. That row nearly fills a
+-- portrait screen, so the fixed side offset put the tag a third of its width
+-- past the edge (#44). This keeps the same placement but pulls it back until it
+-- sits inside the room. Returns the alignment and offset for the tag UIBox.
+function get_portrait_first_tag_align()
+    local pc = (PORTRAIT_CONFIG and PORTRAIT_CONFIG.tag_align) or {}
+    local left_side = (G.SETTINGS.play_main_hand == 1)
+    local align = left_side and 'bl' or 'br'
+    local offset_x = left_side and (pc.first_x_left or -0.2) or (pc.first_x_right or 0.2)
+
+    -- Tag sprite plus the UIBox padding around it, in room tiles.
+    local tag_w = pc.width or 0.9
+    local margin = pc.screen_margin or 0.1
+
+    if G.jokers and G.jokers.T and G.ROOM and G.ROOM.T and G.ROOM.T.w then
+        if left_side then
+            local left_edge = G.jokers.T.x - tag_w + offset_x
+            if left_edge < margin then offset_x = offset_x + (margin - left_edge) end
+        else
+            local right_edge = G.jokers.T.x + G.jokers.T.w + offset_x + tag_w
+            local limit = G.ROOM.T.w - margin
+            if right_edge > limit then offset_x = offset_x - (right_edge - limit) end
+        end
+    end
+
+    return align, {x = offset_x, y = 0}
+end
+
 -- Some vanilla windows are laid out for a desktop-width room and run off the
 -- sides of a phone screen (#42: Credits, Language, Card Stats). Given a window's
 -- natural width in room tiles, this returns the multiplier that makes it fit the
@@ -440,7 +548,11 @@ function apply_portrait_tooltip_fit(config)
         elseif config.lr_clamp == nil then
             config.lr_clamp = true
         end
-        if config.touch_above_cursor == nil then config.touch_above_cursor = true end
+        -- Popups are already placed above or below their card depending on where
+        -- that card sits, so pushing them clear of the finger on top of that only
+        -- made them jump around as the touch moved (#44). Off unless a caller
+        -- explicitly asks for it.
+        if config.touch_above_cursor == nil then config.touch_above_cursor = false end
         if config.snap_to_fit == nil then config.snap_to_fit = true end
     end
 

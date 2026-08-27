@@ -601,11 +601,9 @@ function Tag:remove()
         if G.HUD_tags and G.HUD_tags[HUD_tag_key+1] then
             if HUD_tag_key == 1 then
                 if G.F_PORTRAIT then
-                    local pc = PORTRAIT_CONFIG.tag_align
-                    local first_tag_align = (G.SETTINGS.play_main_hand == 1) and 'bl' or 'br'
-                    local first_tag_x = (G.SETTINGS.play_main_hand == 1) and pc.first_x_left or pc.first_x_right
+                    local first_tag_align, first_tag_offset = get_portrait_first_tag_align()
                     G.HUD_tags[HUD_tag_key+1]:set_alignment({type = first_tag_align,
-                    offset = {x=first_tag_x,y=0},
+                    offset = first_tag_offset,
                     xy_bond = 'Weak',
                     major = G.jokers})
                 else

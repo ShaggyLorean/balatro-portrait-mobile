@@ -845,7 +845,7 @@ function set_main_menu_UI()
     end
 
     G.MAIN_MENU_UI = UIBox{
-        definition = create_UIBox_main_menu_buttons(),
+        definition = portrait_adopt_mods_button(create_UIBox_main_menu_buttons()),
         config = {align="bmi", offset = {x=menu_x_offset,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
     }
     G.MAIN_MENU_UI.alignment.offset.y = y_offset_base

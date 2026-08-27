@@ -12,6 +12,16 @@ with an empty save. You can carry your unlocks and progression over from either:
 > and `meta.jkr`). An in-progress run is not carried over. The Zygisk path doesn't
 > need any of this; it runs on the official app and keeps that app's save.
 
+> **Check the export before you build.** Takeout hands over the last snapshot
+> Play Games holds, not the save on your phone, and the two saved games are
+> written separately. `1-meta.jkr` can carry today's date while `1-profile.jkr`
+> next to it is months old, which shows up as unlocks that look right and stats
+> that do not. Open the zip and compare the file dates under
+> `Google Play Games Services/Games/Balatro/Saved Games/` first. If the profile
+> one is stale, no amount of re-exporting will refresh it, and the routes below
+> are a file level copy (root) or the Zygisk module, which needs no transfer at
+> all. Reported in [issue #43](https://github.com/ShaggyLorean/balatro-portrait-mobile/issues/43).
+
 ## Easiest: bake it into the build
 
 `build.py` can fold a save straight into the APK. On the first launch it drops

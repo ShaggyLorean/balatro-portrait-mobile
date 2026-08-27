@@ -501,8 +501,17 @@ function love.mousemoved(x, y, dx, dy, istouch)
     G.CONTROLLER:set_HID_flags(G.CONTROLLER.last_touch_time > G.TIMERS.UPTIME - 0.2 and 'touch' or 'mouse')
 end
 
+-- Second guard for the accelerometer, in case a device still lists it after
+-- conf.lua turns the option off. Its axes never mean a controller is in use.
+local function _is_accelerometer(joystick)
+    if not (joystick and joystick.getName) then return false end
+    local ok, name = pcall(joystick.getName, joystick)
+    if not ok or type(name) ~= 'string' then return false end
+    return string.find(string.lower(name), 'accelerometer', 1, true) ~= nil
+end
+
 function love.joystickaxis( joystick, axis, value )
-    if math.abs(value) > 0.2 and joystick:isGamepad() then
+    if math.abs(value) > 0.2 and joystick:isGamepad() and not _is_accelerometer(joystick) then
 		G.CONTROLLER:set_gamepad(joystick)
         G.CONTROLLER:set_HID_flags('axis')
     end
