@@ -2,6 +2,39 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.6](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.6) - 2026-08-29
+
+The first round of iOS-only fixes, from the test report in #45. Nothing here
+touches Android or desktop.
+
+**iOS**
+
+- **The game is drawn at the screen's real resolution.** iOS hands LOVE a
+  drawable the size of the window in points unless the window asks for the
+  native scale, so an iPhone 13 Pro rendered everything at 390x844 and let the
+  system stretch it over a 1170x2532 panel. That is the soft picture in the
+  report, and it is why the diagnostics said `DPI scale: 1`. The flag is set in
+  `conf.lua` and is now also kept through the window rebuild the game does at
+  boot, which used to undo it. Android reads its scale from the display density
+  and ignores the flag entirely, so it is unaffected.
+- **ProMotion phones run at their real refresh rate.** iOS holds an app to
+  60 Hz unless `CADisableMinimumFrameDurationOnPhone` is in `Info.plist`, and
+  OpenGL ES presents without blocking, so the game ran its loop at 120 while
+  the panel showed every other frame. That is a 119 FPS counter over 60 Hz
+  motion. The IPA build writes the key now.
+- **The title-screen corner buttons keep off the rounded corners.** The safe
+  area iOS reports covers the home indicator but not the curve of the display.
+  Measured off the report's screenshot, the profile box sat 4pt from the left
+  edge with the corner arc cutting 2.5pt into it, so it grazed the bezel as the
+  menu swayed. Both corner boxes now step up and in on any device with a home
+  indicator, which puts about 12pt between them and the curve
+  (`corner_lift_ios` and `corner_inset_ios` under `main_menu`).
+
+**Docs**
+
+- docs/IOS.md covers the native scale, the refresh-rate key and the corner
+  nudge, and no longer lists high refresh rate as unverified.
+
 ## [v2.7.5](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.5) - 2026-08-27
 
 A pass over the things that only show up on a phone in your hand, most of them
