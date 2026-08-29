@@ -42,8 +42,10 @@ files = {
     -- The boot screen fit swaps love.graphics.print for the length of one call
     -- so an overlong status line can be squeezed to the window, and puts the
     -- real one back straight after. Writing into the love table is what 122
-    -- flags, and it is deliberate here.
-    ["src/conf.lua"] = {ignore = {"122/love"}},
+    -- flags, and it is deliberate here. 143 covers love._os, which is set by
+    -- LOVE before conf.lua runs (love.system is not loaded yet at that point)
+    -- but is not part of luacheck's love standard.
+    ["src/conf.lua"] = {ignore = {"122/love", "143"}},
     -- The mobile LOVE fork adds APIs luacheck's love standard doesn't know
     -- (window.setHint, handlers table access, graphics.isCreated).
     ["src/main.lua"] = {ignore = {"143"}},

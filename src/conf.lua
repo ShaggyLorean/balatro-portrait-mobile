@@ -101,7 +101,15 @@ function love.conf(t)
 	-- (#44). Nothing here uses tilt input, so the device is pure noise.
 	t.accelerometerjoystick = false
 
-	-- Force portrait orientation on mobile at engine level
+	-- iOS hands LOVE a drawable the size of the window in points unless the
+	-- window asks for the screen's native scale, so the whole game was drawn at
+	-- 390x844 on an iPhone 13 Pro and stretched over its 1170x2532 panel (#45).
+	-- SDL only reads this flag on iOS and macOS: Android takes its scale from
+	-- the display density and ignores it, desktop is left alone on purpose.
+	t.window.highdpi = (love._os == 'iOS')
+
+	-- Keeps love.graphics coordinates in points on a high density screen, so
+	-- the layout is unchanged by the line above and only the pixel count grows.
 	t.window.usedpiscale = true
 	t.modules.window = true
 end

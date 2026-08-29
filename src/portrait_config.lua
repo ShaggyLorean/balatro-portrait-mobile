@@ -97,6 +97,19 @@ PORTRAIT_CONFIG = {
         x_offset_plus = 0.2,
         y_offset_base = -1.55,
         corner_y_offset = -2.15,
+        -- Extra lift (room tiles) for the two bottom corner buttons on iOS.
+        -- Rounded display corners are not part of the safe area iOS reports,
+        -- so a box that clears the home indicator can still reach the curve:
+        -- measured off the #45 screenshot, the profile box sat 4.5pt from the
+        -- left edge with the corner arc cutting 2.5pt in at that height, about
+        -- 2pt of daylight. Lifting the pair clear of the arc costs nothing
+        -- else. Android has no such report and keeps 0.
+        corner_lift_ios = 0.4,
+        -- Horizontal half of the same nudge, in room tiles. Lifting alone tops
+        -- out at the 4pt the box already keeps from the side edge, so the pair
+        -- also steps inward, away from the arc. There is ~23 tiles-worth of
+        -- daylight to the menu column at this width, so this stays clear of it.
+        corner_inset_ios = 0.25,
     },
     view_deck_scale = 0.8,
     game_over_scale = 1.2,
@@ -285,6 +298,34 @@ function get_mobile_room_bottom_trim(os_name, safe_top)
     end
     trim = trim + ((PORTRAIT_CONFIG and PORTRAIT_CONFIG.safe_area_bottom_extra_ios) or 0)
     return math.max(trim, 0)
+end
+
+-- How far to nudge the main-menu corner buttons (profile on the left, language
+-- on the right) away from the corner, in room tiles: up first, then inward.
+-- iOS reports the home indicator in its safe area but not the rounded display
+-- corners, so those two boxes can clear the swipe bar and still graze the curve
+-- (#45). Returns lift, inset. Applied on iOS only, and only on a device that
+-- reports a bottom inset, which is the same set of devices that has the
+-- rounded corners. Everything else, every Android phone included, gets 0, 0.
+function get_portrait_corner_nudge(os_name)
+    os_name = os_name or (love.system and love.system.getOS and love.system.getOS())
+    if os_name ~= 'iOS' then return 0, 0 end
+
+    local menu = PORTRAIT_CONFIG and PORTRAIT_CONFIG.main_menu
+    local lift = (menu and menu.corner_lift_ios) or 0
+    local inset = (menu and menu.corner_inset_ios) or 0
+    if lift <= 0 and inset <= 0 then return 0, 0 end
+
+    if not (love.window and love.window.getSafeArea
+            and love.graphics and love.graphics.getHeight) then
+        return 0, 0
+    end
+
+    local ok, _sx, sy, _sw, sh = pcall(love.window.getSafeArea)
+    if not ok or type(sy) ~= 'number' or type(sh) ~= 'number' then return 0, 0 end
+    if love.graphics.getHeight() - (sy + sh) <= 0 then return 0, 0 end
+
+    return lift, inset
 end
 
 -- Plain-text device/layout report shown in Options -> Diagnostics and copied

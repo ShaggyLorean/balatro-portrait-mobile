@@ -832,12 +832,16 @@ function set_main_menu_UI()
     local x_offset_plus = 0
     local y_offset_base = 0
     local corner_y_offset = 0
+    local corner_x_offset = 0
     if G.F_PORTRAIT then
         local pc = PORTRAIT_CONFIG.main_menu
         x_offset_base = pc.x_offset_base
         x_offset_plus = pc.x_offset_plus
         y_offset_base = pc.y_offset_base
-        corner_y_offset = pc.corner_y_offset or y_offset_base
+        -- Up and in, out of the rounded display corner on iOS. Zero elsewhere.
+        local corner_lift, corner_inset = get_portrait_corner_nudge()
+        corner_y_offset = (pc.corner_y_offset or y_offset_base) - corner_lift
+        corner_x_offset = x_offset_base + corner_inset
     end
     local menu_x_offset = x_offset_base*2+x_offset_plus
     if G.F_PORTRAIT then
@@ -859,14 +863,14 @@ function set_main_menu_UI()
                 G.PROFILE_BUTTON = UIBox{
                     definition = create_UIBox_profile_button(),
                     config = {align="bli", offset = {x=-10,y=corner_y_offset}, major = G.ROOM_ATTACH, bond = 'Weak'}}
-                G.PROFILE_BUTTON.alignment.offset.x = x_offset_base
+                G.PROFILE_BUTTON.alignment.offset.x = corner_x_offset
                 G.PROFILE_BUTTON:align_to_major()
             end
             if G.F_PORTRAIT and not G.F_ENGLISH_ONLY then
                 G.LANGUAGE_BUTTON = UIBox{
                     definition = create_UIBox_language_button(),
                     config = {align="bri", offset = {x=10,y=corner_y_offset}, major = G.ROOM_ATTACH, bond = 'Weak'}}
-                G.LANGUAGE_BUTTON.alignment.offset.x = -x_offset_base
+                G.LANGUAGE_BUTTON.alignment.offset.x = -corner_x_offset
                 G.LANGUAGE_BUTTON:align_to_major()
             end
             return true

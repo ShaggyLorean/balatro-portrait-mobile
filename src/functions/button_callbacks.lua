@@ -1328,7 +1328,12 @@ G.FUNCS.apply_window_changes = function(_initial)
     vsync = G.SETTINGS.WINDOW.vsync,
     resizable = true,
     display = G.SETTINGS.WINDOW.selected_display,
-    highdpi = (love.system.getOS() == 'OS X')
+    -- This runs once at boot, and love.window.updateMode rebuilds the window
+    -- with whatever it is handed, so leaving iOS out here would undo the
+    -- highdpi flag conf.lua asked for. Steamodded rewrites the parenthesised
+    -- test on this line for mobile, so it is kept byte identical and iOS is
+    -- added after it instead (#45).
+    highdpi = (love.system.getOS() == 'OS X') or (love.system.getOS() == 'iOS')
     })
   G.SETTINGS.QUEUED_CHANGE = {}
   if _initial ~= true then

@@ -17,8 +17,15 @@ There is no Xcode and no macOS involved. The build:
    Additional Tools, SHA-256 verified, contains **no game data**)
 2. Inserts your locally built `Game.love` (made from **your** copy of Balatro)
    into `Payload/Balatro.app/`
-3. Locks `Info.plist` to portrait orientation and stamps the mod version
+3. Locks `Info.plist` to portrait orientation, stamps the mod version and
+   opts the app into the panel's full refresh rate
 4. Writes `balatro-portrait.ipa`
+
+Since v2.7.6 the window also asks for the screen's native scale. Without it
+iOS handed LOVE a drawable the size of the window in points and stretched it
+over the panel, so an iPhone 13 Pro drew the whole game at 390x844 and blew it
+up to 1170x2532 (#45). Android was never affected: it takes its scale from the
+display density instead of that flag.
 
 The IPA is **unsigned by design**. Sideloading tools re-sign it with your own
 Apple ID at install time.
@@ -70,8 +77,15 @@ data survives re-signing as long as you don't delete the app.
   title-screen buttons clear the swipe bar; `safe_area_bottom_extra_ios` in
   `src/portrait_config.lua` adds extra gap. If something still looks off,
   attach the **Options -> Diagnostics** report to your issue
-- **High refresh rate**, `fps_cap = 'auto'` should pick up 120 Hz on ProMotion
-  devices; unverified
+- **Rounded display corners**, iOS leaves these out of the safe area it
+  reports, so since v2.7.6 the two title-screen corner buttons step up and in
+  on any device with a home indicator (`corner_lift_ios` and
+  `corner_inset_ios` under `main_menu` in `src/portrait_config.lua`)
+- **High refresh rate**, `fps_cap = 'auto'` picks up the panel's rate, and
+  since v2.7.6 the IPA carries `CADisableMinimumFrameDurationOnPhone` so iOS
+  stops holding the app at 60 Hz on ProMotion devices. Before that the game
+  ran its loop at 120 while the panel showed every other frame, which reads as
+  a high FPS counter over 60 Hz motion (#45)
 - **Haptics**, `love.system.vibrate` support varies on iOS; worst case it's a
   silent no-op
 - **Performance**, the CRT shader may behave differently on Apple GPUs; if you

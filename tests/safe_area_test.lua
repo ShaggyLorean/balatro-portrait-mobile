@@ -106,5 +106,32 @@ check(near(get_mobile_room_bottom_trim("iOS", knob_top), base_trim + 0.5 + 0.3),
 PORTRAIT_CONFIG.safe_area_extra_ios = 0.0
 PORTRAIT_CONFIG.safe_area_bottom_extra_ios = 0.0
 
+-- Main-menu corner nudge: the rounded display corners are not part of the safe
+-- area iOS reports, so the two corner buttons step up and in on a device that
+-- has them. Everything else, Android included, must come back untouched.
+local menu = PORTRAIT_CONFIG.main_menu
+set_device("iOS", 390, 844, {x = 0, y = 47, w = 390, h = 763})
+local lift, inset = get_portrait_corner_nudge("iOS")
+check(near(lift, menu.corner_lift_ios) and near(inset, menu.corner_inset_ios),
+    "iOS with a home indicator: corner buttons are nudged up and in")
+
+set_device("iOS", 375, 667, {x = 0, y = 20, w = 375, h = 647})
+lift, inset = get_portrait_corner_nudge("iOS")
+check(near(lift, 0) and near(inset, 0),
+    "iOS without a bottom inset (square corners): no nudge")
+
+set_device("iOS", 390, 844, nil)
+lift, inset = get_portrait_corner_nudge("iOS")
+check(near(lift, 0) and near(inset, 0),
+    "iOS w/o getSafeArea: no nudge")
+
+set_device("Android", 1080, 2400, {x = 0, y = 90, w = 1080, h = 2250})
+lift, inset = get_portrait_corner_nudge("Android")
+check(near(lift, 0) and near(inset, 0), "Android: corner buttons untouched")
+
+set_device("Windows", 1920, 1080, nil)
+lift, inset = get_portrait_corner_nudge("Windows")
+check(near(lift, 0) and near(inset, 0), "Desktop: corner buttons untouched")
+
 print(failures == 0 and "ALL PASSED" or (failures .. " FAILURES"))
 os.exit(failures == 0 and 0 or 1)

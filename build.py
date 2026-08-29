@@ -1125,6 +1125,11 @@ def build_ipa(profiler=None):
             plist["UISupportedInterfaceOrientations~ipad"] = ["UIInterfaceOrientationPortrait"]
             plist["CFBundleShortVersionString"] = MOD_VERSION
             plist["CFBundleVersion"] = MOD_VERSION
+            # ProMotion iPhones hold an app to 60 Hz unless it says otherwise,
+            # and OpenGL ES presents without blocking, so the game happily ran
+            # its loop at 120 while the panel showed every other frame (#45).
+            # iOS 15+ key, ignored by everything older and by 60 Hz devices.
+            plist["CADisableMinimumFrameDurationOnPhone"] = True
             zout.writestr(plist_arc, plistlib.dumps(plist))
 
             zout.write(game_love_src, love_arc)
