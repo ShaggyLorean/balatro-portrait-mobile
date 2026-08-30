@@ -2,6 +2,36 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.7](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.7) - 2026-08-30
+
+Follow-ups from the #45 tester, who confirmed the 2.7.6 resolution and corner
+fixes on an iPhone 13 Pro. Still iOS only.
+
+**iOS**
+
+- **The flame over the score boxes.** When a hand beats the blind the chips and
+  mult boxes are meant to catch fire. On iOS they turned into solid blue and red
+  slabs that spilled out of the HUD panel. The flame's silhouette is a threshold
+  on numbers in the thousands (`flame_up_vec` walks time up to +-5000 and the
+  per-pixel detail is the small offset added on top), and GLSL ES gives locals
+  the *default* float precision: at mediump a number that size steps in whole
+  units, so every pixel of the quad lands on the same value and the threshold
+  flips for all of them at once. Reproduced on the desktop rig by quantising
+  that value, then fixed by declaring the highest precision the device has.
+  `build.py` patches `flame.fs` on the way into the build, the same way it
+  already patches `CRT.fs`. Steamodded ships the same patch for mobile, which is
+  a second vote for it. The Zygisk module carries Lua only, so this reaches the
+  APK and IPA builds, not the rooted install.
+- **The menu clears the home indicator.** The menu column finished 8pt from the
+  bottom of the screen, so the swipe bar sat on top of it. It now ends level
+  with the safe-area bottom, lifting by whatever inset the device reports.
+
+**Docs**
+
+- docs/IOS.md no longer says mods cannot run on iOS. A tester got Steamodded
+  going with Lovely Mobile Maker; all that is true is that the IPA this build
+  writes is vanilla.
+
 ## [v2.7.6](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.6) - 2026-08-29
 
 The first round of iOS-only fixes, from the test report in #45. Nothing here
