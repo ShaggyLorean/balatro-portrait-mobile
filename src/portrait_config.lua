@@ -110,6 +110,12 @@ PORTRAIT_CONFIG = {
         -- also steps inward, away from the arc. There is ~23 tiles-worth of
         -- daylight to the menu column at this width, so this stays clear of it.
         corner_inset_ios = 0.25,
+        -- The menu column ends this far above the bottom of the screen, in room
+        -- tiles, measured at 390x844. The lift below is the device's own bottom
+        -- inset minus this, so the panel finishes level with the safe area and
+        -- the home indicator gets the strip to itself instead of sitting on the
+        -- panel (#45).
+        menu_gap_tiles = 0.26,
     },
     view_deck_scale = 0.8,
     game_over_scale = 1.2,
@@ -326,6 +332,32 @@ function get_portrait_corner_nudge(os_name)
     if love.graphics.getHeight() - (sy + sh) <= 0 then return 0, 0 end
 
     return lift, inset
+end
+
+-- Lift for the main menu column in room tiles, so its bottom edge finishes at
+-- the safe-area bottom rather than under the home indicator. Derived from the
+-- inset the device reports, so a phone with a taller bar lifts further and a
+-- device with no bar lifts not at all. iOS only, like the corner nudge.
+function get_portrait_menu_lift(os_name)
+    os_name = os_name or (love.system and love.system.getOS and love.system.getOS())
+    if os_name ~= 'iOS' then return 0 end
+
+    if not (love.window and love.window.getSafeArea
+            and love.graphics and love.graphics.getHeight
+            and G and G.TILESCALE and G.TILESIZE
+            and G.TILESCALE > 0 and G.TILESIZE > 0) then
+        return 0
+    end
+
+    local ok, _sx, sy, _sw, sh = pcall(love.window.getSafeArea)
+    if not ok or type(sy) ~= 'number' or type(sh) ~= 'number' then return 0 end
+
+    local bottom_px = love.graphics.getHeight() - (sy + sh)
+    if bottom_px <= 0 then return 0 end
+
+    local menu = PORTRAIT_CONFIG and PORTRAIT_CONFIG.main_menu
+    local gap = (menu and menu.menu_gap_tiles) or 0
+    return math.max(0, bottom_px / (G.TILESCALE * G.TILESIZE) - gap)
 end
 
 -- Plain-text device/layout report shown in Options -> Diagnostics and copied

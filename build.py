@@ -135,6 +135,27 @@ CRT_MASK_ORIGINAL = '''    //smoothly transition the edge to black
                 * (1.0 - smoothstep(1.0-feather_fac,1.0,abs(tc.y) - BUFF));'''
 CRT_MASK_MODIFIED = CRT_MASK_ORIGINAL + '''
     mask = 1.0 - (1.0 - mask) * clamp(crt_intensity/(0.16*0.3), 0.0, 1.0);'''
+# The flame that licks the chips/mult boxes when a hand beats the blind draws
+# its silhouette by thresholding values in the thousands: flame_up_vec walks
+# time up to +-5000 and the per-pixel detail is the small offset added on top.
+# GLSL ES gives locals the default float precision, and at mediump a number
+# that size steps in whole units, so every pixel of the quad lands on the same
+# value and the flame comes out as a solid slab over the score boxes (#45,
+# reproduced on desktop by quantising sv). Ask for the highest precision the
+# device has. Guarded by GL_ES, so desktop GL is untouched.
+FLAME_PRECISION_ANCHOR = """#if defined(VERTEX) || __VERSION__ > 100 || defined(GL_FRAGMENT_PRECISION_HIGH)
+	#define MY_HIGHP_OR_MEDIUMP highp
+#else
+	#define MY_HIGHP_OR_MEDIUMP mediump
+#endif
+"""
+
+FLAME_PRECISION_PATCHED = FLAME_PRECISION_ANCHOR + """
+#ifdef GL_ES
+	precision MY_HIGHP_OR_MEDIUMP float;
+#endif
+"""
+
 CRT_NOISE_COMMENTED_LINES = (
     ("//extern MY_HIGHP_OR_MEDIUMP number noise_fac;", "extern MY_HIGHP_OR_MEDIUMP number noise_fac;"),
     ("    //MY_HIGHP_OR_MEDIUMP number x = (tc.x - mod(tc.x, 0.002)) * (tc.y - mod(tc.y, 0.0013)) * time * 1000.0;",
@@ -482,6 +503,24 @@ def _apply_crt_slider_mask_patch(src_dir):
         f.write(content)
 
 
+def _apply_flame_precision_patch(src_dir):
+    """Give flame.fs a default float precision on GLSL ES (see the constants)."""
+    flame_shader = os.path.join(src_dir, "resources", "shaders", "flame.fs")
+    if not os.path.exists(flame_shader):
+        return
+    with open(flame_shader, "r", encoding="utf-8") as f:
+        content = f.read()
+    if FLAME_PRECISION_PATCHED in content:
+        return
+    if FLAME_PRECISION_ANCHOR not in content:
+        print("  Warning: flame shader precision target not found in flame.fs - skipping.")
+        return
+    content = content.replace(FLAME_PRECISION_ANCHOR, FLAME_PRECISION_PATCHED, 1)
+    with open(flame_shader, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("  Flame shader asks for high precision on mobile GL.")
+
+
 def _apply_readabletro(src_dir, apply):
     font_src        = os.path.join("patches", "readabletro", "fonts", "TypoQuik-Bold.ttf")
     font_dst        = os.path.join(src_dir, "resources", "fonts", "TypoQuik-Bold.ttf")
@@ -654,6 +693,7 @@ def build_game_love(apply_crt=False, apply_readabletro=False, force=False, impor
     if apply_crt:
         _apply_crt_patch(src_dir, apply=True)
     _apply_crt_slider_mask_patch(src_dir)
+    _apply_flame_precision_patch(src_dir)
     if apply_readabletro:
         _apply_readabletro(src_dir, apply=True)
 

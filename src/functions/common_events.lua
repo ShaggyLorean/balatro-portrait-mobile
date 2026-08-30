@@ -852,7 +852,7 @@ function set_main_menu_UI()
         definition = portrait_adopt_mods_button(create_UIBox_main_menu_buttons()),
         config = {align="bmi", offset = {x=menu_x_offset,y=10}, major = G.ROOM_ATTACH, bond = 'Weak'}
     }
-    G.MAIN_MENU_UI.alignment.offset.y = y_offset_base
+    G.MAIN_MENU_UI.alignment.offset.y = y_offset_base - (G.F_PORTRAIT and get_portrait_menu_lift() or 0)
     G.MAIN_MENU_UI:align_to_major()
     G.E_MANAGER:add_event(Event({
         blockable = false,

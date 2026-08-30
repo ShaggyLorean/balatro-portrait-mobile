@@ -39,8 +39,14 @@ python build.py --ios
 Or answer **yes** to "Build iOS .ipa?" during the interactive build.
 The output is `balatro-portrait.ipa` in the project root.
 
-> **Note:** Lovely mod support is Android-only (`liblovely.so`). The iOS build
-> is always vanilla, regardless of the Lovely setting.
+> **Note:** This build does not bundle Lovely, so the IPA it writes is vanilla.
+> That is not the same as saying mods cannot run on iOS: a tester got
+> Steamodded working on an iPhone with
+> [Lovely Mobile Maker](https://lmm.shorty.systems/), following the
+> [Steamodded mobile install guide](https://docs.smods.dev/Installation/Installing%20Steamodded%20mobile/)
+> (#45). Portrait and Steamodded are independent, so that route should work
+> here too. It is not something the maintainer can test, so treat it as
+> tester-reported rather than supported.
 
 ## Sideloading
 

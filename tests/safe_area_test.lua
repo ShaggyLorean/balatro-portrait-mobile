@@ -133,5 +133,21 @@ set_device("Windows", 1920, 1080, nil)
 lift, inset = get_portrait_corner_nudge("Windows")
 check(near(lift, 0) and near(inset, 0), "Desktop: corner buttons untouched")
 
+-- Menu column lift: the panel should finish at the safe-area bottom instead of
+-- under the home indicator, so the lift is the reported inset less the gap the
+-- layout already leaves.
+local tile_844 = set_device("iOS", 390, 844, {x = 0, y = 47, w = 390, h = 763})
+check(near(get_portrait_menu_lift("iOS"), 34/tile_844 - menu.menu_gap_tiles),
+    "iOS: menu lifts by the bottom inset less the gap it already has")
+
+set_device("iOS", 375, 667, {x = 0, y = 20, w = 375, h = 647})
+check(near(get_portrait_menu_lift("iOS"), 0), "iOS without a bottom inset: menu stays put")
+
+set_device("Android", 1080, 2400, {x = 0, y = 90, w = 1080, h = 2250})
+check(near(get_portrait_menu_lift("Android"), 0), "Android: menu stays put")
+
+set_device("Windows", 1920, 1080, nil)
+check(near(get_portrait_menu_lift("Windows"), 0), "Desktop: menu stays put")
+
 print(failures == 0 and "ALL PASSED" or (failures .. " FAILURES"))
 os.exit(failures == 0 and 0 or 1)
