@@ -117,9 +117,23 @@ PORTRAIT_CONFIG = {
         -- panel (#45).
         menu_gap_tiles = 0.26,
     },
-    -- Rows the Steamodded mod list may use on a phone. It reserves the height
-    -- of four, and drawing past that lands on its own header and pager.
-    mod_list_max_rows = 4,
+    -- Height of one mod row in the Steamodded list, measured on the rig at
+    -- 390x844. Room tiles, so it holds at any resolution, and a box is one line
+    -- tall whatever the mod is called.
+    mod_list_row_h = 1.6,
+    -- Mods shown per page on a phone. Has to divide the number Steamodded pages
+    -- by (below) so a page of ours never straddles two of theirs. Six keeps the
+    -- window short enough that its back bar stays well clear of the home
+    -- indicator; the rest of the mods are one page turn away.
+    mod_list_page_size = 6,
+    -- Mods per page upstream. Steamodded's own number, used to find which of
+    -- its pages one of ours sits in.
+    mod_list_per_page = 12,
+    -- Room tiles taken off the mod window so its frame is visible rather than
+    -- flush with the screen edges. Measured on the rig at 390x844: the window
+    -- adds 1.14 tiles of padding and emboss around whatever its content asks
+    -- for, so this is that plus roughly half a tile of daylight each side.
+    mod_list_margin = 2.1,
     view_deck_scale = 0.8,
     game_over_scale = 1.2,
     game_over_scale_landscape = 1.5,
@@ -478,51 +492,166 @@ end
 -- button out and seats it next to Options and Quit at their size, and puts the
 -- panel's own styling back. Runs only when that button is actually there, so a
 -- build without Steamodded keeps the menu exactly as it was.
--- Steamodded lists mods three to a row, which is laid out for a desktop window:
--- on a phone the row runs off both edges and the toggle on the last mod cannot
--- be reached at all (#45). The page it builds is a plain node tree, so rather
--- than reimplement the pane, take the boxes it produced and deal them out over
--- fewer columns. Steamodded reserves the height of four rows, and going past
--- that draws the list over its own header and pager, so the column count is
--- whatever keeps the page inside four rows: one per row up to four mods, two
--- per row up to eight, and beyond that its own layout is left alone rather than
--- traded for a worse one. Pagination, ordering and the boxes themselves stay
--- Steamodded's, so this holds across its releases. Idempotent, and a no-op
--- without Steamodded or in landscape.
+-- Steamodded's mod list is laid out for a desktop window: three boxes to a row,
+-- a pane asking for a fixed 17 tiles of width and a list area with a fixed 5
+-- tiles of height. On a phone the row ran off both edges with the last mod's
+-- toggle out of reach, and the pane's frame sat off screen entirely (#45).
+--
+-- Three things are done to it, all measured rather than guessed, because a mod
+-- box is as wide as its name, author and version make it:
+--   * every box gets its own row, which is the narrowest the list can be laid
+--     out and so the only arrangement that survives a long mod name,
+--   * anything asking for more width than the room has is clamped to the room,
+--     which brings the pane's frame back on screen,
+--   * the list area is grown to whatever the rows actually measure once they
+--     are built, since Steamodded attaches them as a child UIBox that does not
+--     resize its host, so a page of them simply drew over the header and pager.
+-- Pagination, ordering and the boxes themselves stay Steamodded's, so this
+-- holds across its releases. Idempotent, and a no-op without it or in landscape.
+-- Steamodded's mod list is laid out for a desktop window: twelve mods a page,
+-- three to a row, a pane asking for a fixed 17 tiles of width and a list area
+-- with a fixed 5 tiles of height. On a phone the rows ran off both edges with
+-- the last mod's toggle out of reach, and the pane's frame sat off screen
+-- entirely (#45).
+--
+-- Rather than squeeze twelve desktop-sized rows onto a phone, the page is made
+-- smaller and the pager it already draws does the rest:
+--   * one mod per row, which is the narrowest the list goes and so the only
+--     arrangement a long mod name cannot break,
+--   * a page holds mod_list_page_size of them instead of twelve, so the window
+--     is a fixed, comfortable height with its back bar well clear of the home
+--     indicator, whatever the mod count,
+--   * the page selector is rebuilt for the new page count, so every mod is
+--     still reachable, one page turn away,
+--   * anything asking for more width than the room has is clamped to it, which
+--     brings the pane's frame back on screen.
+-- The boxes, their order and the page mechanism stay Steamodded's, so this
+-- holds across its releases. Idempotent, and a no-op without it or in landscape.
 function portrait_hook_smods_mod_list()
     if not (G and G.F_PORTRAIT) then return end
     if not (SMODS and SMODS.GUI and type(SMODS.GUI.dynamicModListContent) == 'function') then return end
     if SMODS.portrait_mod_list_hooked then return end
 
+    -- Our page size has to divide Steamodded's, so a page of ours never
+    -- straddles two of theirs and can always be cut out of one build.
+    local function page_size()
+        local cfg = PORTRAIT_CONFIG or {}
+        local upstream = cfg.mod_list_per_page or 12
+        local size = cfg.mod_list_page_size or 6
+        if size < 1 or upstream % size ~= 0 then return upstream, upstream end
+        return size, upstream
+    end
+
+    local function page_count()
+        local size = page_size()
+        local total = #((SMODS and SMODS.mod_list) or {})
+        return math.max(1, math.ceil(total/size)), size, total
+    end
+
+    local function page_label(index, count)
+        return (localize and localize('k_page') or 'Page') .. ' ' .. index .. '/' .. count
+    end
+
+    -- Rebuild the page selector for our page count. Steamodded hands the cycle
+    -- an option list and gets the chosen index back, so swapping the list is
+    -- all it takes for the same control to page through our smaller pages.
+    if type(SMODS.GUI.createOptionSelector) == 'function' then
+        local smods_selector = SMODS.GUI.createOptionSelector
+        SMODS.GUI.createOptionSelector = function(args)
+            if G.F_PORTRAIT and type(args) == 'table' and args.opt_callback == 'update_mod_list' then
+                local count = page_count()
+                local current = math.min(math.max(SMODS.portrait_mod_page or 1, 1), count)
+                SMODS.portrait_mod_page = current
+                local options = {}
+                for i = 1, count do options[i] = page_label(i, count) end
+                args.options = options
+                args.current_option = options[current]
+            end
+            return smods_selector(args)
+        end
+    end
+
+    if type(SMODS.GUI.staticModListContent) == 'function' then
+        local smods_static = SMODS.GUI.staticModListContent
+        SMODS.GUI.staticModListContent = function(...)
+            local pane = smods_static(...)
+            local cfg = PORTRAIT_CONFIG or {}
+            local room = G.F_PORTRAIT and G.ROOM and G.ROOM.T
+            if not (room and room.w and room.w > 0) then return pane end
+
+            local usable = room.w - (cfg.mod_list_margin or 2.1)
+            local size = page_size()
+            local list_h = size*(cfg.mod_list_row_h or 1.6)
+
+            local seen = {}
+            local function fit(node)
+                if type(node) ~= 'table' or seen[node] then return end
+                seen[node] = true
+                local config = node.config
+                if type(config) == 'table' then
+                    -- The pane asks for a fixed 17 tiles, which put its frame
+                    -- off both edges of a phone screen.
+                    if type(config.minw) == 'number' and config.minw > usable then config.minw = usable end
+                    if type(config.maxw) == 'number' and config.maxw > usable then config.maxw = usable end
+
+                    -- Steamodded hangs the rows off this node as a child UIBox,
+                    -- which does not resize its host, so the host is given the
+                    -- height a full page of rows takes. Fixed, so the window is
+                    -- the same size whether you have three mods or thirty.
+                    local holds_list = false
+                    for _, child in ipairs(node.nodes or {}) do
+                        if type(child) == 'table' and child.config and child.config.id == 'modsList' then
+                            holds_list = true
+                        end
+                    end
+                    if holds_list and type(config.minh) == 'number' and list_h > config.minh then
+                        config.minh = list_h
+                    end
+                end
+                for _, child in ipairs(node.nodes or {}) do fit(child) end
+            end
+            fit(pane)
+            return pane
+        end
+    end
+
     local smods_mod_list = SMODS.GUI.dynamicModListContent
     SMODS.GUI.dynamicModListContent = function(page)
-        local pane = smods_mod_list(page)
-        if not (G.F_PORTRAIT and pane and type(pane.nodes) == 'table') then return pane end
+        if not G.F_PORTRAIT then return smods_mod_list(page) end
 
-        -- Flatten first: the entries are what matters, not how they were grouped.
+        local count, size, total = page_count()
+        local index = math.min(math.max(tonumber(page) or SMODS.portrait_mod_page or 1, 1), count)
+        SMODS.portrait_mod_page = index
+
+        -- Build the Steamodded page our slice sits in, then cut the slice out.
+        local _, upstream = page_size()
+        local first = (index - 1)*size + 1
+        local upstream_page = math.floor((first - 1)/upstream) + 1
+        local pane = smods_mod_list(upstream_page)
+        if not (pane and type(pane.nodes) == 'table') then return pane end
+
         local entries, template = {}, nil
         for _, row in ipairs(pane.nodes) do
             if type(row) ~= 'table' or type(row.nodes) ~= 'table' then return pane end
             template = template or row
             for _, entry in ipairs(row.nodes) do entries[#entries + 1] = entry end
         end
+        if not template or #entries == 0 then return pane end
 
-        local max_rows = (PORTRAIT_CONFIG and PORTRAIT_CONFIG.mod_list_max_rows) or 4
-        if #entries <= 1 or not template then return pane end
-        local per_row = math.ceil(#entries/max_rows)
-        if per_row >= 3 then return pane end
+        local offset = first - (upstream_page - 1)*upstream
+        local last = math.min(offset + size - 1, #entries, total - (upstream_page - 1)*upstream)
 
         local rows = {}
-        for i = 1, #entries, per_row do
-            -- Fresh config per row: UIBox writes layout results back into it,
-            -- so the split rows cannot share one table.
-            local config = {}
-            for k, v in pairs(template.config or {}) do config[k] = v end
-            local group = {}
-            for j = i, math.min(i + per_row - 1, #entries) do group[#group + 1] = entries[j] end
-            rows[#rows + 1] = {n = template.n, config = config, nodes = group}
+        for i = offset, last do
+            if entries[i] then
+                -- Fresh config per row: UIBox writes layout results back into
+                -- it, so the split rows cannot share one table.
+                local config = {}
+                for k, v in pairs(template.config or {}) do config[k] = v end
+                rows[#rows + 1] = {n = template.n, config = config, nodes = {entries[i]}}
+            end
         end
-        pane.nodes = rows
+        if #rows > 0 then pane.nodes = rows end
         return pane
     end
     SMODS.portrait_mod_list_hooked = true
