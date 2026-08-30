@@ -18,7 +18,7 @@ There is no Xcode and no macOS involved. The build:
    data**). `--ios-vanilla` uses the plain shell instead
    (`balatro-base.ipa` from [balatro-apk-maker](https://github.com/blake502/balatro-apk-maker)'s
    Additional Tools, SHA-256 verified), which is what every build before
-   v2.7.8 used
+   v2.7.7 used
 2. Inserts your locally built `Game.love` (made from **your** copy of Balatro)
    into `Payload/Balatro.app/`
 3. Locks `Info.plist` to portrait orientation, stamps the mod version and
@@ -45,7 +45,7 @@ The output is `balatro-portrait.ipa` in the project root.
 
 ### Mods
 
-Since v2.7.8 the IPA is built on a shell that has lovely-injector in it, so
+Since v2.7.7 the IPA is built on a shell that has lovely-injector in it, so
 Steamodded loads the same way it does on Android. Earlier builds used a plain
 LÖVE shell with no mod loader, which is why mods could not be made to work with
 them (#45).
