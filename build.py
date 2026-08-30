@@ -18,7 +18,11 @@ Options:
                           deprecated alias)
     --readabletro         Apply Readabletro font and high-res texture patch (default)
     --no-readabletro      Skip Readabletro patch
-    --ios                 Also build an iOS .ipa for sideloading (EXPERIMENTAL)
+    --ios                 Also build an iOS .ipa for sideloading (EXPERIMENTAL).
+                          The shell has lovely-injector in it, so Steamodded can
+                          load the same way it does on Android
+    --ios-vanilla         Build that .ipa on the plain LOVE shell instead, with
+                          no mod loader
     --no-ios              Skip the iOS build (default)
     --balatro PATH        Path to Balatro game file (skips the interactive prompt)
     --skip-setup          Skip resource extraction (if src/resources already exists)
@@ -117,6 +121,18 @@ REVANCED_AAPT2_BASE = "https://github.com/ReVanced/aapt2/releases/download/v1.1.
 # result is sideloaded with Sideloadly/AltStore which re-sign it with the user's
 # Apple ID — no Xcode or macOS needed.
 IOS_BASE_URL = "https://github.com/blake502/balatro-apk-maker/releases/download/Additional-Tools-1.0/balatro-base.ipa"
+
+# The same service that provides the Lovely base APK also publishes an iOS shell
+# with lovely-injector linked into the LOVE binary, which is what Lovely Mobile
+# Maker builds its own apps from. Using it as the base is how the iOS build gets
+# the mod loader the Android build has had all along (#45): without it the IPA
+# has nothing to load Steamodded with. Rebuilt upstream, so no hash pin, same as
+# the APK above.
+IOS_LOVELY_BASE_URL = "https://lmm.shorty.systems/base.ipa"
+
+# Bundle id of the vanilla shell, reused for the lovely build so an update lands
+# on the same app and keeps its saves.
+IOS_BUNDLE_ID = "org.htf65jud.balatro"
 
 TOOL_SHA256 = {
     JDK_URL:      JDK_SHA256,
@@ -1123,13 +1139,25 @@ def build_apk(profiler=None):
 # Step 4 — iOS IPA build (experimental)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_ipa(profiler=None):
+def _ios_app_dir(zin):
+    """Name of the .app folder inside an IPA. The two bases do not agree on it."""
+    for name in zin.namelist():
+        parts = name.split("/")
+        if len(parts) > 1 and parts[0] == "Payload" and parts[1].endswith(".app"):
+            return "Payload/" + parts[1]
+    raise RuntimeError("no .app bundle found inside the base IPA")
+
+
+def build_ipa(profiler=None, lovely=True):
     """Package Game.love into an unsigned, portrait-locked iOS .ipa.
 
     The base is a prebuilt LOVE iOS app shell (no game data). We rewrite the
     archive instead of appending so Info.plist can be replaced: orientation is
     locked to portrait and the bundle version is set to MOD_VERSION. The IPA is
     unsigned by design — Sideloadly/AltStore re-sign it at install time.
+
+    With lovely=True the shell is the one that has lovely-injector linked in, so
+    Steamodded can load; the app is renamed back to Balatro on the way past.
     """
     game_love_src = os.path.abspath("Game.love")
     if not os.path.exists(game_love_src):
@@ -1139,13 +1167,17 @@ def build_ipa(profiler=None):
     os.makedirs(WORKDIR, exist_ok=True)
     p = profiler or BuildProfiler()
 
-    base_ipa  = os.path.join(WORKDIR, "balatro-base.ipa")
+    base_url  = IOS_LOVELY_BASE_URL if lovely else IOS_BASE_URL
+    base_ipa  = os.path.join(WORKDIR, "lovely-base.ipa" if lovely else "balatro-base.ipa")
     out_ipa   = "balatro-portrait.ipa"
-    plist_arc = "Payload/Balatro.app/Info.plist"
-    love_arc  = "Payload/Balatro.app/game.love"
 
     with p.step("Download iOS base"):
-        _download(IOS_BASE_URL, base_ipa)
+        _download(base_url, base_ipa)
+
+    with zipfile.ZipFile(base_ipa, "r") as _probe:
+        app_dir = _ios_app_dir(_probe)
+    plist_arc = app_dir + "/Info.plist"
+    love_arc  = app_dir + "/game.love"
 
     with p.step("Pack IPA"):
         print("  Packing IPA (portrait-locked Info.plist + game.love) ...")
@@ -1170,6 +1202,15 @@ def build_ipa(profiler=None):
             # its loop at 120 while the panel showed every other frame (#45).
             # iOS 15+ key, ignored by everything older and by 60 Hz devices.
             plist["CADisableMinimumFrameDurationOnPhone"] = True
+            if lovely:
+                # The lovely shell ships under its own name and bundle id. The
+                # id has to match what the vanilla shell used or iOS treats the
+                # build as a different app and the save container is left
+                # behind, so anyone updating from an earlier IPA loses their
+                # runs.
+                plist["CFBundleDisplayName"] = "Balatro"
+                plist["CFBundleName"] = "Balatro"
+                plist["CFBundleIdentifier"] = IOS_BUNDLE_ID
             zout.writestr(plist_arc, plistlib.dumps(plist))
 
             zout.write(game_love_src, love_arc)
@@ -1178,6 +1219,7 @@ def build_ipa(profiler=None):
     size_mb = os.path.getsize(out_ipa) / 1_048_576
     print(f"\n{'=' * 60}")
     print("  iOS build complete - EXPERIMENTAL (untested by maintainer)")
+    print("  Mod loader: " + ("lovely (Steamodded can load)" if lovely else "none (vanilla)"))
     print(f"  IPA: {out_ipa}  ({size_mb:.2f} MB)")
     print(f"{'=' * 60}")
     print()
@@ -1216,6 +1258,9 @@ def _parse_args():
                      help="also build an iOS .ipa for sideloading (EXPERIMENTAL)")
     ios.add_argument("--no-ios", dest="ios", action="store_false",
                      help="skip the iOS build (default)")
+
+    parser.add_argument("--ios-vanilla", dest="ios_vanilla", action="store_true",
+                        help="build the iOS .ipa on the plain LOVE shell, without the mod loader")
 
     parser.add_argument("--balatro", dest="balatro_path", metavar="PATH",
                         help="path to the Balatro game file (skips the interactive prompt)")
@@ -1392,7 +1437,7 @@ def main():
     if build_ios:
         print()
         print(f"[4/{total}] Building iOS IPA (experimental) ...")
-        build_ipa(profiler=BuildProfiler())
+        build_ipa(profiler=BuildProfiler(), lovely=not cli.get("ios_vanilla"))
 
 
 if __name__ == "__main__":

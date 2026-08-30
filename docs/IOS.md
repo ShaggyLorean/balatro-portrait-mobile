@@ -12,9 +12,13 @@
 
 There is no Xcode and no macOS involved. The build:
 
-1. Downloads a prebuilt, unsigned LÖVE iOS app shell
+1. Downloads a prebuilt, unsigned LÖVE iOS app shell with lovely-injector
+   linked into it (`base.ipa` from
+   [Lovely Mobile Maker](https://lmm.shorty.systems/), contains **no game
+   data**). `--ios-vanilla` uses the plain shell instead
    (`balatro-base.ipa` from [balatro-apk-maker](https://github.com/blake502/balatro-apk-maker)'s
-   Additional Tools, SHA-256 verified, contains **no game data**)
+   Additional Tools, SHA-256 verified), which is what every build before
+   v2.7.8 used
 2. Inserts your locally built `Game.love` (made from **your** copy of Balatro)
    into `Payload/Balatro.app/`
 3. Locks `Info.plist` to portrait orientation, stamps the mod version and
@@ -39,14 +43,23 @@ python build.py --ios
 Or answer **yes** to "Build iOS .ipa?" during the interactive build.
 The output is `balatro-portrait.ipa` in the project root.
 
-> **Note:** This build does not bundle Lovely, so the IPA it writes is vanilla.
-> That is not the same as saying mods cannot run on iOS: a tester got
-> Steamodded working on an iPhone with
-> [Lovely Mobile Maker](https://lmm.shorty.systems/), following the
-> [Steamodded mobile install guide](https://docs.smods.dev/Installation/Installing%20Steamodded%20mobile/)
-> (#45). Portrait and Steamodded are independent, so that route should work
-> here too. It is not something the maintainer can test, so treat it as
-> tester-reported rather than supported.
+### Mods
+
+Since v2.7.8 the IPA is built on a shell that has lovely-injector in it, so
+Steamodded loads the same way it does on Android. Earlier builds used a plain
+LÖVE shell with no mod loader, which is why mods could not be made to work with
+them (#45).
+
+Put mods where the
+[Steamodded mobile guide](https://docs.smods.dev/Installation/Installing%20Steamodded%20mobile/)
+says: open the **Files** app, go to **On My iPhone → Balatro → game → Mods**
+and drop `smods` in there. The bundle id is unchanged, so this installs over an
+earlier build and keeps its saves.
+
+Portrait keeps the vanilla lines that Steamodded's patches anchor on, which is
+what makes the two work together on Android; the same source is what goes into
+the IPA. None of this is tested on a device by the maintainer, so report back.
+Use `--ios-vanilla` for the old plain shell.
 
 ## Sideloading
 
