@@ -117,6 +117,9 @@ PORTRAIT_CONFIG = {
         -- panel (#45).
         menu_gap_tiles = 0.26,
     },
+    -- Rows the Steamodded mod list may use on a phone. It reserves the height
+    -- of four, and drawing past that lands on its own header and pager.
+    mod_list_max_rows = 4,
     view_deck_scale = 0.8,
     game_over_scale = 1.2,
     game_over_scale_landscape = 1.5,
@@ -383,6 +386,13 @@ function portrait_diagnostics_report()
     if love.graphics and love.graphics.getWidth then
         add("Window", love.graphics.getWidth() .. "x" .. love.graphics.getHeight())
     end
+    -- Reported refresh rate and the cap the loop is actually using. The two
+    -- disagreeing is the difference between "the panel is 60" and "we are
+    -- capping ourselves at 60", which is not something a frame counter alone
+    -- can tell apart (#45).
+    local ok_mode, _mw, _mh, mode_flags = pcall(love.window.getMode)
+    add("Refresh rate", ok_mode and mode_flags and mode_flags.refreshrate or "?")
+    add("FPS cap", (G and G.FPS_CAP) or (PORTRAIT_CONFIG and PORTRAIT_CONFIG.fps_cap) or "?")
     if love.window and love.window.getDPIScale then
         add("DPI scale", love.window.getDPIScale())
     end
@@ -468,8 +478,61 @@ end
 -- button out and seats it next to Options and Quit at their size, and puts the
 -- panel's own styling back. Runs only when that button is actually there, so a
 -- build without Steamodded keeps the menu exactly as it was.
+-- Steamodded lists mods three to a row, which is laid out for a desktop window:
+-- on a phone the row runs off both edges and the toggle on the last mod cannot
+-- be reached at all (#45). The page it builds is a plain node tree, so rather
+-- than reimplement the pane, take the boxes it produced and deal them out over
+-- fewer columns. Steamodded reserves the height of four rows, and going past
+-- that draws the list over its own header and pager, so the column count is
+-- whatever keeps the page inside four rows: one per row up to four mods, two
+-- per row up to eight, and beyond that its own layout is left alone rather than
+-- traded for a worse one. Pagination, ordering and the boxes themselves stay
+-- Steamodded's, so this holds across its releases. Idempotent, and a no-op
+-- without Steamodded or in landscape.
+function portrait_hook_smods_mod_list()
+    if not (G and G.F_PORTRAIT) then return end
+    if not (SMODS and SMODS.GUI and type(SMODS.GUI.dynamicModListContent) == 'function') then return end
+    if SMODS.portrait_mod_list_hooked then return end
+
+    local smods_mod_list = SMODS.GUI.dynamicModListContent
+    SMODS.GUI.dynamicModListContent = function(page)
+        local pane = smods_mod_list(page)
+        if not (G.F_PORTRAIT and pane and type(pane.nodes) == 'table') then return pane end
+
+        -- Flatten first: the entries are what matters, not how they were grouped.
+        local entries, template = {}, nil
+        for _, row in ipairs(pane.nodes) do
+            if type(row) ~= 'table' or type(row.nodes) ~= 'table' then return pane end
+            template = template or row
+            for _, entry in ipairs(row.nodes) do entries[#entries + 1] = entry end
+        end
+
+        local max_rows = (PORTRAIT_CONFIG and PORTRAIT_CONFIG.mod_list_max_rows) or 4
+        if #entries <= 1 or not template then return pane end
+        local per_row = math.ceil(#entries/max_rows)
+        if per_row >= 3 then return pane end
+
+        local rows = {}
+        for i = 1, #entries, per_row do
+            -- Fresh config per row: UIBox writes layout results back into it,
+            -- so the split rows cannot share one table.
+            local config = {}
+            for k, v in pairs(template.config or {}) do config[k] = v end
+            local group = {}
+            for j = i, math.min(i + per_row - 1, #entries) do group[#group + 1] = entries[j] end
+            rows[#rows + 1] = {n = template.n, config = config, nodes = group}
+        end
+        pane.nodes = rows
+        return pane
+    end
+    SMODS.portrait_mod_list_hooked = true
+end
+
 function portrait_adopt_mods_button(definition)
     if not (G and G.F_PORTRAIT and definition and definition.nodes) then return definition end
+
+    -- The MODS button is the way into the mod list, so hook it while we are here.
+    if portrait_hook_smods_mod_list then portrait_hook_smods_mod_list() end
 
     -- UIBox_button wraps the real button one level down: the id and height live
     -- on that child, and the width lives on its label rows.

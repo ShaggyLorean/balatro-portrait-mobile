@@ -1,5 +1,10 @@
 function set_screen_positions()
-    if G.STAGE == G.STAGES.RUN and G.hand then
+    -- Every card area this touches has to exist, not just the hand. A mod that
+    -- resizes the window while the run is still being built gets here with the
+    -- rest of them still nil: Silk Touch did exactly that and took the game
+    -- down with "attempt to index field 'play'" on iOS (#45).
+    if G.STAGE == G.STAGES.RUN and G.hand and G.jokers and G.play
+       and G.consumeables and G.deck and G.discard then
         -- Early exit if ROOM is not initialized
         if not G.ROOM or not G.ROOM.T then return end
         

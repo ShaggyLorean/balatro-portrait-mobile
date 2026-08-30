@@ -1179,6 +1179,22 @@ def build_ipa(profiler=None, lovely=True):
     plist_arc = app_dir + "/Info.plist"
     love_arc  = app_dir + "/game.love"
 
+    # The lovely shell carries its own app icon, which is not the one anybody
+    # installing Balatro wants on their home screen (#45). Both shells use
+    # LOVE's stock icon filenames, so the plain one's icons are lifted across.
+    icons = {}
+    if lovely:
+        icon_src = os.path.join(WORKDIR, "balatro-base.ipa")
+        with p.step("Download iOS icons"):
+            _download(IOS_BASE_URL, icon_src)
+        with zipfile.ZipFile(icon_src, "r") as zicon:
+            for name in zicon.namelist():
+                base = name.rsplit("/", 1)[-1]
+                if base.startswith("iOS AppIcon") and base.endswith(".png"):
+                    icons[base] = zicon.read(name)
+        if icons:
+            print(f"  Icons: taking {len(icons)} from the Balatro shell.")
+
     with p.step("Pack IPA"):
         print("  Packing IPA (portrait-locked Info.plist + game.love) ...")
         if os.path.exists(out_ipa):
@@ -1190,7 +1206,8 @@ def build_ipa(profiler=None, lovely=True):
                     continue
                 # passing the original ZipInfo preserves unix permissions on
                 # the Balatro executable inside the .app bundle
-                zout.writestr(item, zin.read(item.filename))
+                icon = icons.get(item.filename.rsplit("/", 1)[-1])
+                zout.writestr(item, icon if icon is not None else zin.read(item.filename))
 
             plist = plistlib.loads(zin.read(plist_arc))
             plist["UISupportedInterfaceOrientations"] = ["UIInterfaceOrientationPortrait"]
