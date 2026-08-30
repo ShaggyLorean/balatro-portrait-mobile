@@ -2,6 +2,30 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.8](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.8) - 2026-08-30
+
+**The iOS build can load mods now.**
+
+The tester in #45 had Steamodded running on his iPhone through
+[Lovely Mobile Maker](https://lmm.shorty.systems/) but could not get it working
+with this build, and asked why. The answer: `--ios` packed the game into a plain
+LÖVE shell, and there was no mod loader anywhere in it. Android never had that
+problem because its base APK already comes from the same service, with
+lovely-injector inside.
+
+So the iOS build now uses that service's iOS shell the same way, which has
+lovely linked into the LÖVE binary. Mods go where the
+[Steamodded mobile guide](https://docs.smods.dev/Installation/Installing%20Steamodded%20mobile/)
+says, **Files → On My iPhone → Balatro → game → Mods**. The bundle id is
+deliberately kept at the one the old shell used, so this installs over an
+earlier build instead of appearing as a second app with an empty save folder.
+`--ios-vanilla` still builds on the plain shell.
+
+Untested on a device: the maintainer has no iPhone. What is verified here is
+that the IPA carries lovely, that the game goes into the right bundle, and that
+the plist keeps the portrait lock, the version, the ProMotion key and the old
+bundle id.
+
 ## [v2.7.7](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.7) - 2026-08-30
 
 Follow-ups from the #45 tester, who confirmed the 2.7.6 resolution and corner
