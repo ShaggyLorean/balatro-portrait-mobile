@@ -2,6 +2,43 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.8](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.8) - 2026-09-03
+
+**Fixes a v2.7.7 launch crash on Android.** Update if you built the last one.
+
+- **The flame fix from v2.7.7 stopped some phones starting at all** (#46). Raising
+  the default float precision in `flame.fs` also raised it for the parameters of
+  `effect`, but LOVE's own preamble declares that function's prototype under
+  `precision mediump float`, and GLSL ES rejects a prototype and a definition
+  whose parameter precisions differ. The parameters are spelled out as mediump
+  now, matching the prototype, while the locals inside keep the highp the flame
+  needs. Checked against the Khronos reference GLSL ES compiler: the 2.7.6
+  shader compiles, the 2.7.7 one fails with the reporter's four lines word for
+  word, this one compiles. Whether a driver enforces the rule varies, which is
+  why it took a Pixel 8a and an S23 to surface it and never showed on iOS.
+- **A mod resizing the window during run setup could take the game down**
+  (#45). `set_screen_positions` checked that the hand existed before touching
+  the joker, play, consumable, deck and discard areas, and Silk Touch got in
+  there before the rest of them were built. Reproduced on the desktop rig by
+  nulling that area at the same point, which gave the reporter's exact error,
+  and it now guards every area it uses.
+- **Steamodded's mod list fits a phone** (#45). It lays mods out three to a row
+  with a pane a fixed 17 tiles wide and a list area a fixed 5 tiles tall, so on
+  a phone the rows ran off both edges with the last mod's toggle out of reach
+  and the pane's frame sat off screen. It now shows one mod per row, six to a
+  page, with the page selector Steamodded already draws rebuilt for the new
+  count, so the rest are one page turn away. Tested at 390x844 with four and
+  with eleven mods, including a deliberately overlong mod name.
+- **The iOS build keeps the Balatro icon.** The shell that carries the mod
+  loader ships its own, which is not what belongs on a home screen (#45).
+- **The Android title screen gets the same bottom gap as iOS.** The menu panel
+  sat flush against the bottom edge of the screen. It cannot be measured there
+  the way it is on iOS, since LOVE reads the Android safe area from the display
+  cutout and the game runs immersive, so it is a flat gap measured against this
+  phone's gesture inset.
+- **Diagnostics reports the refresh rate and the frame cap**, which is the
+  difference between a panel that is 60 Hz and a game capping itself at 60.
+
 ## [v2.7.7](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.7) - 2026-08-30
 
 Follow-ups from the #45 tester, who confirmed the 2.7.6 resolution and corner
