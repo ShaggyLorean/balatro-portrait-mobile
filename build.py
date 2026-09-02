@@ -172,6 +172,20 @@ FLAME_PRECISION_PATCHED = FLAME_PRECISION_ANCHOR + """
 #endif
 """
 
+# Raising the default precision has a second half. LOVE's pixel-shader
+# preamble declares the prototype `vec4 effect(vec4, Image, vec2, vec2)` under
+# its own `precision mediump float;`, so those parameters are mediump. Once the
+# default above is highp, defining effect with bare `vec4`/`vec2` parameters
+# makes them highp, and GLSL ES treats a prototype and a definition whose
+# parameter precisions differ as an error: "overloaded functions must have the
+# same parameter precision qualifiers". Apple's compiler let it through, the
+# Mali and Adreno ones on Android did not (#46). Spelling the parameters out
+# as mediump matches the prototype again while every local inside the function
+# keeps the highp default the flame needs. This is the same pair of edits
+# Steamodded ships in its own mobile patch for this file.
+FLAME_EFFECT_ORIGINAL = "vec4 effect( vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords )"
+FLAME_EFFECT_PATCHED  = "mediump vec4 effect( mediump vec4 colour, Image texture, mediump vec2 texture_coords, mediump vec2 screen_coords )"
+
 CRT_NOISE_COMMENTED_LINES = (
     ("//extern MY_HIGHP_OR_MEDIUMP number noise_fac;", "extern MY_HIGHP_OR_MEDIUMP number noise_fac;"),
     ("    //MY_HIGHP_OR_MEDIUMP number x = (tc.x - mod(tc.x, 0.002)) * (tc.y - mod(tc.y, 0.0013)) * time * 1000.0;",
@@ -526,15 +540,24 @@ def _apply_flame_precision_patch(src_dir):
         return
     with open(flame_shader, "r", encoding="utf-8") as f:
         content = f.read()
-    if FLAME_PRECISION_PATCHED in content:
+    changed = False
+    if FLAME_PRECISION_PATCHED not in content:
+        if FLAME_PRECISION_ANCHOR not in content:
+            print("  Warning: flame shader precision target not found in flame.fs - skipping.")
+            return
+        content = content.replace(FLAME_PRECISION_ANCHOR, FLAME_PRECISION_PATCHED, 1)
+        changed = True
+    if FLAME_EFFECT_PATCHED not in content:
+        if FLAME_EFFECT_ORIGINAL not in content:
+            print("  Warning: flame shader effect() signature not found in flame.fs - skipping.")
+            return
+        content = content.replace(FLAME_EFFECT_ORIGINAL, FLAME_EFFECT_PATCHED, 1)
+        changed = True
+    if not changed:
         return
-    if FLAME_PRECISION_ANCHOR not in content:
-        print("  Warning: flame shader precision target not found in flame.fs - skipping.")
-        return
-    content = content.replace(FLAME_PRECISION_ANCHOR, FLAME_PRECISION_PATCHED, 1)
     with open(flame_shader, "w", encoding="utf-8") as f:
         f.write(content)
-    print("  Flame shader asks for high precision on mobile GL.")
+    print("  Flame shader asks for high precision on mobile GL, with effect() kept at the preamble's precision.")
 
 
 def _apply_readabletro(src_dir, apply):
