@@ -127,7 +127,8 @@ check(near(lift, 0) and near(inset, 0),
 
 set_device("Android", 1080, 2400, {x = 0, y = 90, w = 1080, h = 2250})
 lift, inset = get_portrait_corner_nudge("Android")
-check(near(lift, 0) and near(inset, 0), "Android: corner buttons untouched")
+check(near(lift, menu.corner_lift_ios) and near(inset, menu.corner_inset_ios),
+    "Android: corner buttons get the same nudge off the rounded corners")
 
 set_device("Windows", 1920, 1080, nil)
 lift, inset = get_portrait_corner_nudge("Windows")
@@ -144,7 +145,8 @@ set_device("iOS", 375, 667, {x = 0, y = 20, w = 375, h = 647})
 check(near(get_portrait_menu_lift("iOS"), 0), "iOS without a bottom inset: menu stays put")
 
 set_device("Android", 1080, 2400, {x = 0, y = 90, w = 1080, h = 2250})
-check(near(get_portrait_menu_lift("Android"), 0), "Android: menu stays put")
+check(near(get_portrait_menu_lift("Android"), PORTRAIT_CONFIG.menu_bottom_gap_android),
+    "Android: menu lifts by its own flat gap, since the gesture bar cannot be measured")
 
 set_device("Windows", 1920, 1080, nil)
 check(near(get_portrait_menu_lift("Windows"), 0), "Desktop: menu stays put")

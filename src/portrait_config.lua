@@ -74,6 +74,14 @@ PORTRAIT_CONFIG = {
     -- Extra bottom gap (room tiles) kept above the home indicator, iOS only.
     -- Bump this if the menu / corner buttons still crowd the swipe bar.
     safe_area_bottom_extra_ios = 0.0,
+    -- The same breathing room at the bottom of the title screen on Android, in
+    -- room tiles. It cannot be measured there the way it is on iOS: LOVE reads
+    -- the Android safe area from the display cutout, which covers the notch and
+    -- says nothing about the gesture bar, and the game runs immersive so the
+    -- bar is hidden anyway. Without it the menu panel sits flush against the
+    -- bottom edge of the screen. Measured against this phone's gesture inset
+    -- (64px at density 640, so 16dp, about half a tile) with a little over it.
+    menu_bottom_gap_android = 1.15,
     tooltip_screen_padding = 0.12,
     -- Gap in room tiles between a card and its tooltip on touch. Large enough
     -- that a thumb on the card does not cover the text; raise it if a bigger
@@ -332,12 +340,16 @@ end
 -- rounded corners. Everything else, every Android phone included, gets 0, 0.
 function get_portrait_corner_nudge(os_name)
     os_name = os_name or (love.system and love.system.getOS and love.system.getOS())
-    if os_name ~= 'iOS' then return 0, 0 end
+    if os_name ~= 'iOS' and os_name ~= 'Android' then return 0, 0 end
 
     local menu = PORTRAIT_CONFIG and PORTRAIT_CONFIG.main_menu
     local lift = (menu and menu.corner_lift_ios) or 0
     local inset = (menu and menu.corner_inset_ios) or 0
     if lift <= 0 and inset <= 0 then return 0, 0 end
+
+    -- Android phones have the same rounded display corners but report nothing
+    -- about them, so they get the same nudge on the same flat terms.
+    if os_name == 'Android' then return lift, inset end
 
     if not (love.window and love.window.getSafeArea
             and love.graphics and love.graphics.getHeight) then
@@ -357,6 +369,9 @@ end
 -- device with no bar lifts not at all. iOS only, like the corner nudge.
 function get_portrait_menu_lift(os_name)
     os_name = os_name or (love.system and love.system.getOS and love.system.getOS())
+    if os_name == 'Android' then
+        return math.max(0, (PORTRAIT_CONFIG and PORTRAIT_CONFIG.menu_bottom_gap_android) or 0)
+    end
     if os_name ~= 'iOS' then return 0 end
 
     if not (love.window and love.window.getSafeArea
