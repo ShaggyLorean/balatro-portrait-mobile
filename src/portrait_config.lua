@@ -125,6 +125,10 @@ PORTRAIT_CONFIG = {
         -- panel (#45).
         menu_gap_tiles = 0.26,
     },
+    -- Steamodded's newer New Run screen does not fit a phone, so portrait turns
+    -- its "vanilla run select" option on the first time it sees the setting.
+    -- Set this to false to leave the option alone entirely.
+    smods_vanilla_run_select = true,
     -- Height of one mod row in the Steamodded list, measured on the rig at
     -- 390x844. Room tiles, so it holds at any resolution, and a box is one line
     -- tall whatever the mod is called.
@@ -672,11 +676,28 @@ function portrait_hook_smods_mod_list()
     SMODS.portrait_mod_list_hooked = true
 end
 
+-- Recent Steamodded replaced the New Run screen with a wide deck grid and a
+-- panel beside it, laid out for a desktop window: on a phone it runs off both
+-- edges and the Select button with it, so a deck cannot be picked at all (#47).
+-- Steamodded keeps the old screen behind its own "vanilla run select" option,
+-- and that one is the layout portrait is already built around, so on a phone it
+-- is the default. Only set when the option has never been chosen, so anyone who
+-- turns it off in Steamodded's own settings keeps their choice.
+function portrait_default_smods_run_select()
+    if not (G and G.F_PORTRAIT) then return end
+    if not (SMODS and type(SMODS.config) == 'table') then return end
+    if PORTRAIT_CONFIG and PORTRAIT_CONFIG.smods_vanilla_run_select == false then return end
+    if SMODS.config.vanilla_run_select == nil then
+        SMODS.config.vanilla_run_select = true
+    end
+end
+
 function portrait_adopt_mods_button(definition)
     if not (G and G.F_PORTRAIT and definition and definition.nodes) then return definition end
 
     -- The MODS button is the way into the mod list, so hook it while we are here.
     if portrait_hook_smods_mod_list then portrait_hook_smods_mod_list() end
+    if portrait_default_smods_run_select then portrait_default_smods_run_select() end
 
     -- UIBox_button wraps the real button one level down: the id and height live
     -- on that child, and the width lives on its label rows.

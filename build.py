@@ -670,7 +670,10 @@ def _steamodded_versions(limit=15):
 def _fetch_steamodded(version):
     """Download a Steamodded release tag and return {relpath: bytes} of the mod."""
     os.makedirs(WORKDIR, exist_ok=True)
-    tmp = os.path.join(WORKDIR, "steamodded.zip")
+    # Named after the tag: the downloader skips anything already on disk, so a
+    # shared filename would hand back whichever version was fetched first.
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", version)
+    tmp = os.path.join(WORKDIR, f"steamodded-{safe}.zip")
     _download(f"https://github.com/{STEAMODDED_REPO}/archive/refs/tags/{version}.zip", tmp)
     files = {}
     with zipfile.ZipFile(tmp) as z:
@@ -700,12 +703,29 @@ def _resolve_steamodded(flag_value, interactive):
         print()
         for i, tag in enumerate(versions, 1):
             print(f"     {i:2}. {tag}" + ("   (latest)" if i == 1 else ""))
-        try:
-            sel = input("     Pick a version [1]: ").strip()
-        except EOFError:
-            sel = ""
-        idx = int(sel) - 1 if sel.isdigit() and 1 <= int(sel) <= len(versions) else 0
-        version = versions[idx]
+        # Anything that is not a number used to fall through to the latest
+        # release without a word, so picking a version by typing its tag left
+        # people with the one they were trying to avoid (#47).
+        version = None
+        for _ in range(3):
+            try:
+                sel = input("     Pick a version or paste a tag [1]: ").strip()
+            except EOFError:
+                sel = ""
+            if not sel:
+                version = versions[0]
+                break
+            if sel.isdigit() and 1 <= int(sel) <= len(versions):
+                version = versions[int(sel) - 1]
+                break
+            match = [t for t in versions if t.lower() == sel.lower()]
+            if match:
+                version = match[0]
+                break
+            print(f"     '{sel}' is not one of those. Enter a number from the list, or a tag exactly as shown.")
+        if version is None:
+            print("  Steamodded: no version picked, skipping.")
+            return None
     if not version:
         return None
     if version == "latest":

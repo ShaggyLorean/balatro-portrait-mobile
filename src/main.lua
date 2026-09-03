@@ -191,9 +191,15 @@ function love.load()
 	end)
 
 	-- Same idea for a bundled mod (build.py --steamodded): copy it into the mod
-	-- folder once, on the first launch. Lovely picks it up after one restart.
+	-- folder on first launch, and again whenever the build carries a different
+	-- one. It used to skip the copy whenever the folder already existed, so a
+	-- rebuild with another Steamodded version never reached the phone and the
+	-- first one installed stayed forever (#47). What was installed is recorded
+	-- beside it, and the copy is redone when that no longer matches.
 	pcall(function()
 		if not love.filesystem.getInfo("install_mods") then return end
+		local STAMP = "/.portrait_bundle"
+
 		local function copy_dir(src, dst)
 			love.filesystem.createDirectory(dst)
 			for _, item in ipairs(love.filesystem.getDirectoryItems(src)) do
@@ -206,11 +212,51 @@ function love.load()
 				end
 			end
 		end
+
+		local function remove_dir(path)
+			for _, item in ipairs(love.filesystem.getDirectoryItems(path)) do
+				local p = path .. "/" .. item
+				if love.filesystem.getInfo(p, "directory") then
+					remove_dir(p)
+				else
+					love.filesystem.remove(p)
+				end
+			end
+			love.filesystem.remove(path)
+		end
+
+		-- File count and total size: two builds of the same mod at different
+		-- versions do not land on both.
+		local function stamp_of(path)
+			local count, bytes = 0, 0
+			local function walk(p)
+				for _, item in ipairs(love.filesystem.getDirectoryItems(p)) do
+					local sp = p .. "/" .. item
+					local info = love.filesystem.getInfo(sp)
+					if info and info.type == "directory" then
+						walk(sp)
+					elseif info then
+						count = count + 1
+						bytes = bytes + (info.size or 0)
+					end
+				end
+			end
+			walk(path)
+			return count .. ":" .. bytes
+		end
+
 		for _, mod in ipairs(love.filesystem.getDirectoryItems("install_mods")) do
 			local src = "install_mods/" .. mod
-			if love.filesystem.getInfo(src, "directory")
-				and not love.filesystem.getInfo("Mods/" .. mod) then
-				copy_dir(src, "Mods/" .. mod)
+			if love.filesystem.getInfo(src, "directory") then
+				local dst = "Mods/" .. mod
+				local stamp = stamp_of(src)
+				local installed = love.filesystem.getInfo(dst, "directory")
+					and love.filesystem.read(dst .. STAMP) or nil
+				if installed ~= stamp then
+					if love.filesystem.getInfo(dst, "directory") then remove_dir(dst) end
+					copy_dir(src, dst)
+					love.filesystem.write(dst .. STAMP, stamp)
+				end
 			end
 		end
 	end)
