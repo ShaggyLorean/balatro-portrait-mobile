@@ -2,6 +2,30 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.7.9](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.9) - 2026-09-03
+
+**Decks can be picked again with a current Steamodded** (#47).
+
+- **The New Run screen.** Recent Steamodded replaces it with a wide deck grid
+  and a panel beside it, built for a desktop window, so on a phone it ran off
+  both edges and took the Select button with it. Steamodded keeps the old screen
+  behind its own "vanilla run select" option and that is the one portrait is
+  built around, so on a phone it is now the default. Anyone who turns it off in
+  Steamodded's settings keeps their choice.
+- **The bundled Steamodded version now actually reaches the phone.** The copy
+  was skipped whenever the mod folder already existed, so whichever version was
+  installed first stayed forever and rebuilding with another one changed
+  nothing. What was installed is recorded beside it now and the copy is redone
+  when the build carries something different.
+- **Picking a version by name works.** Anything that was not a number fell
+  through to the latest release without a word. The prompt takes a tag as well
+  now and asks again instead of quietly choosing for you, and the download is
+  named after the tag so a cached archive cannot stand in for another version.
+
+Checked on a phone rather than assumed: a device holding Steamodded 1.0.0-beta-1814a
+picked up 26.829.0 on the first launch after installing a build carrying it, and
+the deck picker on that same phone fits the screen with every control reachable.
+
 ## [v2.7.8](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.8) - 2026-09-03
 
 **Fixes a v2.7.7 launch crash on Android.** Update if you built the last one.
