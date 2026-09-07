@@ -100,11 +100,13 @@ data survives re-signing as long as you don't delete the app.
   reports, so since v2.7.6 the two title-screen corner buttons step up and in
   on any device with a home indicator (`corner_lift_ios` and
   `corner_inset_ios` under `main_menu` in `src/portrait_config.lua`)
-- **High refresh rate**, `fps_cap = 'auto'` picks up the panel's rate, and
-  since v2.7.6 the IPA carries `CADisableMinimumFrameDurationOnPhone` so iOS
-  stops holding the app at 60 Hz on ProMotion devices. Before that the game
-  ran its loop at 120 while the panel showed every other frame, which reads as
-  a high FPS counter over 60 Hz motion (#45)
+- **High refresh rate**, still open. The IPA carries
+  `CADisableMinimumFrameDurationOnPhone` since v2.7.6, which is the key iOS
+  documents for going past 60 Hz, but the one ProMotion report so far (#45)
+  still reads 60 on the lovely shell and "feels like 60" on the plain one.
+  Since v2.7.8 the **Options -> Diagnostics** report shows the refresh rate the
+  app is told the panel has and the cap the frame loop is using; if you have a
+  120 Hz iPhone, that report is what settles it
 - **Haptics**, `love.system.vibrate` support varies on iOS; worst case it's a
   silent no-op
 - **Performance**, the CRT shader may behave differently on Apple GPUs; if you
