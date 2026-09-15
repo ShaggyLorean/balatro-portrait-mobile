@@ -864,18 +864,39 @@ function set_main_menu_UI()
         blocking = false,
         func = (function()
             if not G.MAIN_MENU_UI then return true end
+            -- The corner boxes sit beside the menu column, and the column is
+            -- not the same width everywhere: a Mods button, a Quit button and
+            -- the UI scale all change it, and a narrow phone room leaves little
+            -- either side. Pushing a box inward by a fixed amount overlapped
+            -- the column on a 360dp phone (#48), so each box is only moved in
+            -- as far as its own side has room for, measured from where the
+            -- column actually landed.
+            local function fitted_offset(box, right_side)
+                if not (G.F_PORTRAIT and box and box.T and G.MAIN_MENU_UI and G.MAIN_MENU_UI.T
+                        and G.ROOM and G.ROOM.T) then
+                    return corner_x_offset
+                end
+                local room, menu = G.ROOM.T, G.MAIN_MENU_UI.T
+                local gap = right_side
+                    and ((room.x + room.w) - (menu.x + menu.w))
+                    or (menu.x - room.x)
+                local clearance = (PORTRAIT_CONFIG.main_menu and PORTRAIT_CONFIG.main_menu.corner_clearance) or 0.15
+                local room_for_inset = gap - box.T.w - clearance
+                return math.max(0, math.min(corner_x_offset, room_for_inset))
+            end
+
             if (not G.F_DISP_USERNAME) or (type(G.F_DISP_USERNAME) == 'string') then
                 G.PROFILE_BUTTON = UIBox{
                     definition = create_UIBox_profile_button(),
                     config = {align="bli", offset = {x=-10,y=corner_y_offset}, major = G.ROOM_ATTACH, bond = 'Weak'}}
-                G.PROFILE_BUTTON.alignment.offset.x = corner_x_offset
+                G.PROFILE_BUTTON.alignment.offset.x = fitted_offset(G.PROFILE_BUTTON, false)
                 G.PROFILE_BUTTON:align_to_major()
             end
             if G.F_PORTRAIT and not G.F_ENGLISH_ONLY then
                 G.LANGUAGE_BUTTON = UIBox{
                     definition = create_UIBox_language_button(),
                     config = {align="bri", offset = {x=10,y=corner_y_offset}, major = G.ROOM_ATTACH, bond = 'Weak'}}
-                G.LANGUAGE_BUTTON.alignment.offset.x = -corner_x_offset
+                G.LANGUAGE_BUTTON.alignment.offset.x = -fitted_offset(G.LANGUAGE_BUTTON, true)
                 G.LANGUAGE_BUTTON:align_to_major()
             end
             return true

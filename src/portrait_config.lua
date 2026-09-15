@@ -118,6 +118,9 @@ PORTRAIT_CONFIG = {
         -- also steps inward, away from the arc. There is ~23 tiles-worth of
         -- daylight to the menu column at this width, so this stays clear of it.
         corner_inset_ios = 0.25,
+        -- Smallest gap (room tiles) a corner box keeps from the menu column.
+        -- The inset above is cut back, down to zero, to keep this (#48).
+        corner_clearance = 0.15,
         -- The menu column ends this far above the bottom of the screen, in room
         -- tiles, measured at 390x844. The lift below is the device's own bottom
         -- inset minus this, so the panel finishes level with the safe area and

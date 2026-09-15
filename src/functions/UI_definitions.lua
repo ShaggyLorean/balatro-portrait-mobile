@@ -7182,10 +7182,11 @@ function create_UIBox_main_menu_buttons()
             }},
           }},
         }},
-        {n=G.UIT.C, config={align = "bm"}, nodes={
-          {n=G.UIT.B, config={w = 0.7, h = 0.25}},
-        }},
-        -- language button moved to separate G.LANGUAGE_BUTTON UIBox (see set_main_menu_UI)
+        -- The language button used to sit here, with a 0.7 wide spacer beside
+        -- it. The button moved to its own UIBox (see set_main_menu_UI) but the
+        -- spacer stayed, so the root was 0.7 tiles wider than the panel it
+        -- drew, the panel sat 0.35 left of centre, and anything placed by the
+        -- root's edges landed off by that much on the right (#48).
       }}
     return t
   else
