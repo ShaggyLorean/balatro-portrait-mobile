@@ -2,6 +2,32 @@
 
 All notable changes to Balatro Portrait Mobile.
 
+## [v2.8.0](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.8.0) - 2026-09-15
+
+**The title screen corner buttons stay clear of the menu on narrow phones** (#48).
+
+- **A stale spacer in the menu root.** When the language button moved into its
+  own box, a 0.7 tile spacer that used to sit beside it stayed behind. The menu
+  root was that much wider than the panel it drew, the panel sat 0.35 tiles left
+  of centre, and the right-hand corner button was placed 0.7 tiles further out
+  than the left one. Removed, so the root is the panel and both sides match.
+- **Corner buttons are moved inward only as far as their side has room.** The
+  nudge off the rounded display corners was a fixed distance, and on a 360dp
+  phone the language box landed on top of the Collection button and the panel.
+  Each box now measures the gap between the room edge and where the menu column
+  actually landed on its side, and moves in by whatever fits while keeping
+  0.15 tiles clear of the column. The measurement is taken at build time, so a
+  Mods button, a Quit button or a different UI scale changing the column's
+  width is accounted for. Checked on the desktop rig at 360x800 with the
+  Android layout and at 390x844 with the iOS one; the phone case has both
+  boxes beside the column with the clearance kept, and the iPhone case keeps
+  its full nudge.
+
+**Docs**
+
+- docs/IOS.md no longer claims 120 Hz works on ProMotion; the one report so far
+  says it does not, and the Diagnostics report now carries what settles it.
+
 ## [v2.7.9](https://github.com/ShaggyLorean/balatro-portrait-mobile/releases/tag/v2.7.9) - 2026-09-03
 
 **Decks can be picked again with a current Steamodded** (#47).
